@@ -29,7 +29,8 @@ const columns: {
     links: [
       { label: "Blog", href: "/blog" },
       { label: "Changelog", href: "/changelog" },
-      { label: "Chart API", href: "https://i.chartts.com" },
+      { label: "Pricing", href: "/pricing" },
+      { label: "Compare", href: "/compare" },
       { label: "Playground", href: "/playground" },
     ],
   },
@@ -41,7 +42,12 @@ const columns: {
         href: "https://github.com/chartts/chartts",
         external: true,
       },
-      { label: "Discord", href: "/discord", external: true },
+      {
+        label: "npm",
+        href: "https://www.npmjs.com/package/@chartts/core",
+        external: true,
+      },
+      { label: "Discord", href: "/discord" },
       { label: "Twitter", href: "https://x.com/chartts", external: true },
     ],
   },
