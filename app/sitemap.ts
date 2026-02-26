@@ -79,6 +79,20 @@ const compareSlugs = [
   "visx",
 ];
 
+const seoLandingSlugs = [
+  "react-line-chart",
+  "react-bar-chart",
+  "react-pie-chart",
+  "vue-chart-library",
+  "svelte-chart-library",
+  "tailwind-charts",
+  "lightweight-chart-library",
+  "accessible-charts",
+  "nextjs-charts",
+  "typescript-chart-library",
+  "candlestick-chart",
+];
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date().toISOString();
 
@@ -138,6 +152,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: now,
   }));
 
+  // SEO landing pages
+  const seoPages: MetadataRoute.Sitemap = seoLandingSlugs.map((slug) => ({
+    url: `${BASE}/charts/${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+    lastModified: now,
+  }));
+
   return [
     ...staticPages,
     ...docPages,
@@ -145,5 +167,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...examplePages,
     ...blogPages,
     ...comparePages,
+    ...seoPages,
   ];
 }
