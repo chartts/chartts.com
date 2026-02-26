@@ -27,6 +27,11 @@ html.dark {
   --c-grid-subtle: rgba(255 255 255 / 0.03);
   --c-dot-fill: #0c0c12;
   --c-chart-label: #52525b;
+  --chartts-grid: rgba(255 255 255 / 0.06);
+  --chartts-axis: rgba(255 255 255 / 0.12);
+  --chartts-text-muted: #71717a;
+  --chartts-bg: #050508;
+  --chartts-font-family: "Outfit", system-ui, sans-serif;
 }
 
 html.light {
@@ -46,6 +51,11 @@ html.light {
   --c-grid-subtle: rgba(0 0 0 / 0.04);
   --c-dot-fill: #ffffff;
   --c-chart-label: #94a3b8;
+  --chartts-grid: rgba(0 0 0 / 0.08);
+  --chartts-axis: rgba(0 0 0 / 0.15);
+  --chartts-text-muted: #64748b;
+  --chartts-bg: #f8fafc;
+  --chartts-font-family: "Outfit", system-ui, sans-serif;
 }
 
 body {
