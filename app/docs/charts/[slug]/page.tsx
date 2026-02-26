@@ -148,8 +148,8 @@ const chartDocs: Record<
       { name: "data", type: "T[]", description: "Array of data objects" },
       { name: "x", type: "keyof T", description: "Key for x-axis values" },
       { name: "y", type: "keyof T", description: "Key for y-axis values" },
-      { name: "size", type: "keyof T | number", description: "Point size — fixed number or data key" },
-      { name: "color", type: "keyof T | string", description: "Point color — fixed or data key for color scale" },
+      { name: "size", type: "keyof T | number", description: "Point size - fixed number or data key" },
+      { name: "color", type: "keyof T | string", description: "Point color - fixed or data key for color scale" },
       { name: "shape", type: "'circle' | 'square' | 'triangle' | 'diamond'", description: "Point shape. Default: 'circle'" },
     ],
     usage: `import { ScatterChart } from "@chartts/react"
@@ -711,7 +711,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const chart = chartDocs[slug];
   if (!chart) return {};
   return {
-    title: `${chart.name} — Chart.ts Documentation`,
+    title: `${chart.name} | Chart.ts Documentation`,
     description: chart.description,
   };
 }

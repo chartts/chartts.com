@@ -16,7 +16,7 @@ At the core of Chart.ts is a **render-agnostic scene graph**. When you write:
 <LineChart data={data} x="time" y="value" />
 ```
 
-Chart.ts doesn't immediately draw pixels or create DOM nodes. Instead, it builds an intermediate representation — a tree of drawing commands:
+Chart.ts doesn't immediately draw pixels or create DOM nodes. Instead, it builds an intermediate representation - a tree of drawing commands:
 
 ```
 Scene
@@ -40,7 +40,7 @@ The SVG renderer creates real DOM elements for each scene node. A line becomes a
 
 ### Canvas Renderer (10k – 100k points)
 
-The Canvas renderer draws to a 2D canvas context. It batches draw calls, uses offscreen canvases for complex elements, and maintains a hit-test map for interactivity. It produces the same visual output as SVG — gradients, rounded corners, shadows — just faster.
+The Canvas renderer draws to a 2D canvas context. It batches draw calls, uses offscreen canvases for complex elements, and maintains a hit-test map for interactivity. It produces the same visual output as SVG - gradients, rounded corners, shadows - just faster.
 
 ### WebGL Renderer (100k+ points)
 
@@ -64,7 +64,7 @@ The thresholds are configurable. You can also force a specific renderer:
 
 ## Feature parity
 
-This is the hard part. Every feature — tooltips, zoom, pan, animations, accessibility — needs to work across all three renderers. We achieve this through the scene graph abstraction. Interaction handlers operate on the scene graph, not on DOM events. This means click, hover, and keyboard events work identically regardless of the underlying renderer.
+This is the hard part. Every feature - tooltips, zoom, pan, animations, accessibility - needs to work across all three renderers. We achieve this through the scene graph abstraction. Interaction handlers operate on the scene graph, not on DOM events. This means click, hover, and keyboard events work identically regardless of the underlying renderer.
 
 The SVG renderer gets accessibility for free (DOM nodes). For Canvas and WebGL, we maintain a parallel invisible DOM structure for screen reader access.
 

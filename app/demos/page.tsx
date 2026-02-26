@@ -5,7 +5,7 @@ import { Footer } from "../components/footer";
 import { renderChart, chartDisplayNames, sampleData } from "@/lib/charts";
 
 export const metadata: Metadata = {
-  title: "Demos — Chart.ts",
+  title: "Demos | Chart.ts",
   description: "Live demos of all 27 chart types in Chart.ts. Rendered as SVG, server-side, with zero JavaScript.",
 };
 

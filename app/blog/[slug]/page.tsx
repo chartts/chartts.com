@@ -25,7 +25,7 @@ export async function generateMetadata({
   const post = getPostBySlug(slug);
   if (!post) return {};
   return {
-    title: `${post.title} — Chart.ts Blog`,
+    title: `${post.title} | Chart.ts Blog`,
     description: post.description,
   };
 }

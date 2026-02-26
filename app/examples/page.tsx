@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Nav } from "../components/nav";
 
 export const metadata: Metadata = {
-  title: "Examples — Chart.ts",
+  title: "Examples | Chart.ts",
   description:
     "Real-world Chart.ts examples. Copy-paste ready code for dashboards, analytics, financial charts, and more.",
 };

@@ -197,7 +197,7 @@ html.light .glow-sm {
 .delay-15 { animation-delay: 1500ms; }
 .delay-20 { animation-delay: 2000ms; }
 
-/* Syntax highlighting tokens — dark */
+/* Syntax highlighting tokens - dark */
 html.dark .tok-kw { color: #c084fc; }
 html.dark .tok-str { color: #34d399; }
 html.dark .tok-fn { color: #22d3ee; }
@@ -209,7 +209,7 @@ html.dark .tok-punc { color: #71717a; }
 html.dark .tok-type { color: #22d3ee; }
 html.dark .tok-cmt { color: #52525b; font-style: italic; }
 
-/* Syntax highlighting tokens — light */
+/* Syntax highlighting tokens - light */
 html.light .tok-kw { color: #7c3aed; }
 html.light .tok-str { color: #059669; }
 html.light .tok-fn { color: #0891b2; }

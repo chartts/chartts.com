@@ -26,7 +26,7 @@ export function UrlApi() {
             Charts from a URL.
           </h2>
           <p className="mt-4 text-lg body-text max-w-2xl mx-auto">
-            Embed beautiful charts in emails, Slack, markdown, Notion — anywhere
+            Embed beautiful charts in emails, Slack, markdown, Notion - anywhere
             images work. No JavaScript required.
           </p>
         </div>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { renderChart, chartDisplayNames } from "@/lib/charts";
 
 export const metadata: Metadata = {
-  title: "Chart Types — Chart.ts Documentation",
+  title: "Chart Types | Chart.ts Documentation",
   description:
     "27 chart types built in. Line, Bar, Area, Pie, Donut, Scatter, Bubble, Radar, Candlestick, Waterfall, Funnel, Gauge, Sparkline, and more.",
 };
@@ -47,7 +47,7 @@ export default function ChartsOverviewPage() {
           Chart Types
         </h1>
         <p className="mt-4 text-lg body-text leading-relaxed">
-          {charts.length} chart types built in. Every one shares the same API surface —
+          {charts.length} chart types built in. Every one shares the same API surface -
           data binding, styling, accessibility, and event handling work
           identically across all types.
         </p>

@@ -11,9 +11,9 @@ import Link from "next/link";
 
 const heroPills = [
   { mono: "<15kb gzipped", color: "text-cyan-400", text: "Smaller than a hero image.", bold: "Your Lighthouse score stays green.", href: "/docs/performance" },
-  { mono: "SVG-first", color: "text-cyan-400", text: "Real DOM elements.", bold: "CSS, devtools, screen readers — all work.", href: "/docs/svg" },
+  { mono: "SVG-first", color: "text-cyan-400", text: "Real DOM elements.", bold: "CSS, devtools, screen readers - all work.", href: "/docs/svg" },
   { mono: "className=", color: "text-emerald-400", text: "Tailwind on every chart element.", bold: "Dark mode in one class.", href: "/docs/tailwind" },
-  { mono: "MIT forever", color: "text-amber-400", text: "Candlestick, waterfall, gauge — 12 chart types.", bold: "Free. Commercial use included.", href: "/docs/charts" },
+  { mono: "MIT forever", color: "text-amber-400", text: "Candlestick, waterfall, gauge - 12 chart types.", bold: "Free. Commercial use included.", href: "/docs/charts" },
   { mono: "WCAG AA", color: "text-cyan-400", text: "Keyboard nav, screen readers, pattern fills.", bold: "Accessible by architecture.", href: "/docs/accessibility" },
   { mono: "Every framework", color: "text-cyan-400", text: "React, Vue, Svelte, Solid, Vanilla.", bold: "Native packages. Same API.", href: "/docs/frameworks" },
 ];

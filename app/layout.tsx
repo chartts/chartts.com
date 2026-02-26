@@ -15,7 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Chart.ts — Beautiful charts. Zero config. <15kb.",
+  title: "Chart.ts - Beautiful charts. Zero config. <15kb.",
   description:
     "The design-native charting library. SVG-first, <15kb gzipped, Tailwind CSS native. Native packages for React, Vue, Svelte, Solid. TypeScript-first. WCAG accessible. 12 chart types including candlestick, waterfall, funnel, gauge. MIT license, free forever.",
   keywords: [
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     "design-native charts",
   ],
   openGraph: {
-    title: "Chart.ts — Beautiful charts. Zero config.",
+    title: "Chart.ts - Beautiful charts. Zero config.",
     description:
       "SVG-first charting library. <15kb. Tailwind native. React, Vue, Svelte, Solid. 12 chart types. MIT license.",
     url: "https://chartts.com",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Chart.ts — Beautiful charts. Zero config.",
+    title: "Chart.ts - Beautiful charts. Zero config.",
     description:
       "The design-native charting library. <15kb, SVG-first, Tailwind native, WCAG accessible. Free forever.",
   },

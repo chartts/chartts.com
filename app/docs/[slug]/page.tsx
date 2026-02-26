@@ -25,12 +25,12 @@ const docs: Record<
   performance: {
     title: "Performance",
     description:
-      "Chart.ts ships at under 15kb gzipped — smaller than most hero images. Here's how we keep it lean.",
+      "Chart.ts ships at under 15kb gzipped - smaller than most hero images. Here's how we keep it lean.",
     badge: "<15kb",
     content: [
       {
         heading: "Bundle size",
-        body: "The core library is under 15kb gzipped with zero runtime dependencies. Each chart type is tree-shakeable — import only what you use. A typical app with 2-3 chart types adds ~8kb to your bundle.",
+        body: "The core library is under 15kb gzipped with zero runtime dependencies. Each chart type is tree-shakeable - import only what you use. A typical app with 2-3 chart types adds ~8kb to your bundle.",
       },
       {
         heading: "Tree shaking",
@@ -38,7 +38,7 @@ const docs: Record<
       },
       {
         heading: "Rendering performance",
-        body: "SVG rendering is fast for typical datasets (under 1,000 points). For larger datasets, Chart.ts automatically switches to Canvas at 10,000+ points and WebGL at 100,000+. This happens transparently — same API, same props, same output.",
+        body: "SVG rendering is fast for typical datasets (under 1,000 points). For larger datasets, Chart.ts automatically switches to Canvas at 10,000+ points and WebGL at 100,000+. This happens transparently - same API, same props, same output.",
       },
       {
         heading: "SSR & streaming",
@@ -58,7 +58,7 @@ const docs: Record<
     content: [
       {
         heading: "Real DOM elements",
-        body: "Every chart renders as structured SVG inside your document. Open devtools and inspect individual bars, lines, labels, and axes. They're real elements with real attributes — not pixels on a canvas.",
+        body: "Every chart renders as structured SVG inside your document. Open devtools and inspect individual bars, lines, labels, and axes. They're real elements with real attributes - not pixels on a canvas.",
       },
       {
         heading: "CSS styleable",
@@ -119,11 +119,11 @@ const docs: Record<
       },
       {
         heading: "Dark mode",
-        body: "Tailwind's dark: variant works on every chart element. Switch your app to dark mode and charts follow automatically. Or use different color schemes per theme — it's just CSS classes.",
+        body: "Tailwind's dark: variant works on every chart element. Switch your app to dark mode and charts follow automatically. Or use different color schemes per theme - it's just CSS classes.",
       },
       {
         heading: "Design tokens",
-        body: "Chart.ts uses your Tailwind config. Colors, fonts, spacing — everything comes from your design tokens. Charts look like they belong in your app because they use the same design system.",
+        body: "Chart.ts uses your Tailwind config. Colors, fonts, spacing - everything comes from your design tokens. Charts look like they belong in your app because they use the same design system.",
       },
       {
         heading: "Example",
@@ -182,7 +182,7 @@ const docs: Record<
       },
       {
         heading: "Flat API",
-        body: "No nested config objects. No builder patterns. Every option is a top-level prop. This makes TypeScript inference work perfectly — you get autocomplete on every prop without digging through nested types.",
+        body: "No nested config objects. No builder patterns. Every option is a top-level prop. This makes TypeScript inference work perfectly - you get autocomplete on every prop without digging through nested types.",
       },
     ],
     relatedLinks: [
@@ -206,7 +206,7 @@ const docs: Record<
       },
       {
         heading: "Pattern fills",
-        body: "Enable pattern fills to distinguish data series without relying on color alone. Stripes, dots, crosshatch — each series gets a unique pattern. Essential for color-blind users and printed output.",
+        body: "Enable pattern fills to distinguish data series without relying on color alone. Stripes, dots, crosshatch - each series gets a unique pattern. Essential for color-blind users and printed output.",
       },
       {
         heading: "High contrast",
@@ -229,7 +229,7 @@ const docs: Record<
     content: [
       {
         heading: "Native packages",
-        body: "Each framework gets a dedicated package built for its reactivity model. @chartts/react uses hooks and refs. @chartts/vue uses the Composition API. @chartts/svelte uses stores. @chartts/solid uses signals. Not wrappers — native implementations.",
+        body: "Each framework gets a dedicated package built for its reactivity model. @chartts/react uses hooks and refs. @chartts/vue uses the Composition API. @chartts/svelte uses stores. @chartts/solid uses signals. Not wrappers - native implementations.",
       },
       {
         heading: "Same API",
@@ -251,7 +251,7 @@ const docs: Record<
   api: {
     title: "API Reference",
     description:
-      "Complete prop reference for every Chart.ts component. Flat API — every option is a top-level prop.",
+      "Complete prop reference for every Chart.ts component. Flat API - every option is a top-level prop.",
     content: [
       {
         heading: "Common props",
@@ -299,7 +299,7 @@ const docs: Record<
       },
       {
         heading: "Server Components",
-        body: "Chart.ts charts are client components (they use refs and effects). Wrap them in a client boundary. Data fetching stays in your server component — pass data as props.",
+        body: "Chart.ts charts are client components (they use refs and effects). Wrap them in a client boundary. Data fetching stays in your server component - pass data as props.",
       },
       {
         heading: "Next.js",
@@ -383,7 +383,7 @@ const docs: Record<
       },
       {
         heading: "Signals",
-        body: "Pass signals as data props. Solid's fine-grained reactivity means chart updates are surgical — only changed elements re-render.",
+        body: "Pass signals as data props. Solid's fine-grained reactivity means chart updates are surgical - only changed elements re-render.",
       },
       {
         heading: "SolidStart",
@@ -441,14 +441,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const mdxDoc = getDocBySlug(slug);
   if (mdxDoc) {
     return {
-      title: `${mdxDoc.title} — Chart.ts Documentation`,
+      title: `${mdxDoc.title} | Chart.ts Documentation`,
       description: mdxDoc.description,
     };
   }
   const doc = docs[slug];
   if (!doc) return {};
   return {
-    title: `${doc.title} — Chart.ts Documentation`,
+    title: `${doc.title} | Chart.ts Documentation`,
     description: doc.description,
   };
 }

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#080E1A"/>
+    </linearGradient>
+    <linearGradient id="stroke" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#06B6D4"/>
+      <stop offset="100%" stop-color="#22D3EE"/>
+    </linearGradient>
+    <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#06B6D4" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="#06B6D4" stop-opacity="0.01"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
+
+  <!-- Border highlight -->
+  <rect x="1.5" y="1.5" width="509" height="509" rx="107" fill="none" stroke="#1E293B" stroke-width="1.5"/>
+
+  <!-- Grid lines -->
+  <g stroke="#1E293B" stroke-width="1">
+    <line x1="80" y1="168" x2="432" y2="168" opacity="0.45"/>
+    <line x1="80" y1="248" x2="432" y2="248" opacity="0.35"/>
+    <line x1="80" y1="328" x2="432" y2="328" opacity="0.25"/>
+  </g>
+
+  <!-- Area fill under curve -->
+  <path d="M 88,372 L 180,312 L 264,330 L 348,222 L 424,128 L 424,392 L 88,392 Z" fill="url(#area)"/>
+
+  <!-- Chart line -->
+  <path d="M 88,372 L 180,312 L 264,330 L 348,222 L 424,128"
+        fill="none" stroke="url(#stroke)" stroke-width="16"
+        stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+
+  <!-- Data points -->
+  <circle cx="180" cy="312" r="6" fill="#0E7490" stroke="#22D3EE" stroke-width="2.5"/>
+  <circle cx="264" cy="330" r="6" fill="#0E7490" stroke="#22D3EE" stroke-width="2.5"/>
+  <circle cx="348" cy="222" r="6" fill="#0E7490" stroke="#22D3EE" stroke-width="2.5"/>
+
+  <!-- End point with pulse ring -->
+  <circle cx="424" cy="128" r="18" fill="#22D3EE" opacity="0.12"/>
+  <circle cx="424" cy="128" r="10" fill="#080E1A" stroke="#22D3EE" stroke-width="3.5"/>
+  <circle cx="424" cy="128" r="4" fill="#22D3EE"/>
+</svg>

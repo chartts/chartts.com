@@ -62,7 +62,7 @@ export function SalesDashboard() {
     description: "Candlestick chart with volume bars, moving average overlay, and real-time price updates.",
     charts: [
       {
-        type: "candlestick", title: "AAPL — 5 Day",
+        type: "candlestick", title: "AAPL - 5 Day",
         data: { labels: ["Mon","Tue","Wed","Thu","Fri"], series: [{ name: "Open", values: [185,188,186,190,189] }, { name: "High", values: [190,192,191,195,196] }, { name: "Low", values: [183,185,184,188,187] }, { name: "Close", values: [188,186,190,189,194] }] },
         width: 600, height: 350,
       },
@@ -342,7 +342,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const example = examples[slug];
   if (!example) return {};
   return {
-    title: `${example.title} — Chart.ts Examples`,
+    title: `${example.title} | Chart.ts Examples`,
     description: example.description,
   };
 }

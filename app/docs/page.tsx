@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CodeBlock } from "@/lib/highlight";
 
 export const metadata: Metadata = {
-  title: "Getting Started — Chart.ts Documentation",
+  title: "Getting Started | Chart.ts Documentation",
   description:
     "Install Chart.ts and render your first chart in under 30 seconds. SVG-first, <15kb, works with React, Vue, Svelte, Solid, and Vanilla JS.",
 };
@@ -95,7 +95,7 @@ export default function App() {
 
         <p className="body-text leading-relaxed">
           That&apos;s it. Chart.ts handles labels, axes, tooltips, gradients,
-          responsive scaling, dark mode, and accessibility — all automatically.
+          responsive scaling, dark mode, and accessibility - all automatically.
           Override anything with props or Tailwind classes.
         </p>
       </section>
@@ -151,7 +151,7 @@ export default function App() {
               WCAG 2.1 AA compliant out of the box. Keyboard navigation,
               screen reader announcements, pattern fills for color-blind users,
               and proper ARIA roles. Accessibility isn&apos;t an afterthought
-              — it&apos;s built into every component.
+              - it&apos;s built into every component.
             </p>
           </div>
         </div>

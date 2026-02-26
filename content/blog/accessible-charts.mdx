@@ -6,7 +6,7 @@ readTime: "10 min read"
 tag: "Deep Dive"
 ---
 
-Data visualization is inherently visual. That makes accessibility a genuine challenge — not an afterthought you can bolt on with ARIA labels. Here's how we built WCAG 2.1 AA compliance into Chart.ts from the ground up.
+Data visualization is inherently visual. That makes accessibility a genuine challenge - not an afterthought you can bolt on with ARIA labels. Here's how we built WCAG 2.1 AA compliance into Chart.ts from the ground up.
 
 ## The SVG advantage
 
@@ -28,9 +28,9 @@ Every interactive chart element is keyboard-focusable. Use Tab to move between d
 
 Chart.ts generates meaningful text descriptions for screen readers:
 
-- **Chart summary** — "Line chart showing revenue over 12 months, ranging from $4,200 to $48,200"
-- **Data point labels** — "January: $4,200. February: $5,800. Increase of 38%."
-- **Trend descriptions** — "Overall upward trend with 24.3% growth"
+- **Chart summary** - "Line chart showing revenue over 12 months, ranging from $4,200 to $48,200"
+- **Data point labels** - "January: $4,200. February: $5,800. Increase of 38%."
+- **Trend descriptions** - "Overall upward trend with 24.3% growth"
 
 These are automatically generated from your data. Override them with the `aria` prop:
 
@@ -56,7 +56,7 @@ Color alone should never convey meaning. Chart.ts supports pattern fills for use
 
 ## Reduced motion
 
-Chart.ts respects `prefers-reduced-motion`. When enabled, animations are replaced with instant transitions. No configuration needed — it reads the OS/browser setting automatically.
+Chart.ts respects `prefers-reduced-motion`. When enabled, animations are replaced with instant transitions. No configuration needed - it reads the OS/browser setting automatically.
 
 ## The result
 

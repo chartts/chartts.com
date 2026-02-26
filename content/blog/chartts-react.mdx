@@ -36,10 +36,10 @@ Every chart component is a controlled React component. Pass data as props. The c
 
 ## Server Components
 
-Chart.ts charts render as SVG — which means they work in React Server Components. No `"use client"` directive needed for static charts:
+Chart.ts charts render as SVG - which means they work in React Server Components. No `"use client"` directive needed for static charts:
 
 ```tsx
-// app/dashboard/page.tsx — this is a Server Component
+// app/dashboard/page.tsx - this is a Server Component
 import { BarChart } from "@chartts/react"
 import { getMetrics } from "@/lib/data"
 
@@ -119,8 +119,8 @@ function ControlledChart() {
 Chart.ts works seamlessly with Next.js App Router. Static charts render on the server. Interactive charts use Client Components. The library is tree-shakeable, so you only ship the chart types you use.
 
 ```tsx
-// Only imports LineChart — BarChart, PieChart, etc. are tree-shaken
+// Only imports LineChart - BarChart, PieChart, etc. are tree-shaken
 import { LineChart } from "@chartts/react"
 ```
 
-That's it. Chart.ts is designed to feel like a native React primitive — not a third-party library bolted onto your app.
+That's it. Chart.ts is designed to feel like a native React primitive - not a third-party library bolted onto your app.

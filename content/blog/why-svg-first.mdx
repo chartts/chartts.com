@@ -1,16 +1,16 @@
 ---
 title: "Why SVG-first matters"
-description: "Canvas is fast. WebGL is faster. But SVG is the right default for 95% of charts. Here's why — and when to switch."
+description: "Canvas is fast. WebGL is faster. But SVG is the right default for 95% of charts. Here's why - and when to switch."
 date: "2025-03-22"
 readTime: "6 min read"
 tag: "Deep Dive"
 ---
 
-Every charting library makes a rendering choice. Most default to Canvas. Some use WebGL. Chart.ts defaults to **SVG** — and we think that's the right call for 95% of use cases.
+Every charting library makes a rendering choice. Most default to Canvas. Some use WebGL. Chart.ts defaults to **SVG** - and we think that's the right call for 95% of use cases.
 
 ## SVG is DOM
 
-When a chart renders as SVG, every element — every bar, line, axis label, tooltip trigger — is a **real DOM node**. This has profound implications:
+When a chart renders as SVG, every element - every bar, line, axis label, tooltip trigger - is a **real DOM node**. This has profound implications:
 
 - **CSS works.** You can style chart elements with Tailwind classes, CSS custom properties, or plain stylesheets. `dark:` variants work. Media queries work. Transitions work.
 - **Accessibility works.** Screen readers can traverse SVG. ARIA attributes work. Keyboard navigation works. You get accessibility for free, not as an expensive add-on.
@@ -19,7 +19,7 @@ When a chart renders as SVG, every element — every bar, line, axis label, tool
 
 ## When SVG isn't enough
 
-SVG hits a wall around **10,000 data points**. At that scale, the DOM becomes a bottleneck — too many nodes, too much memory, layout calculations grind to a halt.
+SVG hits a wall around **10,000 data points**. At that scale, the DOM becomes a bottleneck - too many nodes, too much memory, layout calculations grind to a halt.
 
 This is where Chart.ts's multi-renderer architecture kicks in:
 
@@ -44,7 +44,7 @@ The switch is **automatic**. Same API. Same props. Same output. Chart.ts detects
 
 ## The best of all worlds
 
-Most charting libraries make you choose: SVG (nice DX, slow at scale) or Canvas (fast, terrible DX). Chart.ts gives you both — SVG when it's the right tool, Canvas/WebGL when you need the performance.
+Most charting libraries make you choose: SVG (nice DX, slow at scale) or Canvas (fast, terrible DX). Chart.ts gives you both - SVG when it's the right tool, Canvas/WebGL when you need the performance.
 
 Your charts start as accessible, styleable, inspectable SVG. When your data grows, they seamlessly upgrade to Canvas or WebGL. No code changes. No migration. No compromise.
 

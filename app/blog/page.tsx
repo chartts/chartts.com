@@ -4,7 +4,7 @@ import { Nav } from "../components/nav";
 import { getAllPosts } from "@/lib/blog";
 
 export const metadata: Metadata = {
-  title: "Blog — Chart.ts",
+  title: "Blog | Chart.ts",
   description:
     "Updates, tutorials, and deep dives from the Chart.ts team. Learn about data visualization best practices.",
 };
