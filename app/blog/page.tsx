@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Nav } from "../components/nav";
 import { getAllPosts } from "@/lib/blog";
 
 export const metadata: Metadata = {
@@ -13,9 +12,8 @@ export default function BlogPage() {
   const posts = getAllPosts();
 
   return (
-    <main className="bg-dots bg-mesh min-h-screen">
-      <Nav />
-      <div className="pt-32 pb-24 px-6">
+    <>
+<div className="pt-32 pb-24 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="mb-16">
             <p className="section-label text-cyan-400 mb-4">Blog</p>
@@ -52,6 +50,6 @@ export default function BlogPage() {
           </div>
         </div>
       </div>
-    </main>
+    </>
   );
 }

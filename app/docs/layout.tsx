@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { Nav } from "../components/nav";
-
 const sidebar = [
   {
     title: "Getting Started",
@@ -80,9 +78,8 @@ export default function DocsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <main className="bg-dots bg-mesh min-h-screen">
-      <Nav />
-      <div className="max-w-[90rem] mx-auto pt-16">
+    <>
+<div className="max-w-[90rem] mx-auto pt-16">
         <div className="flex">
           {/* Sidebar */}
           <aside className="hidden lg:block w-64 shrink-0 border-r adaptive-border sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto py-8 px-6">
@@ -115,6 +112,6 @@ export default function DocsLayout({
           </div>
         </div>
       </div>
-    </main>
+    </>
   );
 }

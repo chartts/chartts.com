@@ -1,5 +1,3 @@
-import { Nav } from "../components/nav";
-import { Footer } from "../components/footer";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -51,10 +49,8 @@ const releases = [
 
 export default function ChangelogPage() {
   return (
-    <main className="bg-dots bg-mesh min-h-screen">
-      <Nav />
-
-      <section className="pt-32 pb-16 px-6">
+    <>
+<section className="pt-32 pb-16 px-6">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight heading">
             Changelog
@@ -113,8 +109,6 @@ export default function ChangelogPage() {
           </div>
         </div>
       </section>
-
-      <Footer />
-    </main>
+</>
   );
 }

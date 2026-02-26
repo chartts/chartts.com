@@ -1,4 +1,3 @@
-import { Nav } from "./components/nav";
 import { HeroChart } from "./components/hero-chart";
 import { Features } from "./components/features";
 import { CodeExample } from "./components/code-example";
@@ -6,7 +5,6 @@ import { ChartGallery } from "./components/chart-gallery";
 import { Frameworks } from "./components/frameworks";
 import { UrlApi } from "./components/url-api";
 import { Cta } from "./components/cta";
-import { Footer } from "./components/footer";
 import Link from "next/link";
 
 const heroPills = [
@@ -20,10 +18,8 @@ const heroPills = [
 
 export default function Home() {
   return (
-    <main className="bg-dots bg-mesh min-h-screen">
-      <Nav />
-
-      {/* Hero */}
+    <>
+{/* Hero */}
       <section className="pt-32 pb-24 px-6">
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="text-6xl sm:text-7xl font-extrabold tracking-tight text-gradient animate-fade-up">
@@ -101,7 +97,6 @@ export default function Home() {
       <Frameworks />
       <UrlApi />
       <Cta />
-      <Footer />
-    </main>
+</>
   );
 }

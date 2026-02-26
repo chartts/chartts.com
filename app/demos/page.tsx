@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Nav } from "../components/nav";
-import { Footer } from "../components/footer";
 import { renderChart, chartDisplayNames, sampleData } from "@/lib/charts";
 
 export const metadata: Metadata = {
@@ -22,9 +20,8 @@ const chartOrder = [
 
 export default function DemosPage() {
   return (
-    <main className="bg-dots bg-mesh min-h-screen">
-      <Nav />
-      <div className="pt-32 pb-24 px-6">
+    <>
+<div className="pt-32 pb-24 px-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="text-center mb-16">
@@ -98,7 +95,6 @@ export default function DemosPage() {
           </div>
         </div>
       </div>
-      <Footer />
-    </main>
+</>
   );
 }

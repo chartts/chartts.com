@@ -98,6 +98,9 @@ const jsonLd = {
   programmingLanguage: "TypeScript",
 };
 
+import { Nav } from "./components/nav";
+import { Footer } from "./components/footer";
+
 export default function RootLayout({
   children,
 }: {
@@ -114,7 +117,11 @@ export default function RootLayout({
       <body
         className={`${outfit.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
-        {children}
+        <Nav />
+        <main className="bg-dots bg-mesh min-h-screen">
+          {children}
+        </main>
+        <Footer />
       </body>
     </html>
   );

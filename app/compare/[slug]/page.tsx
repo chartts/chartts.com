@@ -1,5 +1,3 @@
-import { Nav } from "../../components/nav";
-import { Footer } from "../../components/footer";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -259,10 +257,8 @@ export default async function ComparePage({ params }: PageProps) {
   ];
 
   return (
-    <main className="bg-dots bg-mesh min-h-screen">
-      <Nav />
-
-      <section className="pt-32 pb-16 px-6">
+    <>
+<section className="pt-32 pb-16 px-6">
         <div className="max-w-4xl mx-auto">
           <Link
             href="/compare"
@@ -400,8 +396,6 @@ export default async function ComparePage({ params }: PageProps) {
           </div>
         </div>
       </section>
-
-      <Footer />
-    </main>
+</>
   );
 }

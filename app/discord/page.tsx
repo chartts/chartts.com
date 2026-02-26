@@ -1,5 +1,3 @@
-import { Nav } from "../components/nav";
-import { Footer } from "../components/footer";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -11,10 +9,8 @@ export const metadata: Metadata = {
 
 export default function DiscordPage() {
   return (
-    <main className="bg-dots bg-mesh min-h-screen">
-      <Nav />
-
-      <section className="pt-32 pb-16 px-6">
+    <>
+<section className="pt-32 pb-16 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <span className="inline-block px-3 py-1 text-xs font-mono rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-6">
             Community
@@ -64,8 +60,6 @@ export default function DiscordPage() {
           </div>
         </div>
       </section>
-
-      <Footer />
-    </main>
+</>
   );
 }

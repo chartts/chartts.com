@@ -1,11 +1,9 @@
-import { Nav } from "./components/nav";
 import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <main className="bg-dots bg-mesh min-h-screen">
-      <Nav />
-      <div className="pt-32 px-6 max-w-2xl mx-auto text-center">
+    <>
+<div className="pt-32 px-6 max-w-2xl mx-auto text-center">
         <p className="text-8xl font-extrabold tracking-tight text-gradient">
           404
         </p>
@@ -20,6 +18,6 @@ export default function NotFound() {
           Back to home
         </Link>
       </div>
-    </main>
+    </>
   );
 }

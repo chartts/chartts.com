@@ -5,7 +5,6 @@ import { MDXRemote } from "next-mdx-remote/rsc";
 import rehypePrettyCode from "rehype-pretty-code";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkMdxFrontmatter from "remark-mdx-frontmatter";
-import { Nav } from "../../components/nav";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import { mdxComponents } from "@/lib/mdx-components";
 
@@ -39,9 +38,8 @@ export default async function BlogPostPage({ params }: PageProps) {
   }
 
   return (
-    <main className="bg-dots bg-mesh min-h-screen">
-      <Nav />
-      <div className="pt-32 pb-24 px-6">
+    <>
+<div className="pt-32 pb-24 px-6">
         <article className="max-w-3xl mx-auto">
           {/* Header */}
           <div className="mb-12">
@@ -105,6 +103,6 @@ export default async function BlogPostPage({ params }: PageProps) {
           </div>
         </article>
       </div>
-    </main>
+    </>
   );
 }

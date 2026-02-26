@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Nav } from "../../components/nav";
 import { renderChart } from "@/lib/charts";
 import { CodeBlock } from "@/lib/highlight";
 import type { ChartData } from "@chartts/core";
@@ -356,9 +355,8 @@ export default async function ExamplePage({ params }: PageProps) {
   }
 
   return (
-    <main className="bg-dots bg-mesh min-h-screen">
-      <Nav />
-      <div className="pt-32 pb-24 px-6">
+    <>
+<div className="pt-32 pb-24 px-6">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-12">
@@ -434,6 +432,6 @@ export default async function ExamplePage({ params }: PageProps) {
           </div>
         </div>
       </div>
-    </main>
+    </>
   );
 }
