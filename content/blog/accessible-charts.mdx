@@ -1,0 +1,63 @@
+---
+title: "Building accessible charts from scratch"
+description: "Keyboard navigation, screen readers, pattern fills, and reduced motion. How we achieved WCAG 2.1 AA without compromising aesthetics."
+date: "2025-04-10"
+readTime: "10 min read"
+tag: "Deep Dive"
+---
+
+Data visualization is inherently visual. That makes accessibility a genuine challenge — not an afterthought you can bolt on with ARIA labels. Here's how we built WCAG 2.1 AA compliance into Chart.ts from the ground up.
+
+## The SVG advantage
+
+Because Chart.ts renders SVG by default, we get a massive head start on accessibility. SVG elements are DOM nodes. They support ARIA attributes. Screen readers can traverse them. This is fundamentally different from Canvas-based libraries, where the entire chart is a single opaque `<canvas>` element.
+
+## Keyboard navigation
+
+Every interactive chart element is keyboard-focusable. Use Tab to move between data points. Use Arrow keys to navigate within a series. Use Enter to select. Use Escape to dismiss tooltips.
+
+```tsx
+// Keyboard navigation is on by default
+<BarChart data={data} x="category" y="value" />
+
+// Disable if needed (not recommended)
+<BarChart data={data} x="category" y="value" keyboard={false} />
+```
+
+## Screen reader announcements
+
+Chart.ts generates meaningful text descriptions for screen readers:
+
+- **Chart summary** — "Line chart showing revenue over 12 months, ranging from $4,200 to $48,200"
+- **Data point labels** — "January: $4,200. February: $5,800. Increase of 38%."
+- **Trend descriptions** — "Overall upward trend with 24.3% growth"
+
+These are automatically generated from your data. Override them with the `aria` prop:
+
+```tsx
+<LineChart
+  data={data}
+  x="month"
+  y="revenue"
+  aria={{
+    label: "Monthly revenue for 2025",
+    description: "Revenue grew steadily from January to December",
+  }}
+/>
+```
+
+## Pattern fills
+
+Color alone should never convey meaning. Chart.ts supports pattern fills for users who can't distinguish colors:
+
+- Diagonal lines, dots, crosshatch, waves
+- Automatically assigned when `patterns` prop is true
+- Works alongside colors, not instead of them
+
+## Reduced motion
+
+Chart.ts respects `prefers-reduced-motion`. When enabled, animations are replaced with instant transitions. No configuration needed — it reads the OS/browser setting automatically.
+
+## The result
+
+Accessible charts that look just as good as inaccessible ones. No compromise on aesthetics. No separate "accessible mode." Just charts that work for everyone, out of the box.

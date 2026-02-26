@@ -1,0 +1,73 @@
+---
+title: "From SVG to WebGL: The multi-renderer architecture"
+description: "Under the hood of Chart.ts's auto-switching renderer. How we maintain feature parity across SVG, Canvas, and WebGL."
+date: "2025-04-18"
+readTime: "12 min read"
+tag: "Engineering"
+---
+
+Chart.ts renders the same chart with three different technologies: SVG, Canvas, and WebGL. The switch is automatic based on data size. Here's how the architecture works under the hood.
+
+## The abstraction layer
+
+At the core of Chart.ts is a **render-agnostic scene graph**. When you write:
+
+```tsx
+<LineChart data={data} x="time" y="value" />
+```
+
+Chart.ts doesn't immediately draw pixels or create DOM nodes. Instead, it builds an intermediate representation — a tree of drawing commands:
+
+```
+Scene
+├── Grid (lines, labels)
+├── Axes (ticks, labels)
+├── Series
+│   ├── Line (path, style)
+│   ├── Area (fill, gradient)
+│   └── Points (circles, style)
+├── Tooltip (content, position)
+└── Legend (items, layout)
+```
+
+This scene graph is then passed to the **active renderer**, which translates it into the target technology.
+
+## Three renderers
+
+### SVG Renderer (default, < 10k points)
+
+The SVG renderer creates real DOM elements for each scene node. A line becomes a `<path>`. A point becomes a `<circle>`. A label becomes a `<text>`. Full CSS support, full accessibility, full DevTools integration.
+
+### Canvas Renderer (10k – 100k points)
+
+The Canvas renderer draws to a 2D canvas context. It batches draw calls, uses offscreen canvases for complex elements, and maintains a hit-test map for interactivity. It produces the same visual output as SVG — gradients, rounded corners, shadows — just faster.
+
+### WebGL Renderer (100k+ points)
+
+The WebGL renderer uses GPU shaders for maximum throughput. Points become instanced geometry. Lines use GPU-accelerated anti-aliasing. The renderer can handle millions of data points at 60fps.
+
+## Automatic switching
+
+Chart.ts counts your data points and selects the optimal renderer:
+
+```
+data.length < 10_000   → SVG
+data.length < 100_000  → Canvas
+data.length >= 100_000 → WebGL
+```
+
+The thresholds are configurable. You can also force a specific renderer:
+
+```tsx
+<LineChart data={data} x="time" y="value" renderer="webgl" />
+```
+
+## Feature parity
+
+This is the hard part. Every feature — tooltips, zoom, pan, animations, accessibility — needs to work across all three renderers. We achieve this through the scene graph abstraction. Interaction handlers operate on the scene graph, not on DOM events. This means click, hover, and keyboard events work identically regardless of the underlying renderer.
+
+The SVG renderer gets accessibility for free (DOM nodes). For Canvas and WebGL, we maintain a parallel invisible DOM structure for screen reader access.
+
+## Zero configuration
+
+The entire multi-renderer system is invisible to the developer. You write `<LineChart data={data} x="time" y="value" />` and Chart.ts handles the rest. Small datasets get beautiful SVG. Large datasets get GPU-accelerated performance. Same API. Same props. Same result.

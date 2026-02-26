@@ -1,0 +1,126 @@
+---
+title: "Chart.ts for React: Hooks, refs, and Server Components"
+description: "A practical guide to using Chart.ts with React 19, Next.js App Router, and React Server Components."
+date: "2025-04-25"
+readTime: "7 min read"
+tag: "Tutorial"
+---
+
+Chart.ts has first-class React support via `@chartts/react`. Here's how to use it with React 19, Next.js App Router, and Server Components.
+
+## Installation
+
+```bash
+npm install @chartts/react
+```
+
+`@chartts/react` has a single peer dependency: `react >= 18`. It works with React 18 and React 19.
+
+## Basic usage
+
+```tsx
+import { LineChart } from "@chartts/react"
+
+export function RevenueChart() {
+  const data = [
+    { month: "Jan", revenue: 4200 },
+    { month: "Feb", revenue: 5800 },
+    { month: "Mar", revenue: 7100 },
+  ]
+
+  return <LineChart data={data} x="month" y="revenue" className="h-64" />
+}
+```
+
+Every chart component is a controlled React component. Pass data as props. The chart re-renders when props change.
+
+## Server Components
+
+Chart.ts charts render as SVG — which means they work in React Server Components. No `"use client"` directive needed for static charts:
+
+```tsx
+// app/dashboard/page.tsx — this is a Server Component
+import { BarChart } from "@chartts/react"
+import { getMetrics } from "@/lib/data"
+
+export default async function Dashboard() {
+  const metrics = await getMetrics()
+
+  return <BarChart data={metrics} x="month" y="sales" />
+}
+```
+
+The chart renders on the server and ships as static HTML. Zero client-side JavaScript for the chart itself.
+
+For interactive features (tooltips, zoom, click handlers), add `"use client"` to the component:
+
+```tsx
+"use client"
+
+import { LineChart } from "@chartts/react"
+
+export function InteractiveChart({ data }) {
+  return (
+    <LineChart
+      data={data}
+      x="date"
+      y="value"
+      onPointClick={(point) => console.log(point)}
+      tooltip
+      zoom
+    />
+  )
+}
+```
+
+## Hooks
+
+`@chartts/react` exports hooks for advanced use cases:
+
+```tsx
+import { useChart, useChartData } from "@chartts/react"
+
+function CustomChart() {
+  const { ref, dimensions } = useChart()
+  const { scales, series } = useChartData(data, { x: "time", y: "value" })
+
+  return (
+    <svg ref={ref} width={dimensions.width} height={dimensions.height}>
+      {/* Build custom visualizations with computed scales */}
+    </svg>
+  )
+}
+```
+
+## Refs and imperative API
+
+Access the chart instance for programmatic control:
+
+```tsx
+import { useRef } from "react"
+import { LineChart, type ChartRef } from "@chartts/react"
+
+function ControlledChart() {
+  const chartRef = useRef<ChartRef>(null)
+
+  return (
+    <>
+      <button onClick={() => chartRef.current?.resetZoom()}>
+        Reset Zoom
+      </button>
+      <LineChart ref={chartRef} data={data} x="time" y="value" zoom />
+    </>
+  )
+}
+```
+
+## Next.js App Router
+
+Chart.ts works seamlessly with Next.js App Router. Static charts render on the server. Interactive charts use Client Components. The library is tree-shakeable, so you only ship the chart types you use.
+
+```tsx
+// Only imports LineChart — BarChart, PieChart, etc. are tree-shaken
+import { LineChart } from "@chartts/react"
+```
+
+That's it. Chart.ts is designed to feel like a native React primitive — not a third-party library bolted onto your app.

@@ -1,0 +1,54 @@
+---
+title: "Introducing Chart.ts"
+description: "Why we built a new charting library, what makes it different, and where we're headed. The story behind &lt;15kb, SVG-first, Tailwind-native charts."
+date: "2025-03-15"
+readTime: "8 min read"
+tag: "Launch"
+---
+
+The JavaScript charting ecosystem is massive. There are dozens of libraries, thousands of Stack Overflow answers, and millions of npm downloads every week. So why build another one?
+
+Because **none of them were built for how we build today**.
+
+## The problem
+
+Modern frontends use Tailwind CSS. They use TypeScript. They ship as Server Components. They care about bundle size. They expect dark mode to just work.
+
+Existing charting libraries were built in a different era. They ship 60kb+ of JavaScript. They use Canvas by default (invisible to screen readers). They have their own theming systems that fight your design tokens. They wrap everything in imperative APIs that don't compose with React, Vue, or Svelte.
+
+We wanted charts that felt native to the modern stack.
+
+## What we built
+
+Chart.ts is a **design-native charting library**. Here's what that means:
+
+- **SVG by default** — Every chart is real DOM. Inspect it. Style it with CSS. It works with screen readers, SSR, and Tailwind classes.
+- **&lt;15kb gzipped** — The entire library. Not per chart. The whole thing.
+- **Tailwind native** — Every element exposes a `className` prop. Use `dark:` variants. Use your design tokens. Charts that match your app.
+- **TypeScript-first** — Built in strict mode. Full type inference. Your editor IS the documentation.
+- **Multi-renderer** — SVG for most charts. Canvas at 10k+ points. WebGL at 100k+. Zero configuration.
+
+## 12 chart types
+
+Line, Bar, Area, Pie/Donut, Scatter, Bubble, Radar, Candlestick, Waterfall, Funnel, Gauge, and Sparkline. Every one shares the same API surface.
+
+```tsx
+import { LineChart } from "@chartts/react"
+
+<LineChart data={data} x="month" y="revenue" />
+```
+
+That's a complete, working chart. Labels, axes, tooltips, gradients, responsive scaling, dark mode, and accessibility — all automatic.
+
+## What's next
+
+We're just getting started. On the roadmap:
+
+- **Animations API** — Spring-based transitions between data states
+- **Chart composer** — Combine multiple chart types in a single view
+- **i.chartts.com** — Generate chart images from URLs (any LLM can create charts)
+- **Figma plugin** — Design charts with real data in Figma, export as Chart.ts code
+
+Chart.ts is MIT licensed and free forever. We believe great data visualization should be accessible to everyone.
+
+[Get started in 30 seconds →](/docs)
