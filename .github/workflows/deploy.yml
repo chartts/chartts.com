@@ -1,0 +1,47 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout website
+        uses: actions/checkout@v4
+        with:
+          path: web
+
+      - name: Checkout library
+        uses: actions/checkout@v4
+        with:
+          repository: chartts/chartts
+          path: lib
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install lib dependencies and build
+        working-directory: lib
+        run: |
+          npm install --prefix packages/core
+          cd packages/core && npx tsup
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm install
+
+      - name: Build
+        working-directory: web
+        run: npm run build
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy out --project-name=chartts --branch=main
+          workingDirectory: web
