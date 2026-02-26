@@ -27,10 +27,10 @@ jobs:
           node-version: 20
 
       - name: Install lib dependencies and build
-        working-directory: lib
+        working-directory: lib/packages/core
         run: |
-          npm install --prefix packages/core
-          cd packages/core && npx tsup
+          npm install
+          npx tsup
 
       - name: Install web dependencies
         working-directory: web
