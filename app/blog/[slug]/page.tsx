@@ -87,11 +87,25 @@ export default async function BlogPostPage({ params }: PageProps) {
     },
   };
 
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://chartts.com" },
+      { "@type": "ListItem", position: 2, name: "Blog", item: "https://chartts.com/blog" },
+      { "@type": "ListItem", position: 3, name: post.title, item: `https://chartts.com/blog/${post.slug}` },
+    ],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
       <div className="pt-32 pb-24 px-6">
         <article className="max-w-3xl mx-auto">

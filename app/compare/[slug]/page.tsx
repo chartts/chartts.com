@@ -266,6 +266,16 @@ export default async function ComparePage({ params }: PageProps) {
   const comp = comparisons[slug];
   if (!comp) notFound();
 
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://chartts.com" },
+      { "@type": "ListItem", position: 2, name: "Compare", item: "https://chartts.com/compare" },
+      { "@type": "ListItem", position: 3, name: `Chart.ts vs ${comp.fullName}`, item: `https://chartts.com/compare/${slug}` },
+    ],
+  };
+
   const rows: { label: string; chartts: string; other: string }[] = [
     { label: "Bundle size", chartts: charttsStats.bundleSize, other: comp.bundleSize },
     { label: "Tree-shaking", chartts: charttsStats.treeshaking, other: comp.treeshaking },
@@ -280,6 +290,10 @@ export default async function ComparePage({ params }: PageProps) {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
 <section className="pt-32 pb-16 px-6">
         <div className="max-w-4xl mx-auto">
           <Link

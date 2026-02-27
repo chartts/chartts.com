@@ -1,5 +1,6 @@
 import { HeroChart } from "./components/hero-chart";
 import { Features } from "./components/features";
+import { BundleSize } from "./components/bundle-size";
 import { CodeExample } from "./components/code-example";
 import { ChartGallery } from "./components/chart-gallery";
 import { Frameworks } from "./components/frameworks";
@@ -92,6 +93,7 @@ export default function Home() {
       </section>
 
       <Features />
+      <BundleSize />
       <CodeExample />
       <ChartGallery />
       <Frameworks />
