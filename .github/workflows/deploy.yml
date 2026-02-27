@@ -37,6 +37,7 @@ jobs:
         run: |
           mkdir -p node_modules/@chartts
           ln -s ../../../core node_modules/@chartts/core
+          npm install tsup typescript --no-save
           npx tsup
 
       - name: Install web dependencies
