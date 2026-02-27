@@ -9,9 +9,43 @@ export const metadata: Metadata = {
 
 const releases = [
   {
+    version: "0.1.5",
+    date: "2026-02-26",
+    tag: "Latest",
+    changes: [
+      "5 new chart types: Violin, Pack (circle packing), Voronoi, WordCloud, Torus",
+      "New GL chart: Torus3D with WebGL rendering",
+      "Graph chart rewrite with simplified data convention, arrow-notation edges, and adjacency matrix support",
+      "Improved graph layouts: force, hierarchical, and circular",
+      "Globe3D rendering improvements",
+      "New convenience APIs: Violin(), Pack(), Voronoi(), WordCloud(), Torus()",
+    ],
+  },
+  {
+    version: "0.1.4",
+    date: "2026-02-26",
+    tag: null,
+    changes: [
+      "Added README files to all 14 packages with install instructions, API docs, and examples",
+      "Improved package descriptions across all packages",
+      "Fixed cross-repo website redeploy in CI pipeline",
+    ],
+  },
+  {
+    version: "0.1.3",
+    date: "2026-02-25",
+    tag: null,
+    changes: [
+      "5 new data adapter packages: @chartts/csv, @chartts/json, @chartts/excel, @chartts/parquet, @chartts/arrow",
+      "New @chartts/themes package with 8 extra theme presets",
+      "Fixed Solid, Svelte, and Tailwind package builds",
+      "Monorepo CI pipeline for npm publishing",
+    ],
+  },
+  {
     version: "0.1.2",
     date: "2026-02-25",
-    tag: "Latest",
+    tag: null,
     changes: [
       "Updated npm README with chart screenshots and OG image",
       "Added demo image gallery to documentation",
