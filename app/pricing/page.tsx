@@ -185,12 +185,12 @@ export default function PricingPage() {
               ))}
             </ul>
 
-            <a
-              href="#"
+            <Link
+              href="/contact"
               className="block w-full text-center px-6 py-3 text-sm font-semibold rounded-lg bg-cyan-500 text-white hover:bg-cyan-400 transition-colors cursor-pointer"
             >
-              Buy Themes
-            </a>
+              Get Pro Themes
+            </Link>
           </div>
 
           {/* Enterprise */}
