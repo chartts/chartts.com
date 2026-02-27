@@ -1,6 +1,5 @@
-import { DocsSidebar, type SidebarSection } from "./docs-sidebar";
-
-const sidebar: SidebarSection[] = [
+import Link from "next/link";
+const sidebar = [
   {
     title: "Getting Started",
     links: [
@@ -119,15 +118,40 @@ export default function DocsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="max-w-[90rem] mx-auto pt-16">
-      <div className="flex">
-        <DocsSidebar sections={sidebar} />
+    <>
+<div className="max-w-[90rem] mx-auto pt-16">
+        <div className="flex">
+          {/* Sidebar */}
+          <aside className="hidden lg:block w-64 shrink-0 border-r adaptive-border sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto py-8 px-6">
+            <nav className="space-y-8">
+              {sidebar.map((section) => (
+                <div key={section.title}>
+                  <p className="text-xs font-mono muted-text uppercase tracking-wider mb-3">
+                    {section.title}
+                  </p>
+                  <ul className="space-y-1">
+                    {section.links.map((link) => (
+                      <li key={link.href}>
+                        <Link
+                          href={link.href}
+                          className="block text-sm body-text hover:text-cyan-400 transition-colors py-1 cursor-pointer"
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </nav>
+          </aside>
 
-        {/* Main content */}
-        <div className="flex-1 min-w-0 px-4 sm:px-8 lg:px-16 py-8 sm:py-12">
-          {children}
+          {/* Main content */}
+          <div className="flex-1 min-w-0 px-6 sm:px-8 lg:px-16 py-12">
+            {children}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
