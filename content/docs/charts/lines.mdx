@@ -1,0 +1,315 @@
+---
+title: "Lines Chart"
+description: "Multi-series line chart optimized for large datasets. Renders hundreds of overlapping lines efficiently."
+badge: "Advanced"
+---
+
+## Quick Start
+
+```tsx
+import { LinesChart } from "@chartts/react"
+
+const data = [
+  {
+    id: "sensor-1",
+    values: [
+      { time: 0, temp: 22.1 },
+      { time: 1, temp: 23.4 },
+      { time: 2, temp: 22.8 },
+      { time: 3, temp: 24.1 },
+      { time: 4, temp: 23.6 },
+    ],
+  },
+  {
+    id: "sensor-2",
+    values: [
+      { time: 0, temp: 21.5 },
+      { time: 1, temp: 22.0 },
+      { time: 2, temp: 23.2 },
+      { time: 3, temp: 22.7 },
+      { time: 4, temp: 24.0 },
+    ],
+  },
+  {
+    id: "sensor-3",
+    values: [
+      { time: 0, temp: 20.8 },
+      { time: 1, temp: 21.9 },
+      { time: 2, temp: 22.5 },
+      { time: 3, temp: 23.3 },
+      { time: 4, temp: 22.9 },
+    ],
+  },
+]
+
+export function SensorOverview() {
+  return (
+    <LinesChart
+      data={data}
+      x="time"
+      y="temp"
+      className="h-80 w-full"
+    />
+  )
+}
+```
+
+That renders all three series as overlapping lines on a single chart. Axes, tooltips, responsive scaling, and efficient rendering of many series are all automatic.
+
+## When to Use Lines Charts
+
+Lines charts are designed for situations where you need to display many series simultaneously and see the overall shape of the data rather than individual values.
+
+**Use a lines chart when:**
+- Rendering tens or hundreds of overlapping series (sensor arrays, simulation runs, stock comparisons)
+- Showing the distribution of trajectories across a shared x-axis
+- Highlighting one or a few series against a background of many others
+- Your dataset is too large for a standard multi-line chart to render smoothly
+
+**Don't use a lines chart when:**
+- You have fewer than 5 series (use a standard LineChart with multi-line)
+- Individual series need distinct legends and tooltips (use a LineChart)
+- You want to compare exact values at each point (use a bar chart or table)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `Series[]` | required | Array of series objects, each with an id and values array |
+| `x` | `string` | required | Key for x-axis values within each series' values |
+| `y` | `string` | required | Key for y-axis values within each series' values |
+| `colors` | `string[] \| ((series: Series, index: number) => string)` | auto palette | Colors for each series, or a function returning a color |
+| `lineWidth` | `number` | `1.5` | Stroke width for all lines in pixels |
+| `opacity` | `number` | `0.3` | Base opacity for all lines (0 to 1) |
+| `highlightOnHover` | `boolean` | `true` | Raise opacity and bring the hovered series to front |
+| `showLegend` | `boolean` | `false` | Display a legend listing all series |
+| `downsample` | `boolean \| number` | `false` | Reduce points per series for performance. Pass a number to set max points |
+| `animate` | `boolean` | `true` | Enable draw animation on mount |
+| `className` | `string` | - | Tailwind classes on the root SVG |
+
+---
+
+## Large Dataset Handling
+
+The LinesChart component is built for scale. It uses optimized SVG path rendering and optional downsampling to stay responsive even with hundreds of series and thousands of points per series.
+
+### Default behavior
+
+Without any special configuration, LinesChart draws all series at low opacity so the density of overlapping lines communicates the distribution of the data. Where many lines converge, the color appears darker. Where lines spread apart, individual strokes remain faint.
+
+```tsx
+<LinesChart
+  data={hundredSeries}
+  x="time"
+  y="value"
+  opacity={0.2}
+  lineWidth={1}
+  className="h-96 w-full"
+/>
+```
+
+### Downsampling
+
+For very large datasets (thousands of points per series), enable downsampling to reduce the number of rendered points while preserving the visual shape. The algorithm keeps local extrema so peaks and valleys are never lost.
+
+```tsx
+// Auto-downsample to a sensible default
+<LinesChart
+  data={massiveDataset}
+  x="time"
+  y="value"
+  downsample
+/>
+
+// Downsample to at most 200 points per series
+<LinesChart
+  data={massiveDataset}
+  x="time"
+  y="value"
+  downsample={200}
+/>
+```
+
+---
+
+## Hover Highlighting
+
+When `highlightOnHover` is enabled (the default), mousing over a line raises its opacity to 1 and brings it to the front. All other lines dim further, making the hovered series easy to track against the background.
+
+```tsx
+<LinesChart
+  data={data}
+  x="time"
+  y="temp"
+  highlightOnHover
+  opacity={0.15}
+  className="h-80"
+/>
+```
+
+This is particularly useful when you have dozens of similar series and need to inspect individual ones without cluttering the chart with a full legend.
+
+### Disabling hover
+
+For static visualizations or screenshots, disable hover effects:
+
+```tsx
+<LinesChart
+  data={data}
+  x="time"
+  y="temp"
+  highlightOnHover={false}
+  opacity={0.3}
+/>
+```
+
+---
+
+## Opacity Control
+
+The `opacity` prop sets the base transparency of all lines. This is the single most important parameter for lines charts because it determines how well overlapping regions communicate density.
+
+```tsx
+// Very transparent: best for 100+ series
+<LinesChart data={data} x="time" y="value" opacity={0.1} />
+
+// Medium transparency: best for 20-50 series
+<LinesChart data={data} x="time" y="value" opacity={0.3} />
+
+// Nearly opaque: best for 5-15 series
+<LinesChart data={data} x="time" y="value" opacity={0.6} />
+```
+
+Lower opacity values make dense regions appear as solid bands of color while sparse regions remain nearly invisible. Higher values make each individual line more visible but can create visual clutter with many series.
+
+---
+
+## Series Coloring
+
+By default, all series share a single color from the palette. This is intentional: the focus is on the overall distribution, not individual identity.
+
+### Single color (default)
+
+```tsx
+<LinesChart
+  data={data}
+  x="time"
+  y="value"
+  colors={["#3b82f6"]}
+  opacity={0.2}
+/>
+```
+
+### Color by group
+
+When your series belong to categories, pass a function to assign colors by group:
+
+```tsx
+<LinesChart
+  data={data}
+  x="time"
+  y="value"
+  colors={(series) => {
+    if (series.id.startsWith("control")) return "#6b7280"
+    if (series.id.startsWith("treatment")) return "#3b82f6"
+    return "#a855f7"
+  }}
+  opacity={0.3}
+/>
+```
+
+### Distinct colors per series
+
+For smaller datasets where you want each line to be individually identifiable:
+
+```tsx
+<LinesChart
+  data={fiveSeries}
+  x="time"
+  y="value"
+  colors={["#ef4444", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7"]}
+  opacity={0.8}
+  showLegend
+/>
+```
+
+---
+
+## Accessibility
+
+- The chart has `role="img"` with an `aria-label` summarizing the number of series and overall data range
+- When `highlightOnHover` is enabled, keyboard users can Tab to the chart and use arrow keys to cycle through series
+- The focused series is announced to screen readers with its id and value range
+- Animation respects `prefers-reduced-motion` and renders instantly when motion reduction is enabled
+- When `showLegend` is true, legend items are focusable and selecting one highlights the corresponding series
+
+---
+
+## Real-World Examples
+
+### IoT sensor array
+
+```tsx
+const sensorData = sensors.map((sensor) => ({
+  id: sensor.name,
+  values: sensor.readings.map((r) => ({ time: r.timestamp, temp: r.value })),
+}))
+
+<LinesChart
+  data={sensorData}
+  x="time"
+  y="temp"
+  colors={["#3b82f6"]}
+  opacity={0.15}
+  lineWidth={1}
+  highlightOnHover
+  className="h-96 w-full rounded-xl bg-zinc-950 p-4"
+/>
+```
+
+### Monte Carlo simulation
+
+```tsx
+const simulations = runs.map((run, i) => ({
+  id: `run-${i}`,
+  values: run.map((value, t) => ({ time: t, value })),
+}))
+
+<LinesChart
+  data={simulations}
+  x="time"
+  y="value"
+  colors={["#a855f7"]}
+  opacity={0.05}
+  lineWidth={1}
+  downsample={500}
+  highlightOnHover={false}
+  animate={false}
+  className="h-80 w-full"
+/>
+```
+
+### Stock comparison
+
+```tsx
+const stocks = tickers.map((ticker) => ({
+  id: ticker.symbol,
+  values: ticker.prices.map((p) => ({ date: p.date, return: p.normalizedReturn })),
+}))
+
+<LinesChart
+  data={stocks}
+  x="date"
+  y="return"
+  colors={(series) =>
+    series.id === selectedTicker ? "#22c55e" : "#6b7280"
+  }
+  opacity={0.2}
+  lineWidth={1}
+  highlightOnHover
+  showLegend={false}
+  className="h-72 w-full"
+/>
+```

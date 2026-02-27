@@ -1,0 +1,312 @@
+---
+title: "Pie Chart"
+description: "Show proportional data as circular segments. Toggle between pie and donut with a single prop. Interactive selection, animated reveal, and full accessibility."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { PieChart } from "@chartts/react"
+
+const data = [
+  { category: "Product", amount: 45000 },
+  { category: "Services", amount: 30000 },
+  { category: "Support", amount: 15000 },
+  { category: "Other", amount: 10000 },
+]
+
+export function RevenuePie() {
+  return (
+    <PieChart
+      data={data}
+      value="amount"
+      label="category"
+      className="h-80 w-80 mx-auto"
+    />
+  )
+}
+```
+
+## When to Use Pie Charts
+
+Pie charts show parts of a whole. Every segment represents a percentage of the total.
+
+**Use a pie chart when:**
+- Showing how parts compose a total (budget breakdown, market share)
+- You have 2 to 6 categories (fewer is better)
+- The audience needs a quick sense of "what fraction is this"
+- One or two segments clearly dominate
+
+**Don't use a pie chart when:**
+- You have more than 6 categories (too many slices become unreadable)
+- Values are close in size (hard to distinguish similar-sized segments)
+- You need to compare values precisely (use a bar chart)
+- Data doesn't represent parts of a whole
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `value` | `keyof T` | required | Key for segment values |
+| `label` | `keyof T` | required | Key for segment labels |
+| `donut` | `boolean` | `false` | Render as donut (hollow center) |
+| `innerRadius` | `number` | `0.6` | Inner radius ratio for donut mode (0 to 1) |
+| `padAngle` | `number` | `1` | Padding between segments in degrees |
+| `cornerRadius` | `number` | `4` | Corner radius for segment edges |
+| `startAngle` | `number` | `0` | Starting angle in degrees (0 = 12 o'clock) |
+| `sort` | `boolean \| 'asc' \| 'desc'` | `'desc'` | Sort segments by value |
+| `labels` | `'inside' \| 'outside' \| 'none'` | `'outside'` | Label placement |
+| `showPercent` | `boolean` | `true` | Show percentage in labels |
+| `centerLabel` | `string \| ReactNode` | - | Content in the donut center |
+| `animate` | `boolean` | `true` | Enable segment entry animation |
+| `className` | `string` | - | Tailwind classes on root SVG |
+| `segmentClassName` | `string` | - | Tailwind classes on segments |
+
+---
+
+## Donut Mode
+
+Add a hollow center by setting `donut`:
+
+```tsx
+<PieChart
+  data={data}
+  value="amount"
+  label="category"
+  donut
+/>
+```
+
+Control the hole size with `innerRadius`. Values from 0 (solid pie) to 1 (infinitely thin ring):
+
+```tsx
+// Thin donut
+<PieChart data={data} value="amount" label="category" donut innerRadius={0.75} />
+
+// Thick donut
+<PieChart data={data} value="amount" label="category" donut innerRadius={0.4} />
+
+// Standard donut
+<PieChart data={data} value="amount" label="category" donut innerRadius={0.6} />
+```
+
+### Center Label
+
+Display a key metric in the center of a donut:
+
+```tsx
+<PieChart
+  data={data}
+  value="amount"
+  label="category"
+  donut
+  centerLabel="$100k"
+/>
+```
+
+For more complex center content in React:
+
+```tsx
+<PieChart
+  data={data}
+  value="amount"
+  label="category"
+  donut
+  centerLabel={
+    <div className="text-center">
+      <div className="text-2xl font-bold heading">$100k</div>
+      <div className="text-sm muted-text">Total Revenue</div>
+    </div>
+  }
+/>
+```
+
+---
+
+## Segment Padding and Corners
+
+`padAngle` adds space between segments. `cornerRadius` rounds the segment edges. Together they create a modern, polished look:
+
+```tsx
+// No padding, no rounding (classic pie)
+<PieChart data={data} value="v" label="l" padAngle={0} cornerRadius={0} />
+
+// Slight padding and rounding (default)
+<PieChart data={data} value="v" label="l" padAngle={1} cornerRadius={4} />
+
+// Wide gaps with heavy rounding
+<PieChart data={data} value="v" label="l" padAngle={4} cornerRadius={8} />
+```
+
+---
+
+## Labels
+
+### Outside labels (default)
+Labels are positioned outside the chart with leader lines connecting to each segment:
+
+```tsx
+<PieChart data={data} value="amount" label="category" labels="outside" />
+```
+
+### Inside labels
+Labels are placed inside each segment. Works best with large segments:
+
+```tsx
+<PieChart data={data} value="amount" label="category" labels="inside" />
+```
+
+### No labels
+Hide labels entirely (rely on legend and tooltips):
+
+```tsx
+<PieChart data={data} value="amount" label="category" labels="none" />
+```
+
+### Percentage display
+Show the percentage each segment represents:
+
+```tsx
+// Show percentage (default)
+<PieChart data={data} value="amount" label="category" showPercent />
+
+// Hide percentage, show only labels
+<PieChart data={data} value="amount" label="category" showPercent={false} />
+```
+
+---
+
+## Colors
+
+Segments are colored from the theme palette by default. Override per-segment or globally:
+
+```tsx
+// Global color array (assigned in order)
+<PieChart
+  data={data}
+  value="amount"
+  label="category"
+  colors={["#06b6d4", "#10b981", "#f59e0b", "#ef4444"]}
+/>
+```
+
+With Tailwind classes:
+
+```tsx
+<PieChart
+  data={data}
+  value="amount"
+  label="category"
+  segmentClassName="hover:opacity-80 transition-opacity cursor-pointer"
+/>
+```
+
+---
+
+## Interactive Selection
+
+Click a segment to select it. Selected segments pull out slightly from the center:
+
+```tsx
+<PieChart
+  data={data}
+  value="amount"
+  label="category"
+  onClick={(segment) => {
+    console.log(`Selected: ${segment.category} = ${segment.amount}`)
+  }}
+/>
+```
+
+---
+
+## Animation
+
+Segments animate in with a clockwise reveal from the starting angle. Each segment grows from 0 degrees to its final arc size with a smooth easing.
+
+```tsx
+// Disable animation
+<PieChart data={data} value="amount" label="category" animate={false} />
+```
+
+---
+
+## Sorting
+
+By default, segments are sorted descending by value (largest first, starting at 12 o'clock). Change this:
+
+```tsx
+// Ascending (smallest first)
+<PieChart data={data} value="amount" label="category" sort="asc" />
+
+// No sorting (use data order)
+<PieChart data={data} value="amount" label="category" sort={false} />
+```
+
+---
+
+## Accessibility
+
+- Each segment has an `aria-label` with the category name, value, and percentage
+- The chart has `role="img"` with a summary of all segments
+- Keyboard navigation: Tab to focus, arrow keys to move between segments
+- Pattern fills available via `patternFill` for color-blind users
+- Screen readers announce the full breakdown
+
+---
+
+## Real-World Examples
+
+### Budget donut with center total
+```tsx
+<PieChart
+  data={budgetItems}
+  value="allocated"
+  label="department"
+  donut
+  innerRadius={0.65}
+  centerLabel={
+    <div className="text-center">
+      <div className="text-xl font-bold">$2.4M</div>
+      <div className="text-xs muted-text">Annual Budget</div>
+    </div>
+  }
+  padAngle={2}
+  cornerRadius={6}
+  className="h-80"
+/>
+```
+
+### Traffic sources
+```tsx
+<PieChart
+  data={trafficSources}
+  value="sessions"
+  label="source"
+  colors={["#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"]}
+  labels="outside"
+  showPercent
+/>
+```
+
+### Simple status indicator
+```tsx
+<PieChart
+  data={[
+    { label: "Complete", value: 73 },
+    { label: "Remaining", value: 27 },
+  ]}
+  value="value"
+  label="label"
+  donut
+  innerRadius={0.75}
+  centerLabel="73%"
+  colors={["#10b981", "#27272a"]}
+  labels="none"
+  className="h-32 w-32"
+/>
+```

@@ -1,0 +1,250 @@
+---
+title: "Radial Bar Chart"
+description: "Display values as circular arcs radiating from a center point. Ideal for progress rings, KPI dashboards, and multi-metric comparisons."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { RadialBarChart } from "@chartts/react"
+
+const data = [
+  { label: "Revenue", value: 82 },
+  { label: "Profit", value: 64 },
+  { label: "Growth", value: 91 },
+  { label: "Retention", value: 75 },
+]
+
+export function KPIRings() {
+  return (
+    <RadialBarChart
+      data={data}
+      value="value"
+      label="label"
+      maxValue={100}
+      showValues
+      className="h-72 w-72 mx-auto"
+    />
+  )
+}
+```
+
+## When to Use Radial Bar Charts
+
+Radial bars turn linear bars into circular arcs, making them compact and visually striking on dashboards.
+
+**Use a radial bar chart when:**
+- Showing progress toward a goal (task completion, quota attainment)
+- Displaying multiple KPIs in a compact space
+- Building dashboard widgets where circular layouts feel natural
+- Comparing a small number of metrics (2 to 6) against a shared maximum
+
+**Don't use a radial bar when:**
+- You have more than 8 categories (bars become too thin to read)
+- Precise comparison matters (arc length is harder to judge than linear length)
+- Data has no meaningful maximum (arcs need a defined scale)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `value` | `keyof T` | required | Key for the arc value |
+| `label` | `keyof T` | - | Key for the label text |
+| `maxValue` | `number` | `100` | Maximum value (full circle) |
+| `innerRadius` | `number` | `0.4` | Inner radius as fraction of total radius (0 to 1) |
+| `trackColor` | `string` | `"#e5e7eb"` | Background track color |
+| `showLabels` | `boolean` | `true` | Display labels next to each bar |
+| `showValues` | `boolean` | `false` | Display numeric values on each bar |
+| `startAngle` | `number` | `-90` | Start angle in degrees (-90 = top) |
+| `animate` | `boolean` | `true` | Animate arcs on mount |
+| `className` | `string` | - | Tailwind classes on root SVG |
+
+---
+
+## Progress Rings
+
+A single-item radial bar works great as a progress ring. Set `innerRadius` high for a thin ring:
+
+```tsx
+<RadialBarChart
+  data={[{ label: "Complete", value: 73 }]}
+  value="value"
+  label="label"
+  maxValue={100}
+  innerRadius={0.85}
+  showValues
+  className="h-48 w-48"
+/>
+```
+
+For multiple concentric progress rings, pass an array. Each item gets its own ring, with the first item on the outermost ring:
+
+```tsx
+<RadialBarChart
+  data={[
+    { label: "Move", value: 420, max: 500 },
+    { label: "Exercise", value: 28, max: 30 },
+    { label: "Stand", value: 10, max: 12 },
+  ]}
+  value="value"
+  label="label"
+  maxValue={100}
+  innerRadius={0.5}
+  showLabels
+  showValues
+/>
+```
+
+---
+
+## Track Background
+
+The track shows the unfilled portion of each arc. Customize it to match your theme:
+
+```tsx
+// Light track (default)
+<RadialBarChart
+  data={data}
+  value="value"
+  label="label"
+  trackColor="#e5e7eb"
+/>
+
+// Dark mode track
+<RadialBarChart
+  data={data}
+  value="value"
+  label="label"
+  trackColor="#374151"
+/>
+
+// No track (transparent)
+<RadialBarChart
+  data={data}
+  value="value"
+  label="label"
+  trackColor="transparent"
+/>
+```
+
+The track gives context for how much remains toward the maximum. Without it, a 90% arc and a 95% arc look nearly identical.
+
+---
+
+## Value Labels
+
+Show the numeric value on each arc:
+
+```tsx
+<RadialBarChart
+  data={data}
+  value="value"
+  label="label"
+  maxValue={100}
+  showValues
+  showLabels
+/>
+```
+
+Labels and values position themselves automatically based on available space. For dense layouts, you can show values only:
+
+```tsx
+<RadialBarChart
+  data={data}
+  value="value"
+  label="label"
+  showValues
+  showLabels={false}
+/>
+```
+
+---
+
+## Custom Start Angle
+
+By default, arcs start from the top (12 o'clock position, -90 degrees). Change the start angle to create different orientations:
+
+```tsx
+// Start from top (default)
+<RadialBarChart data={data} value="value" label="label" startAngle={-90} />
+
+// Start from right (3 o'clock)
+<RadialBarChart data={data} value="value" label="label" startAngle={0} />
+
+// Start from bottom (6 o'clock)
+<RadialBarChart data={data} value="value" label="label" startAngle={90} />
+
+// Start from left (9 o'clock)
+<RadialBarChart data={data} value="value" label="label" startAngle={180} />
+```
+
+---
+
+## Accessibility
+
+- Each arc has `role="progressbar"` with `aria-valuenow`, `aria-valuemin`, and `aria-valuemax`
+- Screen readers announce the label and current value as a percentage of the maximum
+- Track background provides visual context for the unfilled portion
+- Colors are supplemented with labels so the chart is usable without color vision
+
+---
+
+## Real-World Examples
+
+### Quarterly targets dashboard
+```tsx
+<RadialBarChart
+  data={[
+    { metric: "Revenue", current: 840, target: 1000 },
+    { metric: "New Customers", current: 312, target: 400 },
+    { metric: "Satisfaction", current: 92, target: 95 },
+  ]}
+  value="current"
+  label="metric"
+  maxValue={100}
+  innerRadius={0.45}
+  showValues
+  showLabels
+  className="h-80 w-80 mx-auto"
+/>
+```
+
+### Fitness activity rings
+```tsx
+<RadialBarChart
+  data={[
+    { ring: "Calories", burned: 480 },
+    { ring: "Active Min", burned: 35 },
+    { ring: "Stand Hours", burned: 9 },
+  ]}
+  value="burned"
+  label="ring"
+  maxValue={100}
+  innerRadius={0.5}
+  trackColor="#1f2937"
+  className="h-64 w-64 bg-gray-950 rounded-full"
+/>
+```
+
+### Skill assessment
+```tsx
+<RadialBarChart
+  data={[
+    { skill: "Frontend", score: 88 },
+    { skill: "Backend", score: 72 },
+    { skill: "DevOps", score: 55 },
+    { skill: "Design", score: 40 },
+  ]}
+  value="score"
+  label="skill"
+  maxValue={100}
+  showValues
+  showLabels
+  innerRadius={0.35}
+  className="h-72 w-72"
+/>
+```

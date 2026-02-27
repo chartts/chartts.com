@@ -1,0 +1,218 @@
+---
+title: "Lollipop Chart"
+description: "A cleaner alternative to bar charts. Thin stems with dot endpoints reduce visual clutter while preserving readability."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { LollipopChart } from "@chartts/react"
+
+const data = [
+  { country: "Norway", score: 95 },
+  { country: "Switzerland", score: 93 },
+  { country: "Australia", score: 91 },
+  { country: "Ireland", score: 90 },
+  { country: "Germany", score: 88 },
+  { country: "Iceland", score: 87 },
+  { country: "Sweden", score: 86 },
+]
+
+export function QualityOfLife() {
+  return (
+    <LollipopChart
+      data={data}
+      x="country"
+      y="score"
+      horizontal
+      sorted="desc"
+      showValues
+      className="h-80 w-full"
+    />
+  )
+}
+```
+
+## When to Use Lollipop Charts
+
+Lollipop charts are bar charts with less ink. The dot-on-a-stick form is easier to scan when you have many categories.
+
+**Use a lollipop chart when:**
+- You would use a bar chart, but have many categories and want less visual weight
+- Comparing values across 10 or more items where thick bars become overwhelming
+- Ranking items from highest to lowest
+- You want a modern, minimal aesthetic
+
+**Don't use a lollipop when:**
+- You have very few categories (bars look better with 3 to 5 items)
+- Showing stacked or grouped data (use bar charts for multi-series)
+- The dot endpoint could be confused with scatter plot data points
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `x` | `keyof T` | required | Key for category labels |
+| `y` | `keyof T` | required | Key for numeric values |
+| `color` | `string` | palette | Color for dots and stems |
+| `dotSize` | `number` | `8` | Radius of the endpoint dot in pixels |
+| `lineWidth` | `number` | `2` | Thickness of the stem line in pixels |
+| `horizontal` | `boolean` | `false` | Render horizontal lollipops |
+| `sorted` | `boolean \| 'asc' \| 'desc'` | `false` | Sort by value |
+| `showValues` | `boolean` | `false` | Display value labels |
+| `animate` | `boolean` | `true` | Animate stems and dots on mount |
+| `className` | `string` | - | Tailwind classes on root SVG |
+
+---
+
+## Horizontal Layout
+
+Horizontal lollipops are the most common layout. Labels read naturally on the left, stems extend right:
+
+```tsx
+<LollipopChart
+  data={data}
+  x="country"
+  y="score"
+  horizontal
+  sorted="desc"
+  showValues
+/>
+```
+
+Vertical lollipops work when category labels are short:
+
+```tsx
+<LollipopChart
+  data={data}
+  x="month"
+  y="revenue"
+/>
+```
+
+---
+
+## Sorting
+
+Sort lollipops by value for easier comparison:
+
+```tsx
+// Largest first
+<LollipopChart data={data} x="name" y="value" sorted="desc" />
+
+// Smallest first
+<LollipopChart data={data} x="name" y="value" sorted="asc" />
+
+// Data order (default)
+<LollipopChart data={data} x="name" y="value" sorted={false} />
+```
+
+Sorted horizontal lollipops are the gold standard for leaderboards and rankings.
+
+---
+
+## Dot Size and Line Width
+
+Adjust the visual weight of the chart:
+
+```tsx
+// Subtle (thin stems, small dots)
+<LollipopChart data={data} x="name" y="value" dotSize={4} lineWidth={1} />
+
+// Standard (default)
+<LollipopChart data={data} x="name" y="value" dotSize={8} lineWidth={2} />
+
+// Bold (thick stems, large dots)
+<LollipopChart data={data} x="name" y="value" dotSize={12} lineWidth={3} />
+```
+
+Larger dots draw more attention to the endpoint values. Thinner stems keep the focus on the dot positions.
+
+---
+
+## Comparison Styling
+
+Color individual lollipops based on their values using conditional styling:
+
+```tsx
+<LollipopChart
+  data={data}
+  x="metric"
+  y="score"
+  horizontal
+  sorted="desc"
+  color={(value) => value >= 80 ? "#10b981" : value >= 60 ? "#f59e0b" : "#ef4444"}
+/>
+```
+
+You can also use a fixed color for all lollipops:
+
+```tsx
+<LollipopChart
+  data={data}
+  x="metric"
+  y="score"
+  color="#8b5cf6"
+/>
+```
+
+---
+
+## Accessibility
+
+- Each lollipop has an `aria-label` with the category name and value
+- Keyboard navigation moves between lollipops in display order
+- Screen readers announce each item's label and numeric value
+- The dot endpoint provides a clear focal point beyond just the stem
+
+---
+
+## Real-World Examples
+
+### Top performing products
+```tsx
+<LollipopChart
+  data={products}
+  x="name"
+  y="unitsSold"
+  horizontal
+  sorted="desc"
+  showValues
+  dotSize={10}
+  color="#06b6d4"
+  className="h-96"
+/>
+```
+
+### Team velocity comparison
+```tsx
+<LollipopChart
+  data={teams}
+  x="team"
+  y="storyPoints"
+  horizontal
+  sorted="desc"
+  showValues
+  color={(v) => v >= 40 ? "#10b981" : "#f59e0b"}
+  className="h-64"
+/>
+```
+
+### Feature adoption rates
+```tsx
+<LollipopChart
+  data={features}
+  x="feature"
+  y="adoptionPercent"
+  horizontal
+  sorted="desc"
+  showValues
+  dotSize={10}
+  lineWidth={2}
+  className="h-80"
+/>
+```

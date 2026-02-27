@@ -1,0 +1,299 @@
+---
+title: "Line Chart"
+description: "Plot continuous data as connected points. Ideal for time series, trends, and multi-series comparisons across a continuous axis."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { LineChart } from "@chartts/react"
+
+const data = [
+  { month: "Jan", revenue: 4200 },
+  { month: "Feb", revenue: 5800 },
+  { month: "Mar", revenue: 7100 },
+  { month: "Apr", revenue: 6400 },
+  { month: "May", revenue: 8200 },
+  { month: "Jun", revenue: 9600 },
+]
+
+export function RevenueChart() {
+  return (
+    <LineChart
+      data={data}
+      x="month"
+      y="revenue"
+      className="h-64 w-full"
+    />
+  )
+}
+```
+
+That renders a fully interactive line chart with axes, tooltips, responsive scaling, and smooth curve interpolation. All automatic.
+
+## When to Use Line Charts
+
+Line charts work best when your x-axis represents a **continuous or ordered dimension** like time, and you want to show how values change across it.
+
+**Use a line chart when:**
+- Showing trends over time (revenue per month, users per day)
+- Comparing multiple series on the same time scale
+- Highlighting rate of change between data points
+- Your audience needs to see the overall trajectory, not individual values
+
+**Don't use a line chart when:**
+- Categories have no natural order (use a bar chart)
+- You want to show proportions of a whole (use a pie or donut chart)
+- You have fewer than 3 data points (use a bar chart)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `x` | `keyof T` | required | Key for x-axis values |
+| `y` | `keyof T \| (keyof T)[]` | required | Key(s) for y-axis values. Pass array for multi-line |
+| `curve` | `'linear' \| 'monotone' \| 'step' \| 'natural'` | `'monotone'` | Interpolation between points |
+| `area` | `boolean` | `false` | Fill the area under the line |
+| `dots` | `boolean` | `true` | Show data point markers |
+| `animate` | `boolean` | `true` | Enable line draw animation on mount |
+| `className` | `string` | - | Tailwind classes on the root SVG |
+| `lineClassName` | `string` | - | Tailwind classes on the line path |
+| `dotClassName` | `string` | - | Tailwind classes on point markers |
+| `axisClassName` | `string` | - | Tailwind classes on axis elements |
+| `gridClassName` | `string` | - | Tailwind classes on grid lines |
+| `tooltipClassName` | `string` | - | Tailwind classes on tooltip |
+| `responsive` | `boolean` | `true` | Auto-resize to container width |
+| `width` | `number` | auto | Fixed width in pixels |
+| `height` | `number` | auto | Fixed height in pixels |
+
+---
+
+## Curve Interpolation
+
+The `curve` prop controls how the line connects data points. This has a significant impact on how your data is perceived.
+
+### `monotone` (default)
+Smooth curves that never overshoot your data values. The line passes through every point while maintaining a natural flow. Best for most use cases.
+
+```tsx
+<LineChart data={data} x="month" y="revenue" curve="monotone" />
+```
+
+### `linear`
+Straight lines between points. Shows the exact change between each pair of values. Use when precision matters more than aesthetics.
+
+```tsx
+<LineChart data={data} x="month" y="revenue" curve="linear" />
+```
+
+### `step`
+Horizontal and vertical segments only. The value stays flat until the next data point, then jumps. Use for discrete changes like pricing tiers or status changes.
+
+```tsx
+<LineChart data={data} x="month" y="plan" curve="step" />
+```
+
+### `natural`
+Cubic spline interpolation that produces very smooth curves. Can overshoot data values between points. Use when visual smoothness is the priority and slight inaccuracy between points is acceptable.
+
+```tsx
+<LineChart data={data} x="month" y="revenue" curve="natural" />
+```
+
+---
+
+## Area Fill
+
+Set `area` to fill the region between the line and the x-axis. This adds visual weight and makes it easier to perceive volume.
+
+```tsx
+<LineChart
+  data={data}
+  x="month"
+  y="revenue"
+  area
+  lineClassName="stroke-cyan-500"
+  className="h-72"
+/>
+```
+
+The fill automatically uses a gradient from the line color to transparent. You can override this with `areaClassName`.
+
+For stacked area charts where multiple series fill on top of each other, use the dedicated `AreaChart` component instead.
+
+---
+
+## Multi-Line Charts
+
+Pass an array of keys to `y` to render multiple lines on the same chart:
+
+```tsx
+const data = [
+  { month: "Jan", revenue: 4200, costs: 2800, profit: 1400 },
+  { month: "Feb", revenue: 5800, costs: 3200, profit: 2600 },
+  { month: "Mar", revenue: 7100, costs: 3800, profit: 3300 },
+]
+
+<LineChart
+  data={data}
+  x="month"
+  y={["revenue", "costs", "profit"]}
+/>
+```
+
+Each line gets a color from the default palette automatically. A legend appears showing which color maps to which series. Override colors per-series with `seriesClassName`:
+
+```tsx
+<LineChart
+  data={data}
+  x="month"
+  y={["revenue", "costs"]}
+  seriesClassName={{
+    revenue: "stroke-emerald-500",
+    costs: "stroke-red-400",
+  }}
+/>
+```
+
+---
+
+## Styling with Tailwind
+
+Every element of the chart exposes a `className` prop. This means you style charts the same way you style the rest of your app.
+
+```tsx
+<LineChart
+  data={data}
+  x="month"
+  y="revenue"
+  className="rounded-xl bg-zinc-900/50 p-4"
+  lineClassName="stroke-cyan-400 stroke-2"
+  dotClassName="fill-cyan-400"
+  axisClassName="text-zinc-500 text-xs"
+  gridClassName="stroke-zinc-800"
+  tooltipClassName="bg-zinc-800 text-white rounded-lg shadow-xl px-3 py-2 text-sm"
+/>
+```
+
+Dark mode works with Tailwind's `dark:` variants:
+
+```tsx
+<LineChart
+  lineClassName="stroke-blue-600 dark:stroke-blue-400"
+  axisClassName="text-gray-600 dark:text-gray-400"
+/>
+```
+
+---
+
+## Tooltips
+
+Tooltips appear on hover by default. They show the x-value and all y-values at the hovered position, with a vertical crosshair line.
+
+Disable tooltips:
+```tsx
+<LineChart data={data} x="month" y="revenue" tooltip={false} />
+```
+
+Custom tooltip format:
+```tsx
+<LineChart
+  data={data}
+  x="month"
+  y="revenue"
+  tooltipFormat={(point) => `$${point.revenue.toLocaleString()}`}
+/>
+```
+
+---
+
+## Animation
+
+Lines animate in with a drawing effect on mount. The line appears to draw itself from left to right over 800ms.
+
+Disable animation for instant rendering (useful for SSR or when the chart is below the fold):
+```tsx
+<LineChart data={data} x="month" y="revenue" animate={false} />
+```
+
+The animation respects `prefers-reduced-motion`. When the user has motion reduction enabled, charts render immediately without animation.
+
+---
+
+## Accessibility
+
+Line charts include full accessibility support out of the box:
+
+- **Screen readers**: Each data point is announced with its x-value and y-value. The overall trend is summarized.
+- **Keyboard navigation**: Tab to focus the chart, then use arrow keys to move between data points. The tooltip follows the focused point.
+- **ARIA roles**: The chart has `role="img"` with a descriptive `aria-label`. Individual points have `role="listitem"`.
+
+---
+
+## Server-Side Rendering
+
+Line charts render as static SVG on the server. No client JavaScript required for the initial render. This means:
+
+- Zero layout shift on page load
+- Works in React Server Components
+- Works with `renderToString()` for non-React environments
+- SEO-friendly (SVG content is in the HTML)
+
+```tsx
+// Server component - no "use client" needed
+import { LineChart } from "@chartts/react"
+
+export default async function Dashboard() {
+  const data = await fetchRevenue()
+  return <LineChart data={data} x="month" y="revenue" />
+}
+```
+
+---
+
+## Real-World Examples
+
+### Revenue dashboard
+```tsx
+<LineChart
+  data={monthlyRevenue}
+  x="month"
+  y={["revenue", "target"]}
+  area
+  seriesClassName={{
+    revenue: "stroke-emerald-500 fill-emerald-500/10",
+    target: "stroke-zinc-400 stroke-dashed",
+  }}
+  className="h-80"
+/>
+```
+
+### Stock price with volume
+```tsx
+<LineChart
+  data={stockData}
+  x="date"
+  y="close"
+  curve="linear"
+  dots={false}
+  lineClassName="stroke-cyan-400 stroke-[1.5]"
+  className="h-64"
+/>
+```
+
+### Comparison with baseline
+```tsx
+<LineChart
+  data={performance}
+  x="week"
+  y={["actual", "baseline"]}
+  seriesClassName={{
+    actual: "stroke-blue-500 stroke-2",
+    baseline: "stroke-gray-400 stroke-dashed stroke-1",
+  }}
+/>
+```

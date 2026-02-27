@@ -1,0 +1,240 @@
+---
+title: "Polar Chart"
+description: "Plot data in polar coordinates with area, line, or bar representations arranged around a central point."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { PolarChart } from "@chartts/react"
+
+const data = [
+  { skill: "Frontend", level: 90 },
+  { skill: "Backend", level: 75 },
+  { skill: "DevOps", level: 60 },
+  { skill: "Design", level: 45 },
+  { skill: "Data", level: 70 },
+  { skill: "Mobile", level: 55 },
+]
+
+export function SkillProfile() {
+  return (
+    <PolarChart
+      data={data}
+      value="level"
+      label="skill"
+      type="area"
+      fill
+      fillOpacity={0.3}
+      className="h-80 w-80"
+    />
+  )
+}
+```
+
+## When to Use Polar Charts
+
+Polar charts map data around a central point, with each category occupying an equal angular slice. They work best for cyclical data and multi-axis comparisons.
+
+**Use a polar chart when:**
+- Comparing multiple categories radiating from a center (skill assessments, performance metrics)
+- Showing cyclical patterns (monthly data, time of day, compass directions)
+- You want a visually distinctive alternative to bar charts for 5-12 categories
+- Displaying ratings or scores across several dimensions
+
+**Don't use a polar chart when:**
+- Precise comparison between values matters (angular position distorts perception)
+- You have fewer than 4 categories (looks sparse)
+- You have more than 12 categories (becomes cluttered)
+- Your audience is unfamiliar with polar layouts (use a standard bar chart)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `value` | `keyof T` | required | Key for the numeric values |
+| `label` | `keyof T` | required | Key for category labels around the perimeter |
+| `type` | `'area' \| 'line' \| 'bar'` | `'area'` | Visual style for data representation |
+| `startAngle` | `number` | `0` | Starting angle in degrees (0 is top) |
+| `gridLevels` | `number` | `5` | Number of concentric grid rings |
+| `showGrid` | `boolean` | `true` | Display the background grid |
+| `colors` | `string[]` | palette | Colors for the data series |
+| `fill` | `boolean` | `true` | Fill the area enclosed by the data shape |
+| `fillOpacity` | `number` | `0.2` | Opacity of the filled area (0 to 1) |
+| `animate` | `boolean` | `true` | Enable draw-in animation |
+| `className` | `string` | - | Tailwind classes on root SVG |
+
+---
+
+## Area, Line, and Bar in Polar Coordinates
+
+The `type` prop controls how data points render around the polar axis:
+
+```tsx
+// Area (default) - filled polygon connecting data points
+<PolarChart data={data} value="score" label="category" type="area" />
+
+// Line - unfilled polygon outline
+<PolarChart data={data} value="score" label="category" type="line" />
+
+// Bar - radial bars extending from center
+<PolarChart data={data} value="score" label="category" type="bar" />
+```
+
+Area and line types connect adjacent points to form a polygon. Bar type renders individual wedges from the center, similar to a radial bar chart.
+
+---
+
+## Grid Levels
+
+The concentric rings in the background provide a reference scale. Control how many rings appear:
+
+```tsx
+// Fewer grid lines for a cleaner look
+<PolarChart
+  data={data}
+  value="rating"
+  label="criterion"
+  gridLevels={3}
+/>
+
+// More grid lines for precise reading
+<PolarChart
+  data={data}
+  value="rating"
+  label="criterion"
+  gridLevels={10}
+/>
+
+// No grid
+<PolarChart
+  data={data}
+  value="rating"
+  label="criterion"
+  showGrid={false}
+/>
+```
+
+Grid levels are evenly spaced from 0 to the maximum value. Each ring is labeled with its value.
+
+---
+
+## Start Angle Configuration
+
+By default, the first category starts at the top (0 degrees). Rotate the chart to change where the first category appears:
+
+```tsx
+// Start from the right (90 degrees)
+<PolarChart
+  data={data}
+  value="value"
+  label="month"
+  startAngle={90}
+/>
+
+// Start from the bottom (180 degrees)
+<PolarChart
+  data={data}
+  value="value"
+  label="month"
+  startAngle={180}
+/>
+```
+
+This is particularly useful for time-based data where you want a specific month or hour at the top.
+
+---
+
+## Fill Opacity
+
+Control how transparent the filled area is. Lower opacity lets the grid show through; higher opacity adds visual weight:
+
+```tsx
+// Very transparent
+<PolarChart
+  data={data}
+  value="score"
+  label="skill"
+  fill
+  fillOpacity={0.1}
+/>
+
+// Semi-transparent (good for overlapping series)
+<PolarChart
+  data={data}
+  value="score"
+  label="skill"
+  fill
+  fillOpacity={0.3}
+/>
+
+// No fill, outline only
+<PolarChart
+  data={data}
+  value="score"
+  label="skill"
+  fill={false}
+/>
+```
+
+---
+
+## Accessibility
+
+- Each data point has an `aria-label` with the category name and value
+- The chart includes a summary description of the overall shape
+- Keyboard navigation moves between points around the perimeter
+- Screen readers announce values in clockwise order starting from the top
+
+---
+
+## Real-World Examples
+
+### Product evaluation matrix
+```tsx
+<PolarChart
+  data={productScores}
+  value="score"
+  label="criterion"
+  type="area"
+  fill
+  fillOpacity={0.25}
+  colors={["#6366f1"]}
+  gridLevels={5}
+  className="h-80 w-80"
+/>
+```
+
+### Monthly sales pattern
+```tsx
+<PolarChart
+  data={monthlySales}
+  value="revenue"
+  label="month"
+  type="bar"
+  colors={["#06b6d4"]}
+  showGrid
+  gridLevels={4}
+  className="h-96 w-96"
+/>
+```
+
+### Athlete performance profile
+```tsx
+<PolarChart
+  data={athleteStats}
+  value="rating"
+  label="attribute"
+  type="area"
+  fill
+  fillOpacity={0.2}
+  colors={["#10b981"]}
+  startAngle={0}
+  gridLevels={5}
+  className="h-80 w-80"
+/>
+```

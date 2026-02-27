@@ -1,0 +1,187 @@
+---
+title: "Sankey Diagram"
+description: "Visualize flow and transitions between stages. Width of connections represents magnitude. Perfect for energy flows, user journeys, and budget allocation."
+badge: "Advanced"
+---
+
+## Quick Start
+
+```tsx
+import { SankeyChart } from "@chartts/react"
+
+const nodes = [
+  { id: "organic", label: "Organic" },
+  { id: "paid", label: "Paid Ads" },
+  { id: "referral", label: "Referral" },
+  { id: "signup", label: "Sign Up" },
+  { id: "trial", label: "Free Trial" },
+  { id: "purchase", label: "Purchase" },
+  { id: "churn", label: "Churn" },
+]
+
+const links = [
+  { source: "organic", target: "signup", value: 400 },
+  { source: "paid", target: "signup", value: 300 },
+  { source: "referral", target: "signup", value: 200 },
+  { source: "signup", target: "trial", value: 700 },
+  { source: "signup", target: "churn", value: 200 },
+  { source: "trial", target: "purchase", value: 450 },
+  { source: "trial", target: "churn", value: 250 },
+]
+
+export function UserFlow() {
+  return (
+    <SankeyChart
+      nodes={nodes}
+      links={links}
+      className="h-96 w-full"
+    />
+  )
+}
+```
+
+## When to Use Sankey Diagrams
+
+Sankeys show how quantities flow from one set of values to another.
+
+**Use a Sankey when:**
+- Showing user journeys through a product (page flows, conversion paths)
+- Visualizing budget or resource allocation across departments
+- Energy or material flow diagrams
+- Any scenario where you need to show how a total splits and recombines
+
+**Don't use a Sankey when:**
+- You have only two stages (use a stacked bar or funnel)
+- Flows are too simple to warrant the complexity
+- Precise comparison matters more than flow visualization
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `nodes` | `{ id: string; label: string }[]` | required | Flow nodes |
+| `links` | `{ source: string; target: string; value: number }[]` | required | Connections between nodes |
+| `nodeWidth` | `number` | `20` | Width of node rectangles in pixels |
+| `nodePadding` | `number` | `10` | Vertical padding between nodes |
+| `nodeAlign` | `'left' \| 'right' \| 'center' \| 'justify'` | `'justify'` | Node alignment method |
+| `linkOpacity` | `number` | `0.4` | Opacity of flow links (0 to 1) |
+| `linkHoverOpacity` | `number` | `0.7` | Opacity on hover |
+| `colors` | `string[]` | palette | Node colors |
+| `showValues` | `boolean` | `true` | Show value labels on nodes |
+| `animate` | `boolean` | `true` | Animated flow reveal |
+| `className` | `string` | - | Tailwind classes on root |
+| `nodeClassName` | `string` | - | Tailwind classes on node rectangles |
+| `linkClassName` | `string` | - | Tailwind classes on flow paths |
+
+---
+
+## Node Alignment
+
+Controls how nodes are distributed horizontally:
+
+```tsx
+// Justify (default) - spreads nodes across full width
+<SankeyChart nodes={nodes} links={links} nodeAlign="justify" />
+
+// Left - all nodes pushed left
+<SankeyChart nodes={nodes} links={links} nodeAlign="left" />
+
+// Right - all nodes pushed right
+<SankeyChart nodes={nodes} links={links} nodeAlign="right" />
+```
+
+---
+
+## Link Styling
+
+Flow links are curved paths whose width represents the value. Control their appearance:
+
+```tsx
+<SankeyChart
+  nodes={nodes}
+  links={links}
+  linkOpacity={0.3}
+  linkHoverOpacity={0.8}
+/>
+```
+
+### Color by source or target
+
+Links inherit their color from the source node by default. This makes it easy to trace where flows originate.
+
+---
+
+## Node Configuration
+
+```tsx
+<SankeyChart
+  nodes={nodes}
+  links={links}
+  nodeWidth={24}
+  nodePadding={16}
+  showValues
+/>
+```
+
+---
+
+## Highlighting
+
+Hovering a node highlights all connected links. Hovering a link highlights just that connection. This makes complex flows navigable.
+
+---
+
+## Animation
+
+Links animate in with a flow reveal from left to right. Nodes fade in simultaneously.
+
+---
+
+## Accessibility
+
+- Each node announces its label and total flow value
+- Each link announces source, target, and flow value
+- Keyboard navigation moves between nodes and their connections
+- Screen readers describe the overall flow structure
+
+---
+
+## Real-World Examples
+
+### Website user journey
+```tsx
+<SankeyChart
+  nodes={[
+    { id: "home", label: "Homepage" },
+    { id: "product", label: "Product Page" },
+    { id: "pricing", label: "Pricing" },
+    { id: "docs", label: "Documentation" },
+    { id: "signup", label: "Sign Up" },
+    { id: "bounce", label: "Exit" },
+  ]}
+  links={[
+    { source: "home", target: "product", value: 3000 },
+    { source: "home", target: "pricing", value: 2000 },
+    { source: "home", target: "docs", value: 1500 },
+    { source: "home", target: "bounce", value: 1000 },
+    { source: "product", target: "signup", value: 1200 },
+    { source: "pricing", target: "signup", value: 800 },
+    { source: "docs", target: "signup", value: 400 },
+  ]}
+  className="h-96"
+/>
+```
+
+### Budget allocation
+```tsx
+<SankeyChart
+  nodes={budgetNodes}
+  links={budgetFlows}
+  nodeWidth={30}
+  nodePadding={20}
+  showValues
+  colors={["#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"]}
+/>
+```

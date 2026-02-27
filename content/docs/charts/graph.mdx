@@ -1,0 +1,296 @@
+---
+title: "Graph Chart"
+description: "Visualize networks and relationships between entities. Force-directed layouts, draggable nodes, and directed edges for social graphs, dependency maps, and knowledge networks."
+badge: "Network"
+---
+
+## Quick Start
+
+```tsx
+import { GraphChart } from "@chartts/react"
+
+const nodes = [
+  { id: "react", label: "React" },
+  { id: "vue", label: "Vue" },
+  { id: "svelte", label: "Svelte" },
+  { id: "webpack", label: "Webpack" },
+  { id: "vite", label: "Vite" },
+  { id: "typescript", label: "TypeScript" },
+]
+
+const links = [
+  { source: "react", target: "webpack" },
+  { source: "react", target: "vite" },
+  { source: "react", target: "typescript" },
+  { source: "vue", target: "vite" },
+  { source: "vue", target: "webpack" },
+  { source: "vue", target: "typescript" },
+  { source: "svelte", target: "vite" },
+  { source: "svelte", target: "typescript" },
+]
+
+export function DependencyGraph() {
+  return (
+    <GraphChart
+      nodes={nodes}
+      links={links}
+      layout="force"
+      draggable
+      className="h-[500px] w-full"
+    />
+  )
+}
+```
+
+That renders an interactive force-directed graph where nodes repel each other and links pull connected nodes together. Drag any node to rearrange the layout. Hover to highlight connections.
+
+## When to Use Graph Charts
+
+Graph charts show relationships between entities where the connections matter as much as the entities themselves. Unlike trees, graphs can have cycles, multiple connections per node, and bidirectional relationships.
+
+**Use a graph chart when:**
+- Showing social networks and follower/friend connections
+- Visualizing package dependencies or module imports
+- Mapping knowledge graphs with interconnected concepts
+- Displaying communication patterns between teams or systems
+- Any data where entities have many-to-many relationships
+
+**Don't use a graph chart when:**
+- Data is strictly hierarchical with one parent per node (use a tree chart)
+- You need to show flow quantities between nodes (use a Sankey diagram)
+- The number of nodes exceeds a few hundred (performance degrades; consider aggregation)
+- Relationships are simple one-to-one mappings (use a table or list)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `nodes` | `NodeData[]` | required | Array of node objects with `id` and optional `label` |
+| `links` | `LinkData[]` | required | Array of link objects with `source` and `target` IDs |
+| `layout` | `'force' \| 'circular' \| 'grid'` | `'force'` | Layout algorithm for node positioning |
+| `nodeSize` | `number \| ((node: NodeData) => number)` | `20` | Node circle diameter, or function for dynamic sizing |
+| `nodeColor` | `string \| ((node: NodeData) => string)` | palette | Node fill color, or function for dynamic coloring |
+| `linkWidth` | `number \| ((link: LinkData) => number)` | `1.5` | Link stroke width, or function for dynamic width |
+| `linkColor` | `string \| ((link: LinkData) => string)` | `'#94a3b8'` | Link stroke color, or function for dynamic coloring |
+| `directed` | `boolean` | `false` | Show arrowheads on links to indicate direction |
+| `showLabels` | `boolean` | `true` | Display text labels on nodes |
+| `draggable` | `boolean` | `false` | Allow dragging nodes to reposition them |
+| `animate` | `boolean` | `true` | Enable layout animation on mount |
+| `className` | `string` | - | Tailwind classes on root SVG |
+| `nodeClassName` | `string` | - | Tailwind classes on node elements |
+| `linkClassName` | `string` | - | Tailwind classes on link paths |
+| `labelClassName` | `string` | - | Tailwind classes on label text |
+
+---
+
+## Layout Algorithms
+
+### Force-directed (default)
+
+Nodes simulate physical forces: links act as springs pulling connected nodes together, while all nodes repel each other. The layout settles into a natural arrangement that reveals clusters and structure.
+
+```tsx
+<GraphChart
+  nodes={nodes}
+  links={links}
+  layout="force"
+/>
+```
+
+Force-directed layout is the most common choice. It works well for most graphs and requires no manual positioning.
+
+### Circular
+
+Nodes are arranged in a circle. Links cross the interior. This layout guarantees no node overlap and works well when you want to emphasize connections over clusters.
+
+```tsx
+<GraphChart
+  nodes={nodes}
+  links={links}
+  layout="circular"
+/>
+```
+
+Circular layout is effective when every node is equally important and you want to see all connections clearly.
+
+### Grid
+
+Nodes are placed in a regular grid. Useful when you want a structured, predictable layout and the spatial position of nodes is less important than the connections.
+
+```tsx
+<GraphChart
+  nodes={nodes}
+  links={links}
+  layout="grid"
+/>
+```
+
+---
+
+## Directed Edges
+
+Set `directed` to `true` to show arrowheads indicating the direction of each link. This is essential for dependency graphs, data flow diagrams, and any network where direction matters.
+
+```tsx
+<GraphChart
+  nodes={nodes}
+  links={links}
+  directed
+/>
+```
+
+Arrowheads are sized proportionally to the link width and positioned at the edge of the target node circle.
+
+---
+
+## Node Dragging
+
+When `draggable` is enabled, users can click and drag any node to reposition it. The force simulation adjusts in real time, pulling connected nodes along.
+
+```tsx
+<GraphChart
+  nodes={nodes}
+  links={links}
+  layout="force"
+  draggable
+/>
+```
+
+Dragged nodes become fixed in place. Other nodes continue to respond to forces. This lets users manually arrange the graph while the simulation handles the rest.
+
+---
+
+## Dynamic Node Sizing
+
+Size nodes by a data property to encode additional information. Larger nodes draw attention and can represent importance, traffic, or any numeric attribute.
+
+```tsx
+const nodes = [
+  { id: "react", label: "React", downloads: 20000000 },
+  { id: "vue", label: "Vue", downloads: 8000000 },
+  { id: "svelte", label: "Svelte", downloads: 2000000 },
+  { id: "angular", label: "Angular", downloads: 5000000 },
+]
+
+<GraphChart
+  nodes={nodes}
+  links={links}
+  nodeSize={(node) => Math.sqrt(node.downloads / 100000) + 10}
+  nodeColor={(node) => node.downloads > 10000000 ? "#06b6d4" : "#94a3b8"}
+/>
+```
+
+The sizing function receives the full node object, so you can derive the size from any property.
+
+---
+
+## Link Styling
+
+Control link appearance to encode relationship strength, type, or weight.
+
+```tsx
+const links = [
+  { source: "a", target: "b", weight: 10 },
+  { source: "b", target: "c", weight: 3 },
+  { source: "a", target: "c", weight: 7 },
+]
+
+<GraphChart
+  nodes={nodes}
+  links={links}
+  linkWidth={(link) => link.weight / 2}
+  linkColor={(link) => link.weight > 5 ? "#06b6d4" : "#e2e8f0"}
+/>
+```
+
+Thicker links represent stronger relationships. Combined with color, this creates a clear visual hierarchy of connection importance.
+
+---
+
+## Accessibility
+
+- Each node announces its label and number of connections
+- Each link announces source and target node labels
+- Keyboard navigation: Tab to enter the graph, arrow keys to move between connected nodes
+- Screen readers describe the graph structure as a list of nodes and their connections
+- Directional links announce the direction (for example, "React depends on TypeScript")
+- Focus ring highlights the currently selected node and its immediate connections
+
+---
+
+## Real-World Examples
+
+### Social network
+
+```tsx
+const users = [
+  { id: "alice", label: "Alice", followers: 1200 },
+  { id: "bob", label: "Bob", followers: 800 },
+  { id: "carol", label: "Carol", followers: 2400 },
+  { id: "dave", label: "Dave", followers: 400 },
+  { id: "eve", label: "Eve", followers: 1600 },
+]
+
+const follows = [
+  { source: "alice", target: "carol" },
+  { source: "bob", target: "alice" },
+  { source: "bob", target: "carol" },
+  { source: "dave", target: "alice" },
+  { source: "eve", target: "carol" },
+  { source: "eve", target: "alice" },
+  { source: "carol", target: "eve" },
+]
+
+<GraphChart
+  nodes={users}
+  links={follows}
+  layout="force"
+  directed
+  draggable
+  nodeSize={(user) => Math.sqrt(user.followers / 10) + 12}
+  nodeColor="#8b5cf6"
+  linkColor="#c4b5fd"
+  className="h-[500px] w-full"
+  labelClassName="text-sm font-medium"
+/>
+```
+
+### API dependency map
+
+```tsx
+<GraphChart
+  nodes={services}
+  links={apiCalls}
+  layout="force"
+  directed
+  nodeSize={28}
+  nodeColor={(svc) => svc.type === "database" ? "#f59e0b" : "#06b6d4"}
+  linkWidth={(call) => call.requestsPerSecond / 100}
+  showLabels
+  className="h-[600px] w-full"
+  nodeClassName="stroke-2 stroke-white dark:stroke-zinc-900"
+/>
+```
+
+### Knowledge graph
+
+```tsx
+<GraphChart
+  nodes={concepts}
+  links={relationships}
+  layout="force"
+  draggable
+  showLabels
+  nodeSize={22}
+  nodeColor={(concept) => {
+    const colors = { person: "#ef4444", place: "#3b82f6", event: "#10b981" }
+    return colors[concept.type] || "#94a3b8"
+  }}
+  linkColor="#d1d5db"
+  linkWidth={1}
+  className="h-[500px] w-full rounded-xl bg-zinc-50 dark:bg-zinc-900"
+  labelClassName="text-xs font-medium"
+/>
+```

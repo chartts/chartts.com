@@ -1,0 +1,257 @@
+---
+title: "Sunburst Chart"
+description: "Display hierarchical data as concentric rings. Each ring represents a level of the hierarchy, with arc size proportional to value."
+badge: "Hierarchy"
+---
+
+## Quick Start
+
+```tsx
+import { SunburstChart } from "@chartts/react"
+
+const data = {
+  label: "Company",
+  children: [
+    {
+      label: "Engineering",
+      children: [
+        { label: "Frontend", value: 12 },
+        { label: "Backend", value: 18 },
+        { label: "DevOps", value: 6 },
+      ],
+    },
+    {
+      label: "Product",
+      children: [
+        { label: "Design", value: 8 },
+        { label: "Research", value: 4 },
+      ],
+    },
+    {
+      label: "Sales",
+      children: [
+        { label: "Enterprise", value: 10 },
+        { label: "SMB", value: 14 },
+      ],
+    },
+  ],
+}
+
+export function OrgBreakdown() {
+  return (
+    <SunburstChart
+      data={data}
+      value="value"
+      label="label"
+      showLabels
+      className="h-96 w-96 mx-auto"
+    />
+  )
+}
+```
+
+## When to Use Sunburst Charts
+
+Sunburst charts are radial treemaps. Each ring is a level of the hierarchy, and each arc's angle represents its share of the parent.
+
+**Use a sunburst chart when:**
+- Data is hierarchical with 2 to 4 levels (org structure, file systems, taxonomies)
+- Showing part-to-whole relationships at multiple levels simultaneously
+- You want an interactive drill-down experience
+- The radial layout suits your design better than a rectangular treemap
+
+**Don't use a sunburst when:**
+- Data is flat with no hierarchy (use a pie or donut chart)
+- You have more than 4 levels deep (outer rings become unreadable)
+- Precise value comparison is needed (arc angles are hard to compare exactly)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `HierarchyNode` | required | Root node with nested `children` arrays |
+| `value` | `string` | required | Key for the leaf node values |
+| `label` | `string` | required | Key for node labels |
+| `colors` | `string[]` | palette | Color palette for top-level segments |
+| `innerRadius` | `number` | `0.15` | Inner radius as fraction of total (0 to 1) |
+| `showLabels` | `boolean` | `true` | Display labels on arcs |
+| `breadcrumb` | `boolean` | `false` | Show breadcrumb trail on hover/click |
+| `animate` | `boolean` | `true` | Animate arcs on mount and drill-down |
+| `className` | `string` | - | Tailwind classes on root SVG |
+
+### HierarchyNode Structure
+
+The data follows a recursive tree format:
+
+```tsx
+type HierarchyNode = {
+  label: string
+  value?: number      // Required on leaf nodes
+  children?: HierarchyNode[]
+}
+```
+
+Parent node values are automatically computed as the sum of their children.
+
+---
+
+## Hierarchical Rings
+
+Each ring represents one level of the hierarchy. The innermost ring shows top-level categories, and each subsequent ring shows their children:
+
+```tsx
+const data = {
+  label: "Root",
+  children: [
+    {
+      label: "Category A",
+      children: [
+        {
+          label: "Sub A1",
+          children: [
+            { label: "Item 1", value: 10 },
+            { label: "Item 2", value: 15 },
+          ],
+        },
+        { label: "Sub A2", value: 25 },
+      ],
+    },
+    {
+      label: "Category B",
+      children: [
+        { label: "Sub B1", value: 30 },
+        { label: "Sub B2", value: 20 },
+      ],
+    },
+  ],
+}
+
+<SunburstChart data={data} value="value" label="label" />
+```
+
+Children arcs are visually nested within their parent's angular range, making the hierarchy clear.
+
+---
+
+## Drill-Down
+
+Click on any arc to zoom into that subtree. The clicked node becomes the new center, and its children expand to fill the full circle:
+
+```tsx
+<SunburstChart
+  data={data}
+  value="value"
+  label="label"
+  breadcrumb
+  animate
+/>
+```
+
+Click the center circle to zoom back out, or use the breadcrumb trail to navigate to any ancestor.
+
+---
+
+## Breadcrumb Trail
+
+Enable `breadcrumb` to show a navigation trail above the chart:
+
+```tsx
+<SunburstChart
+  data={orgData}
+  value="value"
+  label="label"
+  breadcrumb
+/>
+```
+
+As you hover over or click into arcs, the breadcrumb updates to show the path from root to the current node: Root / Engineering / Frontend. Each breadcrumb segment is clickable.
+
+---
+
+## Label Auto-Sizing
+
+Labels inside arcs automatically adjust to fit the available space:
+
+```tsx
+// Labels on (auto-sized)
+<SunburstChart data={data} value="value" label="label" showLabels />
+
+// Labels off (rely on tooltips)
+<SunburstChart data={data} value="value" label="label" showLabels={false} />
+```
+
+Small arcs hide their labels to avoid overlap. On hover, the full label appears in a tooltip. Outer rings with more arc length can display longer labels than inner rings with the same angular span.
+
+---
+
+## Color by Depth
+
+Colors are assigned to top-level segments and inherited by their descendants with decreasing saturation:
+
+```tsx
+// Custom palette for top-level categories
+<SunburstChart
+  data={data}
+  value="value"
+  label="label"
+  colors={["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"]}
+/>
+```
+
+Children inherit their parent's hue but become progressively lighter at each depth level, creating a natural visual grouping.
+
+---
+
+## Accessibility
+
+- Each arc announces its label, value, percentage of parent, and depth level
+- Keyboard navigation: Tab into the chart, arrow keys to move between arcs
+- Screen readers describe the hierarchical path (e.g., "Engineering, Frontend, 12, 17% of Engineering")
+- Breadcrumb trail provides an alternative navigation path for screen reader users
+
+---
+
+## Real-World Examples
+
+### Organizational headcount
+```tsx
+<SunburstChart
+  data={orgChart}
+  value="headcount"
+  label="name"
+  breadcrumb
+  showLabels
+  colors={["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6"]}
+  className="h-[450px] w-[450px] mx-auto"
+/>
+```
+
+### Budget breakdown by department and project
+```tsx
+<SunburstChart
+  data={budgetTree}
+  value="amount"
+  label="name"
+  showLabels
+  breadcrumb
+  colors={["#06b6d4", "#8b5cf6", "#f59e0b", "#ef4444", "#10b981"]}
+  innerRadius={0.2}
+  className="h-96 w-96"
+/>
+```
+
+### File system disk usage
+```tsx
+<SunburstChart
+  data={fileTree}
+  value="sizeBytes"
+  label="name"
+  breadcrumb
+  showLabels
+  innerRadius={0.1}
+  colors={["#60a5fa", "#34d399", "#fbbf24", "#f87171"]}
+  className="h-[500px] w-[500px]"
+/>
+```

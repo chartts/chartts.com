@@ -1,0 +1,193 @@
+---
+title: "Stacked Bar Chart"
+description: "Visualize part-to-whole relationships across categories with stacked rectangular bars."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { StackedBarChart } from "@chartts/react"
+
+const data = [
+  { quarter: "Q1", productA: 4000, productB: 3000, productC: 2000 },
+  { quarter: "Q2", productA: 5500, productB: 4200, productC: 2800 },
+  { quarter: "Q3", productA: 4800, productB: 3600, productC: 3100 },
+  { quarter: "Q4", productA: 7200, productB: 5100, productC: 3500 },
+]
+
+export function RevenueBreakdown() {
+  return (
+    <StackedBarChart
+      data={data}
+      x="quarter"
+      y={["productA", "productB", "productC"]}
+      colors={["#06b6d4", "#8b5cf6", "#f59e0b"]}
+      className="h-72 w-full"
+    />
+  )
+}
+```
+
+## When to Use Stacked Bar Charts
+
+Stacked bar charts combine comparison with composition. Each bar shows a total, and the segments show what makes up that total.
+
+**Use a stacked bar chart when:**
+- You want to show both individual values and their combined total
+- Comparing composition across categories (revenue by product line per quarter)
+- Showing how parts contribute to a whole over time
+- You have 2-5 series that stack meaningfully
+
+**Don't use a stacked bar chart when:**
+- You have more than 6 series (middle segments become hard to compare)
+- The individual segment values matter more than the total
+- Categories have no relationship to each other
+- A grouped bar chart would make direct comparisons clearer
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `x` | `keyof T` | required | Key for category labels |
+| `y` | `(keyof T)[]` | required | Array of keys for stacked values |
+| `colors` | `string[]` | palette | Colors for each series segment |
+| `showValues` | `boolean` | `false` | Display value labels on segments |
+| `showLegend` | `boolean` | `true` | Show legend identifying each series |
+| `normalized` | `boolean` | `false` | Normalize to 100% stacked bars |
+| `barRadius` | `number` | `4` | Border radius for top/bottom bar corners |
+| `gap` | `number` | `0.2` | Padding between bars (0 to 1) |
+| `animate` | `boolean` | `true` | Enable stacking animation |
+| `className` | `string` | - | Tailwind classes on root SVG |
+
+---
+
+## Basic Stacking
+
+Pass an array of keys to `y` and each bar renders as stacked segments. The bottom segment is the first key, and segments stack upward in order:
+
+```tsx
+<StackedBarChart
+  data={data}
+  x="quarter"
+  y={["productA", "productB", "productC"]}
+  barRadius={6}
+/>
+```
+
+The total bar height represents the sum of all values. Only the top corners of the topmost segment and the bottom corners of the bottommost segment are rounded, so segments fit together seamlessly.
+
+---
+
+## Normalized (100%) Stacked
+
+Set `normalized` to scale every bar to the same height, showing proportional composition:
+
+```tsx
+<StackedBarChart
+  data={data}
+  x="quarter"
+  y={["productA", "productB", "productC"]}
+  normalized
+  showValues
+/>
+```
+
+In normalized mode, values display as percentages rather than absolute numbers. This is ideal when you care about the mix rather than the magnitude.
+
+---
+
+## Custom Colors
+
+Override the default palette with specific colors for each series:
+
+```tsx
+<StackedBarChart
+  data={data}
+  x="region"
+  y={["online", "retail", "wholesale"]}
+  colors={["#10b981", "#3b82f6", "#f97316"]}
+/>
+```
+
+Colors map to keys in the same order they appear in the `y` array. You can also use Tailwind color values or any valid CSS color string.
+
+---
+
+## Legend
+
+The legend is shown by default and identifies each series by its color and key name. Hide it when space is tight or when context makes the series obvious:
+
+```tsx
+// Legend visible (default)
+<StackedBarChart
+  data={data}
+  x="quarter"
+  y={["productA", "productB"]}
+  showLegend
+/>
+
+// Hide the legend
+<StackedBarChart
+  data={data}
+  x="quarter"
+  y={["productA", "productB"]}
+  showLegend={false}
+/>
+```
+
+---
+
+## Accessibility
+
+- Each segment has an `aria-label` with the series name, category, and value
+- Keyboard navigation moves between bars and segments within each bar
+- Screen readers announce segment values and their proportion of the total
+- Legend items are focusable and announce the series name and color
+
+---
+
+## Real-World Examples
+
+### Department budget allocation
+```tsx
+<StackedBarChart
+  data={departmentBudgets}
+  x="department"
+  y={["salaries", "tools", "travel", "training"]}
+  colors={["#6366f1", "#06b6d4", "#f59e0b", "#ec4899"]}
+  showLegend
+  barRadius={4}
+  className="h-80"
+/>
+```
+
+### Marketing channel performance
+```tsx
+<StackedBarChart
+  data={monthlyLeads}
+  x="month"
+  y={["organic", "paid", "referral"]}
+  normalized
+  showValues
+  colors={["#10b981", "#3b82f6", "#f97316"]}
+  className="h-72"
+/>
+```
+
+### Survey response breakdown
+```tsx
+<StackedBarChart
+  data={surveyResults}
+  x="question"
+  y={["stronglyAgree", "agree", "neutral", "disagree", "stronglyDisagree"]}
+  normalized
+  colors={["#059669", "#34d399", "#d1d5db", "#fb923c", "#dc2626"]}
+  gap={0.3}
+  barRadius={6}
+  className="h-96"
+/>
+```

@@ -1,0 +1,313 @@
+---
+title: "Geo Chart"
+description: "Render geographic data on interactive maps with choropleth coloring, multiple projections, and custom GeoJSON support. Perfect for regional data, election maps, and global metrics."
+badge: "Geographic"
+---
+
+## Quick Start
+
+```tsx
+import { GeoChart } from "@chartts/react"
+
+const data = [
+  { region: "US", value: 331000000 },
+  { region: "BR", value: 214000000 },
+  { region: "IN", value: 1400000000 },
+  { region: "CN", value: 1410000000 },
+  { region: "ID", value: 274000000 },
+  { region: "NG", value: 211000000 },
+  { region: "DE", value: 83000000 },
+  { region: "JP", value: 126000000 },
+  { region: "GB", value: 67000000 },
+  { region: "FR", value: 67000000 },
+]
+
+export function WorldPopulation() {
+  return (
+    <GeoChart
+      data={data}
+      region="region"
+      value="value"
+      projection="equalEarth"
+      colorScale={["#eff6ff", "#1d4ed8"]}
+      showTooltip
+      className="h-[500px] w-full"
+    />
+  )
+}
+```
+
+That renders a world map where each country is shaded according to its population value. Lighter colors represent lower values and darker colors represent higher values. Hover any region to see its name and exact value.
+
+## When to Use Geo Charts
+
+Geo charts (choropleth maps) color geographic regions according to a data variable. They make geographic patterns instantly visible: where values are highest, where gaps exist, and how regions compare.
+
+**Use a geo chart when:**
+- Data is tied to geographic regions (countries, states, counties)
+- Spatial patterns matter (clustering, regional trends, border effects)
+- The audience expects to see data on a map (elections, demographics, economics)
+- Comparing values across 5 or more distinct regions
+- The presentation benefits from the immediate recognition of geographic shapes
+
+**Don't use a geo chart when:**
+- Regions vary drastically in size (small but important regions become invisible)
+- Precise value comparison matters more than spatial context (use a bar chart)
+- Data is not geographic or the regions are arbitrary
+- You have only 2 to 3 regions (a simple table or bar chart is clearer)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects with region identifiers and values |
+| `region` | `keyof T` | required | Key for the region identifier (ISO code, name, or custom ID) |
+| `value` | `keyof T` | required | Key for the numeric value to encode as color |
+| `geoJson` | `GeoJSON.FeatureCollection` | world map | Custom GeoJSON for region boundaries |
+| `projection` | `'mercator' \| 'equalEarth' \| 'orthographic'` | `'equalEarth'` | Map projection type |
+| `colorScale` | `string[]` | `['#eff6ff', '#1d4ed8']` | Array of colors for the value gradient |
+| `showLabels` | `boolean` | `false` | Display region name labels on the map |
+| `showTooltip` | `boolean` | `true` | Show value tooltip on hover |
+| `zoom` | `boolean` | `false` | Enable scroll-to-zoom and drag-to-pan |
+| `animate` | `boolean` | `true` | Enable color transition animation |
+| `className` | `string` | - | Tailwind classes on root SVG |
+| `regionClassName` | `string` | - | Tailwind classes on region paths |
+| `labelClassName` | `string` | - | Tailwind classes on label text |
+
+---
+
+## Projection Types
+
+### Equal Earth (default)
+
+A modern projection that shows all countries at their true relative size. No region is disproportionately enlarged. Best general-purpose choice.
+
+```tsx
+<GeoChart
+  data={data}
+  region="region"
+  value="value"
+  projection="equalEarth"
+/>
+```
+
+### Mercator
+
+The familiar web map projection. Preserves shapes and angles but distorts size at high latitudes (Greenland appears as large as Africa). Use when the audience expects the "standard" web map look.
+
+```tsx
+<GeoChart
+  data={data}
+  region="region"
+  value="value"
+  projection="mercator"
+/>
+```
+
+### Orthographic
+
+A globe view that shows one hemisphere at a time. Creates a dramatic, three-dimensional appearance. Combine with `zoom` to let users rotate the globe.
+
+```tsx
+<GeoChart
+  data={data}
+  region="region"
+  value="value"
+  projection="orthographic"
+  zoom
+  className="h-[500px] w-[500px] mx-auto"
+/>
+```
+
+---
+
+## Color Scales
+
+The `colorScale` prop works the same way as in heatmaps: an array of colors that the chart interpolates between based on each region's value.
+
+### Sequential (low to high)
+
+```tsx
+// Blue scale (default)
+<GeoChart
+  data={data}
+  region="region"
+  value="value"
+  colorScale={["#eff6ff", "#1d4ed8"]}
+/>
+
+// Green scale
+<GeoChart
+  data={data}
+  region="region"
+  value="value"
+  colorScale={["#f0fdf4", "#16a34a"]}
+/>
+
+// Heat scale
+<GeoChart
+  data={data}
+  region="region"
+  value="value"
+  colorScale={["#fefce8", "#dc2626"]}
+/>
+```
+
+### Diverging (negative to positive)
+
+Three colors for data that diverges from a midpoint (like GDP growth where negative is bad and positive is good).
+
+```tsx
+<GeoChart
+  data={growthData}
+  region="country"
+  value="gdpGrowth"
+  colorScale={["#dc2626", "#f5f5f5", "#16a34a"]}
+/>
+```
+
+### Multi-stop
+
+```tsx
+<GeoChart
+  data={data}
+  region="region"
+  value="value"
+  colorScale={["#1e3a5f", "#3b82f6", "#fbbf24", "#ef4444"]}
+/>
+```
+
+---
+
+## Custom GeoJSON
+
+Use your own GeoJSON to render any geographic boundaries: states, provinces, counties, districts, or custom regions.
+
+```tsx
+import usStates from "./us-states.json"
+
+<GeoChart
+  data={stateData}
+  region="state"
+  value="population"
+  geoJson={usStates}
+  projection="mercator"
+  colorScale={["#dbeafe", "#1e40af"]}
+  showLabels
+  className="h-[400px] w-full"
+/>
+```
+
+The `region` key in your data must match a property in the GeoJSON features. By default, the chart matches against `properties.id`, `properties.name`, or `properties.ISO_A2`.
+
+### Custom region matching
+
+When your GeoJSON uses a non-standard property for region identification:
+
+```tsx
+<GeoChart
+  data={data}
+  region="zipCode"
+  value="medianIncome"
+  geoJson={zipCodeBoundaries}
+  geoJsonKey="properties.ZCTA5CE10"
+/>
+```
+
+---
+
+## Zoom and Pan
+
+Enable `zoom` to let users scroll to zoom in and drag to pan across the map. This is essential for maps where small regions contain important data.
+
+```tsx
+<GeoChart
+  data={data}
+  region="region"
+  value="value"
+  zoom
+/>
+```
+
+Zoom works with all projections. On the orthographic projection, dragging rotates the globe instead of panning.
+
+### Zoom limits
+
+The zoom range is automatically constrained to prevent users from zooming out beyond the full map or zooming in past the point where individual regions lose detail.
+
+---
+
+## Accessibility
+
+- Each region announces its name, value, and rank relative to other regions
+- Keyboard navigation: Tab to enter the map, arrow keys to move between adjacent regions
+- Screen readers describe the overall pattern (for example, "highest values concentrated in South Asia")
+- Regions without data are announced as "no data available"
+- Color is never the only encoding: tooltips and labels provide text-based value access
+- High-contrast mode adds distinct borders between all regions
+
+---
+
+## Real-World Examples
+
+### US election results
+
+```tsx
+import usStates from "./us-states.json"
+
+const electionData = [
+  { state: "CA", margin: -29.2 },
+  { state: "TX", margin: 5.6 },
+  { state: "FL", margin: 3.4 },
+  { state: "NY", margin: -23.1 },
+  { state: "PA", margin: 1.2 },
+  { state: "OH", margin: 8.0 },
+  // ... all states
+]
+
+<GeoChart
+  data={electionData}
+  region="state"
+  value="margin"
+  geoJson={usStates}
+  projection="mercator"
+  colorScale={["#2563eb", "#f5f5f5", "#dc2626"]}
+  showTooltip
+  showLabels
+  className="h-[450px] w-full"
+  regionClassName="stroke-white stroke-1"
+/>
+```
+
+### Global GDP per capita
+
+```tsx
+<GeoChart
+  data={gdpData}
+  region="countryCode"
+  value="gdpPerCapita"
+  projection="equalEarth"
+  colorScale={["#fef3c7", "#b45309", "#78350f"]}
+  showTooltip
+  zoom
+  className="h-[500px] w-full"
+  regionClassName="stroke-zinc-300 dark:stroke-zinc-700 stroke-0.5"
+/>
+```
+
+### COVID case density
+
+```tsx
+<GeoChart
+  data={covidData}
+  region="country"
+  value="casesPerMillion"
+  projection="equalEarth"
+  colorScale={["#fef9c3", "#f59e0b", "#dc2626", "#7f1d1d"]}
+  showTooltip
+  animate
+  className="h-[500px] w-full"
+/>
+```

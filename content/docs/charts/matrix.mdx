@@ -1,0 +1,310 @@
+---
+title: "Matrix Chart"
+description: "Display data as a grid of colored cells. Perfect for correlation matrices and confusion tables."
+badge: "Statistics"
+---
+
+## Quick Start
+
+```tsx
+import { MatrixChart } from "@chartts/react"
+
+const data = [
+  { row: "Revenue", col: "Revenue", value: 1.0 },
+  { row: "Revenue", col: "Users", value: 0.85 },
+  { row: "Revenue", col: "Churn", value: -0.62 },
+  { row: "Users", col: "Revenue", value: 0.85 },
+  { row: "Users", col: "Users", value: 1.0 },
+  { row: "Users", col: "Churn", value: -0.45 },
+  { row: "Churn", col: "Revenue", value: -0.62 },
+  { row: "Churn", col: "Users", value: -0.45 },
+  { row: "Churn", col: "Churn", value: 1.0 },
+]
+
+export function CorrelationMatrix() {
+  return (
+    <MatrixChart
+      data={data}
+      rows="row"
+      columns="col"
+      value="value"
+      showValues
+      className="h-80 w-80 mx-auto"
+    />
+  )
+}
+```
+
+That renders a labeled grid where each cell's color encodes the value. Row and column headers, color scaling, value labels, and responsive sizing are all automatic.
+
+## When to Use Matrix Charts
+
+Matrix charts display relationships or counts across two categorical dimensions as a colored grid. They are the standard tool for correlation analysis and classification evaluation.
+
+**Use a matrix chart when:**
+- Showing pairwise correlations between variables
+- Displaying confusion matrices from classification models
+- Comparing metrics across two categorical dimensions
+- Visualizing any square or rectangular grid of values where color communicates intensity
+
+**Don't use a matrix chart when:**
+- Your data is continuous on both axes (use a scatter plot or heatmap)
+- You have a single dimension (use a bar chart)
+- Exact comparisons between cells matter more than the overall pattern (use a table)
+- You have many sparse entries (use a scatter plot)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects, one per cell |
+| `rows` | `keyof T` | required | Key for row labels |
+| `columns` | `keyof T` | required | Key for column labels |
+| `value` | `keyof T` | required | Key for the numeric cell value |
+| `colorScale` | `string[]` | `["#dc2626", "#ffffff", "#2563eb"]` | Colors for the value gradient |
+| `cellSize` | `number` | auto | Fixed cell size in pixels. Auto-calculated when omitted |
+| `showValues` | `boolean` | `false` | Display the numeric value inside each cell |
+| `showLabels` | `boolean` | `true` | Display row and column header labels |
+| `symmetric` | `boolean` | `false` | Mirror values across the diagonal. Only render the upper triangle |
+| `animate` | `boolean` | `true` | Enable cell fade-in animation on mount |
+| `className` | `string` | - | Tailwind classes on the root SVG |
+
+---
+
+## Correlation Matrix
+
+The most common use case for MatrixChart is displaying correlation coefficients between variables. Values range from -1 (strong negative correlation) to 1 (strong positive correlation), with 0 meaning no correlation.
+
+```tsx
+const correlations = [
+  { row: "Height", col: "Height", value: 1.0 },
+  { row: "Height", col: "Weight", value: 0.72 },
+  { row: "Height", col: "Age", value: 0.13 },
+  { row: "Height", col: "Income", value: 0.08 },
+  { row: "Weight", col: "Height", value: 0.72 },
+  { row: "Weight", col: "Weight", value: 1.0 },
+  { row: "Weight", col: "Age", value: 0.22 },
+  { row: "Weight", col: "Income", value: 0.15 },
+  { row: "Age", col: "Height", value: 0.13 },
+  { row: "Age", col: "Weight", value: 0.22 },
+  { row: "Age", col: "Age", value: 1.0 },
+  { row: "Age", col: "Income", value: 0.58 },
+  { row: "Income", col: "Height", value: 0.08 },
+  { row: "Income", col: "Weight", value: 0.15 },
+  { row: "Income", col: "Age", value: 0.58 },
+  { row: "Income", col: "Income", value: 1.0 },
+]
+
+<MatrixChart
+  data={correlations}
+  rows="row"
+  columns="col"
+  value="value"
+  colorScale={["#dc2626", "#ffffff", "#2563eb"]}
+  showValues
+  className="h-96 w-96 mx-auto"
+/>
+```
+
+The default diverging color scale (red-white-blue) centers on zero. Negative correlations appear red, positive correlations appear blue, and near-zero values stay white.
+
+---
+
+## Confusion Matrix
+
+Classification models are evaluated using confusion matrices where rows represent actual classes and columns represent predicted classes. The diagonal shows correct predictions.
+
+```tsx
+const confusion = [
+  { row: "Cat", col: "Cat", value: 42 },
+  { row: "Cat", col: "Dog", value: 5 },
+  { row: "Cat", col: "Bird", value: 3 },
+  { row: "Dog", col: "Cat", value: 8 },
+  { row: "Dog", col: "Dog", value: 38 },
+  { row: "Dog", col: "Bird", value: 4 },
+  { row: "Bird", col: "Cat", value: 2 },
+  { row: "Bird", col: "Dog", value: 6 },
+  { row: "Bird", col: "Bird", value: 35 },
+]
+
+<MatrixChart
+  data={confusion}
+  rows="row"
+  columns="col"
+  value="value"
+  colorScale={["#f0fdf4", "#16a34a"]}
+  showValues
+  showLabels
+  className="h-80 w-80 mx-auto"
+/>
+```
+
+For confusion matrices, use a sequential color scale (light to dark) rather than a diverging one. Higher values on the diagonal are good (correct classifications), so a single-hue green scale works well.
+
+---
+
+## Symmetric Mode
+
+When your matrix is symmetric (like a correlation matrix), set `symmetric` to render only the upper triangle. This avoids redundant information and makes the chart cleaner.
+
+```tsx
+<MatrixChart
+  data={correlations}
+  rows="row"
+  columns="col"
+  value="value"
+  symmetric
+  showValues
+  colorScale={["#dc2626", "#ffffff", "#2563eb"]}
+  className="h-80 w-80 mx-auto"
+/>
+```
+
+In symmetric mode, cells below the diagonal are hidden and the diagonal itself is always visible. This cuts visual clutter in half for symmetric datasets.
+
+---
+
+## Custom Cell Size
+
+By default, cells resize to fill the available space. Override with `cellSize` for a fixed pixel dimension per cell:
+
+```tsx
+// Small cells for large matrices
+<MatrixChart
+  data={largeMatrix}
+  rows="row"
+  columns="col"
+  value="value"
+  cellSize={24}
+  showValues={false}
+/>
+
+// Large cells for small matrices with labels
+<MatrixChart
+  data={smallMatrix}
+  rows="row"
+  columns="col"
+  value="value"
+  cellSize={80}
+  showValues
+/>
+```
+
+When `cellSize` is set, the chart may overflow its container. Wrap it in a scrollable container for large matrices:
+
+```tsx
+<div className="overflow-auto max-w-full">
+  <MatrixChart
+    data={twentyByTwenty}
+    rows="row"
+    columns="col"
+    value="value"
+    cellSize={32}
+  />
+</div>
+```
+
+---
+
+## Value Labels
+
+Set `showValues` to render the numeric value inside each cell. The text color adjusts automatically: dark text on light cells, light text on dark cells.
+
+```tsx
+<MatrixChart
+  data={data}
+  rows="row"
+  columns="col"
+  value="value"
+  showValues
+  className="h-80 w-80"
+/>
+```
+
+For formatted values, the component reads your data as-is. Pre-format values in your data array or use string values:
+
+```tsx
+const formatted = rawData.map((d) => ({
+  ...d,
+  display: d.value.toFixed(2),
+}))
+
+<MatrixChart
+  data={formatted}
+  rows="row"
+  columns="col"
+  value="value"
+  showValues
+/>
+```
+
+---
+
+## Accessibility
+
+- The chart has `role="img"` with an `aria-label` describing the matrix dimensions and value range
+- Each cell has an `aria-label` with its row, column, and value (e.g., "Height, Weight: 0.72")
+- Keyboard navigation: Tab to the chart, then arrow keys to move between cells
+- Screen readers announce each cell's position and value as the user navigates
+- Value labels provide a non-color channel for reading exact numbers
+- Animation respects `prefers-reduced-motion` and renders immediately when motion reduction is enabled
+
+---
+
+## Real-World Examples
+
+### Feature correlation in data science
+
+```tsx
+<MatrixChart
+  data={featureCorrelations}
+  rows="featureA"
+  columns="featureB"
+  value="pearsonR"
+  symmetric
+  showValues
+  colorScale={["#b91c1c", "#fafafa", "#1d4ed8"]}
+  cellSize={60}
+  className="mx-auto"
+/>
+```
+
+### Model evaluation confusion matrix
+
+```tsx
+const predictions = [
+  { actual: "Spam", predicted: "Spam", count: 892 },
+  { actual: "Spam", predicted: "Ham", count: 18 },
+  { actual: "Ham", predicted: "Spam", count: 45 },
+  { actual: "Ham", predicted: "Ham", count: 1045 },
+]
+
+<MatrixChart
+  data={predictions}
+  rows="actual"
+  columns="predicted"
+  value="count"
+  colorScale={["#fef9c3", "#ca8a04"]}
+  showValues
+  showLabels
+  cellSize={100}
+  className="mx-auto"
+/>
+```
+
+### Cross-tabulation of survey responses
+
+```tsx
+<MatrixChart
+  data={surveyResults}
+  rows="ageGroup"
+  columns="preference"
+  value="respondents"
+  colorScale={["#eff6ff", "#2563eb"]}
+  showValues
+  showLabels
+  className="h-72 w-full"
+/>
+```

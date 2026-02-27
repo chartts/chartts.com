@@ -1,0 +1,193 @@
+---
+title: "Funnel Chart"
+description: "Visualize progressive reduction through stages. Ideal for sales pipelines, conversion flows, and process analysis."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { FunnelChart } from "@chartts/react"
+
+const pipeline = [
+  { stage: "Visitors", count: 10000 },
+  { stage: "Leads", count: 6000 },
+  { stage: "Qualified", count: 4000 },
+  { stage: "Proposals", count: 2000 },
+  { stage: "Closed Won", count: 800 },
+]
+
+export function SalesFunnel() {
+  return (
+    <FunnelChart
+      data={pipeline}
+      value="count"
+      label="stage"
+      className="h-80 w-full"
+    />
+  )
+}
+```
+
+## When to Use Funnel Charts
+
+Funnels show how volume decreases through sequential stages.
+
+**Use a funnel chart when:**
+- Visualizing conversion rates (website visitors to customers)
+- Showing pipeline stages (sales, recruitment, onboarding)
+- Tracking drop-off at each step in a process
+- The stages have a natural sequential order
+
+**Don't use a funnel when:**
+- Stages don't represent a sequential flow
+- Values don't decrease (use a bar chart instead)
+- You need precise comparisons between stages (use horizontal bars)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects (ordered by stage) |
+| `value` | `keyof T` | required | Key for stage values |
+| `label` | `keyof T` | required | Key for stage labels |
+| `direction` | `'vertical' \| 'horizontal'` | `'vertical'` | Layout direction |
+| `gap` | `number` | `2` | Gap between stages in pixels |
+| `pinch` | `number` | auto | How much each stage narrows (0 to 1) |
+| `showConversion` | `boolean` | `true` | Show conversion rate between stages |
+| `showValues` | `boolean` | `true` | Show absolute values on stages |
+| `colors` | `string[]` | palette | Custom color array |
+| `animate` | `boolean` | `true` | Animated entry per stage |
+| `className` | `string` | - | Tailwind classes on root |
+| `stageClassName` | `string` | - | Tailwind classes on stage elements |
+
+---
+
+## Conversion Rates
+
+By default, the funnel shows the conversion rate between each pair of adjacent stages.
+
+```tsx
+// Show conversion rates (default)
+<FunnelChart data={pipeline} value="count" label="stage" showConversion />
+
+// Hide conversion rates
+<FunnelChart data={pipeline} value="count" label="stage" showConversion={false} />
+```
+
+Conversion rates are calculated automatically: if Stage A has 10,000 and Stage B has 6,000, the displayed rate is 60%.
+
+---
+
+## Horizontal Layout
+
+Flip the funnel to flow left to right:
+
+```tsx
+<FunnelChart
+  data={pipeline}
+  value="count"
+  label="stage"
+  direction="horizontal"
+  className="h-48 w-full"
+/>
+```
+
+Horizontal funnels work well in dashboards where vertical space is limited.
+
+---
+
+## Pinch Control
+
+`pinch` controls how dramatically each stage narrows. Auto-calculates by default based on values.
+
+```tsx
+// Dramatic narrowing
+<FunnelChart data={pipeline} value="count" label="stage" pinch={0.8} />
+
+// Subtle narrowing
+<FunnelChart data={pipeline} value="count" label="stage" pinch={0.3} />
+
+// Uniform width (no narrowing - becomes a stacked bar)
+<FunnelChart data={pipeline} value="count" label="stage" pinch={0} />
+```
+
+---
+
+## Stage Colors
+
+Each stage gets a color from the palette. Override with `colors`:
+
+```tsx
+<FunnelChart
+  data={pipeline}
+  value="count"
+  label="stage"
+  colors={["#06b6d4", "#22d3ee", "#67e8f9", "#a5f3fc", "#cffafe"]}
+/>
+```
+
+Or use a gradient from strong to light to emphasize the drop-off visually.
+
+---
+
+## Styling with Tailwind
+
+```tsx
+<FunnelChart
+  data={pipeline}
+  value="count"
+  label="stage"
+  className="rounded-xl"
+  stageClassName="hover:opacity-90 transition-opacity cursor-pointer"
+/>
+```
+
+---
+
+## Animation
+
+Stages animate in sequentially from top to bottom (or left to right for horizontal). Each stage slides in and expands to its final width with a stagger delay.
+
+---
+
+## Accessibility
+
+- Each stage has an `aria-label` with the stage name, value, and conversion rate
+- Keyboard navigation moves between stages
+- Screen readers announce the funnel progression
+
+---
+
+## Real-World Examples
+
+### E-commerce conversion funnel
+```tsx
+<FunnelChart
+  data={[
+    { stage: "Page Views", count: 50000 },
+    { stage: "Add to Cart", count: 8000 },
+    { stage: "Checkout Started", count: 3500 },
+    { stage: "Payment", count: 2800 },
+    { stage: "Order Complete", count: 2400 },
+  ]}
+  value="count"
+  label="stage"
+  showConversion
+  colors={["#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#c084fc"]}
+/>
+```
+
+### Recruitment pipeline
+```tsx
+<FunnelChart
+  data={recruitmentData}
+  value="candidates"
+  label="stage"
+  direction="horizontal"
+  showValues
+  className="h-40"
+/>
+```

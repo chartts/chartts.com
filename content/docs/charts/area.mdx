@@ -1,0 +1,405 @@
+---
+title: "Area Chart"
+description: "Visualize quantitative data as filled regions under a line. Ideal for showing volume, cumulative totals, and composition over time with stacked or gradient fills."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { AreaChart } from "@chartts/react"
+
+const data = [
+  { month: "Jan", users: 1200 },
+  { month: "Feb", users: 1800 },
+  { month: "Mar", users: 2400 },
+  { month: "Apr", users: 2100 },
+  { month: "May", users: 3200 },
+  { month: "Jun", users: 4100 },
+]
+
+export function UserGrowthChart() {
+  return (
+    <AreaChart
+      data={data}
+      x="month"
+      y="users"
+      className="h-64 w-full"
+    />
+  )
+}
+```
+
+That renders a filled area chart with smooth curves, axes, tooltips, gradient fill, and responsive scaling. All automatic.
+
+## When to Use Area Charts
+
+Area charts are line charts with the region below filled in. The fill adds visual weight, making them better at conveying volume and magnitude than a plain line.
+
+**Use an area chart when:**
+- Showing volume or magnitude over time (total users, cumulative revenue)
+- Emphasizing the size of a value rather than just its trend
+- Comparing the contribution of multiple series with stacking
+- Your audience should perceive "how much" not just "which direction"
+
+**Use a stacked area chart when:**
+- Showing how parts compose a total over time (traffic by channel, revenue by product)
+- The total matters as much as the individual parts
+- You have 2 to 5 series (more than 5 becomes hard to read)
+
+**Don't use an area chart when:**
+- You have multiple overlapping series without stacking (lines will be hidden behind fills)
+- Categories have no natural order (use a bar chart)
+- You want to compare exact values between series (use a grouped bar chart)
+- Series values are on very different scales (the smaller one will be invisible)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `x` | `keyof T` | required | Key for x-axis values |
+| `y` | `keyof T \| (keyof T)[]` | required | Key(s) for y-axis values. Pass array for multi-series |
+| `stacked` | `boolean` | `false` | Stack areas on top of each other |
+| `curve` | `'linear' \| 'monotone' \| 'step' \| 'natural'` | `'monotone'` | Interpolation between points |
+| `gradient` | `boolean` | `true` | Apply a vertical gradient fill from opaque to transparent |
+| `opacity` | `number` | `0.3` | Fill opacity (0 to 1) |
+| `animate` | `boolean` | `true` | Enable area reveal animation on mount |
+| `className` | `string` | - | Tailwind classes on the root SVG |
+| `areaClassName` | `string` | - | Tailwind classes on the filled area |
+| `lineClassName` | `string` | - | Tailwind classes on the top edge line |
+| `axisClassName` | `string` | - | Tailwind classes on axis elements |
+| `gridClassName` | `string` | - | Tailwind classes on grid lines |
+| `tooltipClassName` | `string` | - | Tailwind classes on tooltip |
+| `responsive` | `boolean` | `true` | Auto-resize to container width |
+| `width` | `number` | auto | Fixed width in pixels |
+| `height` | `number` | auto | Fixed height in pixels |
+
+---
+
+## Stacked Areas
+
+Set `stacked` with multiple `y` keys to layer areas on top of each other. Each series fills the space between itself and the series below it, and the topmost edge shows the total.
+
+```tsx
+const data = [
+  { month: "Jan", organic: 800, paid: 300, referral: 100 },
+  { month: "Feb", organic: 950, paid: 450, referral: 200 },
+  { month: "Mar", organic: 1100, paid: 600, referral: 350 },
+  { month: "Apr", organic: 1250, paid: 700, referral: 400 },
+  { month: "May", organic: 1400, paid: 850, referral: 500 },
+]
+
+<AreaChart
+  data={data}
+  x="month"
+  y={["organic", "paid", "referral"]}
+  stacked
+  className="h-72"
+/>
+```
+
+Without `stacked`, multiple areas overlap each other. This makes the front-most series obscure those behind it, which is rarely what you want. Use `stacked` whenever you have more than one series.
+
+### Series ordering
+
+The order of keys in the `y` array determines the stacking order. The first key sits at the bottom, the last key sits at the top. Place the most stable or largest series at the bottom for a cleaner look.
+
+```tsx
+// "organic" is on the bottom, "referral" on top
+<AreaChart data={data} x="month" y={["organic", "paid", "referral"]} stacked />
+```
+
+---
+
+## Gradient Fills
+
+The `gradient` prop controls whether the area fill uses a vertical gradient that fades from the fill color at the top edge to transparent at the baseline. This is enabled by default.
+
+```tsx
+// Gradient fill (default)
+<AreaChart data={data} x="month" y="users" gradient />
+
+// Solid fill - no gradient
+<AreaChart data={data} x="month" y="users" gradient={false} />
+```
+
+Gradient fills make charts feel lighter and more polished. Solid fills are better when you need to clearly show the boundary between stacked series.
+
+### Combining gradient with opacity
+
+The `opacity` and `gradient` props work together. The `opacity` value sets the maximum opacity at the top of the gradient, fading to zero at the baseline.
+
+```tsx
+// Subtle fill
+<AreaChart data={data} x="month" y="users" gradient opacity={0.15} />
+
+// Bold fill
+<AreaChart data={data} x="month" y="users" gradient opacity={0.6} />
+
+// Fully opaque, no gradient
+<AreaChart data={data} x="month" y="users" gradient={false} opacity={1} />
+```
+
+---
+
+## Curve Interpolation
+
+The `curve` prop controls how the area boundary connects data points. The same options available on `LineChart` work here.
+
+### `monotone` (default)
+Smooth curves that pass through every data point without overshooting. Produces the most natural-looking area charts.
+
+```tsx
+<AreaChart data={data} x="month" y="users" curve="monotone" />
+```
+
+### `linear`
+Straight segments between points. Creates a jagged, angular fill. Use when you want precision over aesthetics, or when data changes are abrupt.
+
+```tsx
+<AreaChart data={data} x="month" y="users" curve="linear" />
+```
+
+### `step`
+Flat horizontal segments that jump at each data point. The area is filled as rectangular blocks. Use for discrete state changes like pricing tiers, inventory levels, or status counts.
+
+```tsx
+<AreaChart data={data} x="month" y="inventory" curve="step" />
+```
+
+### `natural`
+Cubic spline interpolation producing very smooth curves. Can overshoot values between data points. Use when visual smoothness matters more than strict accuracy.
+
+```tsx
+<AreaChart data={data} x="month" y="users" curve="natural" />
+```
+
+---
+
+## Multi-Series
+
+Pass an array of keys to `y` to render multiple area series on the same chart:
+
+```tsx
+const data = [
+  { month: "Jan", desktop: 3200, mobile: 1800, tablet: 600 },
+  { month: "Feb", desktop: 3500, mobile: 2200, tablet: 700 },
+  { month: "Mar", desktop: 3800, mobile: 2800, tablet: 850 },
+]
+
+<AreaChart
+  data={data}
+  x="month"
+  y={["desktop", "mobile", "tablet"]}
+  stacked
+/>
+```
+
+Each series gets a color from the default palette. A legend appears showing which color maps to which series. Override colors per-series with `seriesClassName`:
+
+```tsx
+<AreaChart
+  data={data}
+  x="month"
+  y={["desktop", "mobile", "tablet"]}
+  stacked
+  seriesClassName={{
+    desktop: "fill-blue-500 stroke-blue-500",
+    mobile: "fill-emerald-500 stroke-emerald-500",
+    tablet: "fill-amber-400 stroke-amber-400",
+  }}
+/>
+```
+
+---
+
+## Styling with Tailwind
+
+Every visual element of the chart exposes a `className` prop. Style area charts the same way you style everything else in your app.
+
+```tsx
+<AreaChart
+  data={data}
+  x="month"
+  y="revenue"
+  className="rounded-xl bg-zinc-900/50 p-4"
+  areaClassName="fill-cyan-500/20"
+  lineClassName="stroke-cyan-400 stroke-2"
+  axisClassName="text-zinc-500 text-xs"
+  gridClassName="stroke-zinc-800"
+  tooltipClassName="bg-zinc-800 text-white rounded-lg shadow-xl px-3 py-2 text-sm"
+/>
+```
+
+Dark mode works with Tailwind's `dark:` variants:
+
+```tsx
+<AreaChart
+  areaClassName="fill-blue-500/20 dark:fill-blue-400/20"
+  lineClassName="stroke-blue-600 dark:stroke-blue-400"
+  axisClassName="text-gray-600 dark:text-gray-400"
+/>
+```
+
+### Controlling fill opacity with Tailwind
+
+You can use Tailwind opacity modifiers on `areaClassName` instead of the `opacity` prop for more granular control:
+
+```tsx
+// Per-class opacity
+<AreaChart
+  data={data}
+  x="month"
+  y="users"
+  areaClassName="fill-indigo-500/10"
+  lineClassName="stroke-indigo-500"
+/>
+```
+
+---
+
+## Tooltips
+
+Tooltips appear on hover by default. They show the x-value and all y-values at the hovered position, with a vertical crosshair line.
+
+Disable tooltips:
+```tsx
+<AreaChart data={data} x="month" y="users" tooltip={false} />
+```
+
+Custom tooltip format:
+```tsx
+<AreaChart
+  data={data}
+  x="month"
+  y="users"
+  tooltipFormat={(point) => `${point.users.toLocaleString()} active users`}
+/>
+```
+
+For stacked area charts, the tooltip shows each series value and the total:
+```tsx
+<AreaChart
+  data={data}
+  x="month"
+  y={["organic", "paid", "referral"]}
+  stacked
+  tooltipFormat={(point) => ({
+    organic: `${point.organic} organic`,
+    paid: `${point.paid} paid`,
+    referral: `${point.referral} referral`,
+    total: `${point.organic + point.paid + point.referral} total`,
+  })}
+/>
+```
+
+---
+
+## Animation
+
+Areas animate in with a reveal effect on mount. The filled region expands from the baseline upward over 800ms.
+
+Disable animation for instant rendering (useful for SSR or when the chart is below the fold):
+```tsx
+<AreaChart data={data} x="month" y="users" animate={false} />
+```
+
+The animation respects `prefers-reduced-motion`. When the user has motion reduction enabled, charts render immediately without animation.
+
+---
+
+## Accessibility
+
+Area charts include full accessibility support out of the box:
+
+- **Screen readers**: Each data point is announced with its x-value and y-value. For stacked charts, the individual contribution and total are both announced.
+- **Keyboard navigation**: Tab to focus the chart, then use arrow keys to move between data points. The tooltip follows the focused point.
+- **ARIA roles**: The chart has `role="img"` with a descriptive `aria-label`. Individual areas have `role="group"` with labels for each series.
+- **High contrast**: The top edge line ensures the area boundary is visible even at low fill opacity. This helps users who have difficulty distinguishing subtle color variations.
+
+---
+
+## Server-Side Rendering
+
+Area charts render as static SVG on the server. No client JavaScript required for the initial render. This means:
+
+- Zero layout shift on page load
+- Works in React Server Components
+- Works with `renderToString()` for non-React environments
+- SEO-friendly (SVG content is in the HTML)
+- Gradient fills are defined as SVG `<linearGradient>` elements, so they work without JavaScript
+
+```tsx
+// Server component - no "use client" needed
+import { AreaChart } from "@chartts/react"
+
+export default async function Dashboard() {
+  const data = await fetchTrafficData()
+  return (
+    <AreaChart
+      data={data}
+      x="date"
+      y={["organic", "paid", "direct"]}
+      stacked
+      animate={false}
+    />
+  )
+}
+```
+
+---
+
+## Real-World Examples
+
+### Website traffic by channel
+```tsx
+<AreaChart
+  data={trafficData}
+  x="week"
+  y={["organic", "paid", "social", "direct"]}
+  stacked
+  gradient
+  seriesClassName={{
+    organic: "fill-emerald-500 stroke-emerald-500",
+    paid: "fill-blue-500 stroke-blue-500",
+    social: "fill-violet-500 stroke-violet-500",
+    direct: "fill-amber-400 stroke-amber-400",
+  }}
+  className="h-80"
+/>
+```
+
+### CPU usage over time
+```tsx
+<AreaChart
+  data={cpuMetrics}
+  x="timestamp"
+  y="utilization"
+  curve="step"
+  gradient
+  opacity={0.4}
+  lineClassName="stroke-red-500 stroke-[1.5]"
+  areaClassName="fill-red-500"
+  className="h-48"
+/>
+```
+
+### Revenue vs costs with margin
+```tsx
+<AreaChart
+  data={financials}
+  x="month"
+  y={["revenue", "costs"]}
+  stacked={false}
+  gradient
+  opacity={0.2}
+  seriesClassName={{
+    revenue: "fill-emerald-500 stroke-emerald-500",
+    costs: "fill-red-400 stroke-red-400",
+  }}
+  className="h-72"
+/>
+```

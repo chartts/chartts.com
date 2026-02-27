@@ -1,0 +1,522 @@
+---
+title: "Candlestick Chart"
+description: "Visualize financial OHLC data (Open, High, Low, Close). Essential for stock and crypto market analysis."
+badge: "Finance"
+---
+
+## Quick Start
+
+```tsx
+import { CandlestickChart } from "@chartts/react"
+
+const data = [
+  { date: "2024-01-02", open: 170.2, high: 173.8, low: 169.5, close: 172.1 },
+  { date: "2024-01-03", open: 172.1, high: 175.4, low: 171.0, close: 174.9 },
+  { date: "2024-01-04", open: 174.9, high: 176.2, low: 172.8, close: 173.5 },
+  { date: "2024-01-05", open: 173.5, high: 178.1, low: 173.0, close: 177.6 },
+  { date: "2024-01-08", open: 177.6, high: 179.3, low: 175.9, close: 176.2 },
+  { date: "2024-01-09", open: 176.2, high: 180.5, low: 175.4, close: 179.8 },
+]
+
+export function StockChart() {
+  return (
+    <CandlestickChart
+      data={data}
+      x="date"
+      open="open"
+      high="high"
+      low="low"
+      close="close"
+      className="h-80 w-full"
+    />
+  )
+}
+```
+
+That renders an interactive candlestick chart with OHLC candles, axes, crosshair tooltip, and responsive scaling. Green candles for up days, red for down days, all automatic.
+
+## When to Use Candlestick Charts
+
+Candlestick charts are the standard for visualizing price action in financial markets. Each candle packs four data points into one visual element.
+
+**Use a candlestick chart when:**
+- Displaying stock, crypto, or forex price data over time
+- Your data has Open, High, Low, and Close values per period
+- Traders or analysts need to identify patterns (doji, hammer, engulfing)
+- You want to show intraday or daily price movement with directional context
+
+**Don't use a candlestick chart when:**
+- You only have a single price series (use a line chart)
+- Your audience is non-financial and unfamiliar with OHLC notation
+- You want to show long-term trends without period detail (use an area chart)
+- Your data is not time-series or lacks OHLC fields
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects with OHLC fields |
+| `x` | `keyof T` | required | Key for the time axis (date/timestamp) |
+| `open` | `keyof T` | required | Key for the opening price |
+| `high` | `keyof T` | required | Key for the highest price |
+| `low` | `keyof T` | required | Key for the lowest price |
+| `close` | `keyof T` | required | Key for the closing price |
+| `upColor` | `string` | `'#22c55e'` | Color for bullish (close above open) candles |
+| `downColor` | `string` | `'#ef4444'` | Color for bearish (close below open) candles |
+| `wickWidth` | `number` | `1` | Width of the wick (shadow) lines in pixels |
+| `bodyWidth` | `number` | `0.7` | Width of the candle body as a ratio from 0 to 1 |
+| `className` | `string` | - | Tailwind classes on the root SVG |
+| `animate` | `boolean` | `true` | Enable candle entry animation on mount |
+| `responsive` | `boolean` | `true` | Auto-resize to container width |
+
+---
+
+## Understanding Candlesticks
+
+Each candlestick represents one time period (a minute, hour, day, week, etc.) and encodes four prices into a single shape.
+
+### Anatomy of a candle
+
+- **Body**: The thick rectangle between the open and close prices. This is the most prominent visual element.
+- **Upper wick (shadow)**: The thin line extending above the body to the period's high price. Shows how far buyers pushed the price up before sellers took over.
+- **Lower wick (shadow)**: The thin line extending below the body to the period's low price. Shows how far sellers pushed the price down before buyers stepped in.
+- **Color**: A green (bullish) candle means the close was higher than the open. A red (bearish) candle means the close was lower than the open.
+
+### Reading the shape
+
+A candle with a long upper wick and small body signals rejection at higher prices. A candle with almost no wicks (a "marubozu") signals strong conviction in one direction. A candle where the open and close are nearly equal (a "doji") signals indecision.
+
+```tsx
+// Each candle maps to this visual structure:
+//
+//    |       <- upper wick (high)
+//   +-+
+//   | |      <- body (open to close)
+//   +-+
+//    |       <- lower wick (low)
+```
+
+---
+
+## Up/Down Coloring
+
+By default, bullish candles are green and bearish candles are red. Customize with `upColor` and `downColor`:
+
+```tsx
+<CandlestickChart
+  data={data}
+  x="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  upColor="#22c55e"
+  downColor="#ef4444"
+/>
+```
+
+### Hollow vs filled candles
+
+Some traders prefer hollow candles for bullish periods and filled for bearish. Use `variant` to switch:
+
+```tsx
+// Hollow up candles, filled down candles
+<CandlestickChart
+  data={data}
+  x="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  variant="hollow"
+/>
+```
+
+### Monochrome style
+
+For a cleaner, non-directional look:
+
+```tsx
+<CandlestickChart
+  data={data}
+  x="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  upColor="#a1a1aa"
+  downColor="#52525b"
+/>
+```
+
+---
+
+## Volume Overlay
+
+Financial charts almost always include volume bars beneath the candlesticks. Pass a `volume` key to render volume as a secondary bar chart aligned to the same x-axis:
+
+```tsx
+const data = [
+  { date: "2024-01-02", open: 170.2, high: 173.8, low: 169.5, close: 172.1, vol: 48200000 },
+  { date: "2024-01-03", open: 172.1, high: 175.4, low: 171.0, close: 174.9, vol: 52100000 },
+  { date: "2024-01-04", open: 174.9, high: 176.2, low: 172.8, close: 173.5, vol: 39800000 },
+]
+
+<CandlestickChart
+  data={data}
+  x="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  volume="vol"
+  volumeHeight={0.2}
+  className="h-96"
+/>
+```
+
+The `volumeHeight` prop controls how much vertical space volume bars occupy (as a ratio of total chart height). Default is `0.2` (20%). Volume bars inherit the up/down color of their corresponding candle.
+
+---
+
+## Zoom and Pan
+
+Financial data often spans months or years but users need to inspect individual candles. Enable interactive zoom and pan for time navigation:
+
+```tsx
+<CandlestickChart
+  data={yearOfData}
+  x="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  zoom
+  pan
+  initialRange={60}
+  className="h-96"
+/>
+```
+
+### Controls
+
+- **Scroll wheel**: Zoom in and out on the time axis
+- **Click and drag**: Pan left and right across the time range
+- **Pinch gesture**: Zoom on touch devices
+- **Double click**: Reset to the initial view
+
+The `initialRange` prop sets how many candles are visible on first render. This is useful when you load a full year of daily data but want to show the most recent 60 trading days by default.
+
+### Programmatic control
+
+Control the visible range from your application state:
+
+```tsx
+const [range, setRange] = useState({ start: 0, end: 60 })
+
+<CandlestickChart
+  data={data}
+  x="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  visibleRange={range}
+  onRangeChange={setRange}
+/>
+```
+
+---
+
+## Crosshair with Price Labels
+
+The crosshair shows exact OHLC values as the user moves their cursor over the chart. A horizontal line snaps to the price axis with a label, and a vertical line snaps to the time axis.
+
+```tsx
+<CandlestickChart
+  data={data}
+  x="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  crosshair
+  crosshairClassName="stroke-zinc-400"
+/>
+```
+
+### Tooltip content
+
+The default tooltip shows date, open, high, low, close, and change. Customize it:
+
+```tsx
+<CandlestickChart
+  data={data}
+  x="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  crosshair
+  tooltipFormat={(candle) => ({
+    Date: candle.date,
+    Open: `$${candle.open.toFixed(2)}`,
+    High: `$${candle.high.toFixed(2)}`,
+    Low: `$${candle.low.toFixed(2)}`,
+    Close: `$${candle.close.toFixed(2)}`,
+    Change: `${((candle.close - candle.open) / candle.open * 100).toFixed(2)}%`,
+  })}
+/>
+```
+
+---
+
+## Real-Time Streaming Data
+
+For live market data, update the `data` array as new ticks arrive. The chart efficiently updates only the last candle or appends a new one:
+
+```tsx
+import { useState, useEffect } from "react"
+import { CandlestickChart } from "@chartts/react"
+
+export function LiveStockChart({ symbol }: { symbol: string }) {
+  const [candles, setCandles] = useState([])
+
+  useEffect(() => {
+    const ws = new WebSocket(`wss://feed.example.com/${symbol}`)
+
+    ws.onmessage = (event) => {
+      const tick = JSON.parse(event.data)
+
+      setCandles((prev) => {
+        const last = prev[prev.length - 1]
+
+        // Same period: update the current candle
+        if (last && last.date === tick.date) {
+          return [
+            ...prev.slice(0, -1),
+            {
+              ...last,
+              high: Math.max(last.high, tick.price),
+              low: Math.min(last.low, tick.price),
+              close: tick.price,
+              volume: last.volume + tick.volume,
+            },
+          ]
+        }
+
+        // New period: append a new candle
+        return [
+          ...prev,
+          {
+            date: tick.date,
+            open: tick.price,
+            high: tick.price,
+            low: tick.price,
+            close: tick.price,
+            volume: tick.volume,
+          },
+        ]
+      })
+    }
+
+    return () => ws.close()
+  }, [symbol])
+
+  return (
+    <CandlestickChart
+      data={candles}
+      x="date"
+      open="open"
+      high="high"
+      low="low"
+      close="close"
+      volume="volume"
+      zoom
+      pan
+      crosshair
+      animate={false}
+      className="h-96 w-full"
+    />
+  )
+}
+```
+
+Disable `animate` for streaming data so new candles appear instantly without entry animations.
+
+---
+
+## Styling with Tailwind
+
+Every part of the chart is styleable through className props:
+
+```tsx
+<CandlestickChart
+  data={data}
+  x="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  className="rounded-xl bg-zinc-950 p-4"
+  upColor="#4ade80"
+  downColor="#f87171"
+  axisClassName="text-zinc-500 text-xs font-mono"
+  gridClassName="stroke-zinc-800/50"
+  crosshairClassName="stroke-zinc-500 stroke-dashed"
+  tooltipClassName="bg-zinc-800 text-white rounded-lg shadow-xl px-3 py-2 text-sm font-mono"
+/>
+```
+
+### Dark mode
+
+```tsx
+<CandlestickChart
+  data={data}
+  x="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  className="bg-white dark:bg-zinc-950"
+  axisClassName="text-gray-600 dark:text-zinc-400"
+  gridClassName="stroke-gray-200 dark:stroke-zinc-800"
+/>
+```
+
+### Dense mode for dashboards
+
+When embedding in a tight layout, reduce padding and hide non-essential elements:
+
+```tsx
+<CandlestickChart
+  data={data}
+  x="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  showGrid={false}
+  showAxis={false}
+  className="h-48"
+/>
+```
+
+---
+
+## Accessibility
+
+Candlestick charts include accessibility support out of the box:
+
+- **Screen readers**: Each candle is announced with its date, open, high, low, close, and direction (bullish or bearish). A summary describes the overall price range and trend.
+- **Keyboard navigation**: Tab to focus the chart, then use left/right arrow keys to move between candles. The tooltip follows the focused candle.
+- **ARIA roles**: The chart has `role="img"` with a descriptive `aria-label`. Each candle has `role="listitem"` with a full OHLC description.
+- **Reduced motion**: When `prefers-reduced-motion` is enabled, candles render immediately without animation.
+- **Color independence**: Up/down direction is communicated through shape (filled vs hollow) and ARIA labels, not just color. This ensures the chart remains readable for color-blind users.
+
+---
+
+## Real-World Examples
+
+### Stock tracker
+
+```tsx
+const stockData = [
+  { date: "2024-03-01", open: 178.2, high: 181.5, low: 177.8, close: 180.7, vol: 51200000 },
+  { date: "2024-03-04", open: 180.7, high: 183.1, low: 179.4, close: 182.6, vol: 47800000 },
+  { date: "2024-03-05", open: 182.6, high: 184.9, low: 181.0, close: 181.4, vol: 39200000 },
+  { date: "2024-03-06", open: 181.4, high: 185.2, low: 180.9, close: 184.8, vol: 55100000 },
+  { date: "2024-03-07", open: 184.8, high: 186.3, low: 183.5, close: 185.1, vol: 42600000 },
+]
+
+<CandlestickChart
+  data={stockData}
+  x="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  volume="vol"
+  zoom
+  pan
+  crosshair
+  upColor="#22c55e"
+  downColor="#ef4444"
+  className="h-96 rounded-xl bg-zinc-950 p-4"
+  axisClassName="text-zinc-400 text-xs font-mono"
+  tooltipClassName="bg-zinc-800 text-zinc-100 rounded-lg px-3 py-2 text-sm"
+/>
+```
+
+### Crypto dashboard
+
+```tsx
+const btcData = [
+  { ts: "2024-01-10 09:00", open: 46200, high: 47100, low: 45800, close: 46950, vol: 1240 },
+  { ts: "2024-01-10 10:00", open: 46950, high: 47500, low: 46400, close: 46600, vol: 890 },
+  { ts: "2024-01-10 11:00", open: 46600, high: 47800, low: 46500, close: 47650, vol: 1580 },
+  { ts: "2024-01-10 12:00", open: 47650, high: 48200, low: 47100, close: 47300, vol: 1120 },
+  { ts: "2024-01-10 13:00", open: 47300, high: 47900, low: 46800, close: 47750, vol: 960 },
+]
+
+<CandlestickChart
+  data={btcData}
+  x="ts"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  volume="vol"
+  upColor="#4ade80"
+  downColor="#fb923c"
+  crosshair
+  tooltipFormat={(c) => ({
+    Time: c.ts,
+    Open: `$${c.open.toLocaleString()}`,
+    High: `$${c.high.toLocaleString()}`,
+    Low: `$${c.low.toLocaleString()}`,
+    Close: `$${c.close.toLocaleString()}`,
+    Volume: `${c.vol.toLocaleString()} BTC`,
+  })}
+  className="h-80 rounded-lg bg-gray-950"
+  axisClassName="text-gray-500 text-xs"
+/>
+```
+
+### Forex pair
+
+```tsx
+const eurUsd = [
+  { date: "2024-02-12", open: 1.0782, high: 1.0801, low: 1.0765, close: 1.0793 },
+  { date: "2024-02-13", open: 1.0793, high: 1.0810, low: 1.0748, close: 1.0762 },
+  { date: "2024-02-14", open: 1.0762, high: 1.0785, low: 1.0732, close: 1.0745 },
+  { date: "2024-02-15", open: 1.0745, high: 1.0790, low: 1.0740, close: 1.0778 },
+  { date: "2024-02-16", open: 1.0778, high: 1.0812, low: 1.0770, close: 1.0805 },
+]
+
+<CandlestickChart
+  data={eurUsd}
+  x="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  upColor="#3b82f6"
+  downColor="#a855f7"
+  bodyWidth={0.5}
+  wickWidth={1}
+  crosshair
+  tooltipFormat={(c) => ({
+    Date: c.date,
+    Open: c.open.toFixed(4),
+    High: c.high.toFixed(4),
+    Low: c.low.toFixed(4),
+    Close: c.close.toFixed(4),
+    Pips: ((c.close - c.open) * 10000).toFixed(1),
+  })}
+  className="h-72"
+  axisClassName="text-zinc-500 text-xs font-mono"
+/>
+```

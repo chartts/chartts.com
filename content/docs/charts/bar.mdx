@@ -1,0 +1,316 @@
+---
+title: "Bar Chart"
+description: "Compare categorical data with rectangular bars. Supports vertical, horizontal, stacked, and grouped layouts."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { BarChart } from "@chartts/react"
+
+const data = [
+  { quarter: "Q1", revenue: 12000, expenses: 8000 },
+  { quarter: "Q2", revenue: 18000, expenses: 11000 },
+  { quarter: "Q3", revenue: 15000, expenses: 9500 },
+  { quarter: "Q4", revenue: 22000, expenses: 14000 },
+]
+
+export function QuarterlyComparison() {
+  return (
+    <BarChart
+      data={data}
+      x="quarter"
+      y={["revenue", "expenses"]}
+      radius={6}
+      className="h-72 w-full"
+    />
+  )
+}
+```
+
+## When to Use Bar Charts
+
+Bar charts are the workhorse of data visualization. Use them when comparing discrete categories.
+
+**Use a bar chart when:**
+- Comparing values across discrete categories (sales by region, headcount by department)
+- Showing rankings or leaderboards
+- Your categories have no natural order, or order is by value
+- You need to compare multiple groups side by side
+
+**Use a stacked bar when:**
+- You want to show composition (what makes up the total)
+- Comparing parts of a whole across categories
+
+**Use horizontal bars when:**
+- Category labels are long (department names, product titles)
+- You have many categories (more than 8-10)
+- Ranking from top to bottom feels natural
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `x` | `keyof T` | required | Key for category labels |
+| `y` | `keyof T \| (keyof T)[]` | required | Key(s) for bar values |
+| `stacked` | `boolean` | `false` | Stack bars for multi-series data |
+| `horizontal` | `boolean` | `false` | Render horizontal bars |
+| `groupPadding` | `number` | `0.2` | Padding between category groups (0 to 1) |
+| `barPadding` | `number` | `0.1` | Padding between bars within a group (0 to 1) |
+| `radius` | `number` | `4` | Border radius for bar corners in pixels |
+| `showValues` | `boolean` | `false` | Display value labels on bars |
+| `sorted` | `boolean \| 'asc' \| 'desc'` | `false` | Sort bars by value |
+| `animate` | `boolean` | `true` | Enable bar entry animation |
+| `className` | `string` | - | Tailwind classes on root SVG |
+| `barClassName` | `string` | - | Tailwind classes on bar elements |
+| `axisClassName` | `string` | - | Tailwind classes on axes |
+| `labelClassName` | `string` | - | Tailwind classes on value labels |
+
+---
+
+## Grouped Bars
+
+When you pass multiple keys to `y`, bars are grouped side by side within each category:
+
+```tsx
+<BarChart
+  data={data}
+  x="quarter"
+  y={["revenue", "expenses", "profit"]}
+  groupPadding={0.3}
+  barPadding={0.05}
+/>
+```
+
+Each series gets a color from the palette. Override with `seriesClassName`:
+
+```tsx
+<BarChart
+  data={data}
+  x="quarter"
+  y={["revenue", "expenses"]}
+  seriesClassName={{
+    revenue: "fill-emerald-500",
+    expenses: "fill-red-400",
+  }}
+/>
+```
+
+---
+
+## Stacked Bars
+
+Set `stacked` to stack bars on top of each other. This shows both the total and the composition:
+
+```tsx
+<BarChart
+  data={data}
+  x="quarter"
+  y={["productA", "productB", "productC"]}
+  stacked
+  radius={6}
+/>
+```
+
+### Normalized (100%) Stacking
+
+Show proportional composition by normalizing to 100%:
+
+```tsx
+<BarChart
+  data={data}
+  x="quarter"
+  y={["productA", "productB", "productC"]}
+  stacked
+  normalized
+/>
+```
+
+This makes every bar the same height, letting viewers compare proportions rather than absolute values.
+
+---
+
+## Horizontal Layout
+
+Flip the chart to horizontal. Particularly useful when category labels are long:
+
+```tsx
+<BarChart
+  data={teamData}
+  x="department"
+  y="headcount"
+  horizontal
+  sorted="desc"
+  showValues
+/>
+```
+
+The labels appear on the left, bars extend to the right. This is also the natural layout for ranking lists.
+
+---
+
+## Rounded Corners
+
+The `radius` prop rounds the corners of each bar. Higher values create pill-shaped bars:
+
+```tsx
+// Slightly rounded (default)
+<BarChart data={data} x="q" y="val" radius={4} />
+
+// More rounded
+<BarChart data={data} x="q" y="val" radius={8} />
+
+// Full pill shape
+<BarChart data={data} x="q" y="val" radius={999} />
+
+// No rounding
+<BarChart data={data} x="q" y="val" radius={0} />
+```
+
+For stacked bars, only the top bar in each stack gets rounded top corners, and the bottom bar gets rounded bottom corners. The middle segments have square edges so they fit together seamlessly.
+
+---
+
+## Value Labels
+
+Show the exact value on each bar:
+
+```tsx
+<BarChart
+  data={data}
+  x="quarter"
+  y="revenue"
+  showValues
+  labelClassName="text-xs font-mono"
+/>
+```
+
+Labels position automatically: inside the bar for tall bars, above for short ones. Format with `valueFormat`:
+
+```tsx
+<BarChart
+  data={data}
+  x="quarter"
+  y="revenue"
+  showValues
+  valueFormat={(v) => `$${(v / 1000).toFixed(0)}k`}
+/>
+```
+
+---
+
+## Sorting
+
+Sort bars by value rather than data order:
+
+```tsx
+// Descending (largest first)
+<BarChart data={data} x="name" y="score" sorted="desc" />
+
+// Ascending (smallest first)
+<BarChart data={data} x="name" y="score" sorted="asc" />
+```
+
+Sorting is especially effective with horizontal bars for leaderboard-style displays.
+
+---
+
+## Styling with Tailwind
+
+```tsx
+<BarChart
+  data={data}
+  x="quarter"
+  y="revenue"
+  className="rounded-xl"
+  barClassName="fill-cyan-500 dark:fill-cyan-400 hover:fill-cyan-400 dark:hover:fill-cyan-300 transition-colors"
+  axisClassName="text-zinc-500 dark:text-zinc-400"
+  labelClassName="text-xs font-mono fill-zinc-700 dark:fill-zinc-300"
+/>
+```
+
+Individual bar styling with conditional classes:
+
+```tsx
+<BarChart
+  data={data}
+  x="quarter"
+  y="revenue"
+  barClassName={(value, index) =>
+    value > 15000 ? "fill-emerald-500" : "fill-zinc-400"
+  }
+/>
+```
+
+---
+
+## Animation
+
+Bars animate in with a stagger effect. Each bar grows from the baseline with a slight delay after the previous one, creating a cascade effect.
+
+```tsx
+// Disable animation
+<BarChart data={data} x="q" y="val" animate={false} />
+```
+
+---
+
+## Accessibility
+
+- Each bar has an `aria-label` with the category name and value
+- Keyboard navigation: Tab to the chart, arrow keys to move between bars
+- Screen readers announce each bar's category and value
+- Pattern fills available for color-blind users via `patternFill` prop
+
+---
+
+## Real-World Examples
+
+### Sales dashboard with targets
+```tsx
+<BarChart
+  data={salesData}
+  x="rep"
+  y={["actual", "target"]}
+  horizontal
+  sorted="desc"
+  seriesClassName={{
+    actual: "fill-emerald-500",
+    target: "fill-zinc-300 dark:fill-zinc-600",
+  }}
+  className="h-96"
+/>
+```
+
+### Budget breakdown
+```tsx
+<BarChart
+  data={budgetItems}
+  x="category"
+  y="amount"
+  horizontal
+  sorted="desc"
+  showValues
+  valueFormat={(v) => `$${(v / 1000).toFixed(0)}k`}
+  barClassName="fill-blue-500"
+  radius={4}
+/>
+```
+
+### Year-over-year comparison
+```tsx
+<BarChart
+  data={yearlyData}
+  x="month"
+  y={["thisYear", "lastYear"]}
+  seriesClassName={{
+    thisYear: "fill-cyan-500",
+    lastYear: "fill-zinc-300 dark:fill-zinc-600",
+  }}
+  groupPadding={0.3}
+/>
+```

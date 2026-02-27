@@ -1,0 +1,280 @@
+---
+title: "Violin Chart"
+description: "Show data distribution shape using kernel density estimation. Combines the precision of a box plot with the visual richness of a density curve."
+badge: "Statistics"
+---
+
+## Quick Start
+
+```tsx
+import { ViolinChart } from "@chartts/react"
+
+const data = [
+  { group: "Control", values: [4.2, 5.1, 4.8, 5.5, 4.9, 5.3, 4.6, 5.0, 5.2, 4.7] },
+  { group: "Treatment A", values: [6.1, 7.3, 6.8, 7.0, 6.5, 7.2, 6.9, 7.5, 6.4, 7.1] },
+  { group: "Treatment B", values: [5.5, 8.2, 6.1, 7.8, 5.9, 8.0, 6.3, 7.4, 5.7, 7.9] },
+]
+
+export function ExperimentResults() {
+  return (
+    <ViolinChart
+      data={data}
+      x="group"
+      values="values"
+      className="h-80 w-full"
+    />
+  )
+}
+```
+
+That renders a violin chart showing the distribution of values for each group. The width of each violin at any point represents the density of data at that value. Wider regions have more observations; narrow regions have fewer.
+
+## When to Use Violin Charts
+
+Violin charts show the full distribution of a numeric variable across categories. They reveal modality, skewness, and density that box plots and bar charts hide.
+
+**Use a violin chart when:**
+- Comparing distributions across groups (test scores by class, response times by server)
+- Your data may have multiple peaks (bimodal or multimodal distributions)
+- You want to show both the shape and summary statistics (median, quartiles)
+- Audience is familiar with statistical visualizations
+
+**Don't use a violin chart when:**
+- You only need to compare averages or totals (use a bar chart)
+- Each group has fewer than 10 observations (not enough data for density estimation)
+- Your audience is non-technical and unfamiliar with distribution plots
+- You want to show change over time (use a line or area chart)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects, one per group |
+| `x` | `keyof T` | required | Key for the category/group axis |
+| `values` | `keyof T` | required | Key for the array of numeric values |
+| `bandwidth` | `number` | auto | Kernel density bandwidth. Lower values follow data closely; higher values smooth more |
+| `showBoxplot` | `boolean` | `true` | Show embedded box plot inside each violin |
+| `showMedian` | `boolean` | `true` | Show median marker inside each violin |
+| `showMean` | `boolean` | `false` | Show mean marker inside each violin |
+| `colors` | `string[]` | palette | Array of colors, one per group |
+| `orientation` | `'vertical' \| 'horizontal'` | `'vertical'` | Orientation of the violins |
+| `trim` | `boolean` | `true` | Trim density curve to the data range (no tails beyond min/max) |
+| `animate` | `boolean` | `true` | Enable violin shape animation on mount |
+| `className` | `string` | - | Tailwind classes on the root SVG |
+
+---
+
+## Density Estimation
+
+The violin shape is computed using kernel density estimation (KDE). The `bandwidth` parameter controls how smooth the curve is.
+
+```tsx
+// Auto bandwidth (Scott's rule): good default for most data
+<ViolinChart
+  data={data}
+  x="group"
+  values="values"
+/>
+
+// Low bandwidth: follows data closely, may show noise
+<ViolinChart
+  data={data}
+  x="group"
+  values="values"
+  bandwidth={0.5}
+/>
+
+// High bandwidth: very smooth, may obscure features
+<ViolinChart
+  data={data}
+  x="group"
+  values="values"
+  bandwidth={2}
+/>
+```
+
+When `bandwidth` is not specified, the chart computes an optimal bandwidth using Scott's rule, which balances detail and smoothness based on the data's standard deviation and sample size.
+
+### Trimming
+
+By default, the density curve is trimmed to the data range. This means the violin starts at the minimum value and ends at the maximum value. Disable trimming to let the tails extend beyond the data:
+
+```tsx
+// Trimmed (default): violin ends at min/max of data
+<ViolinChart data={data} x="group" values="values" trim />
+
+// Untrimmed: tails extend beyond the data range
+<ViolinChart data={data} x="group" values="values" trim={false} />
+```
+
+Untrimmed violins show the estimated density beyond the observed range, which can be useful for visualizing theoretical distributions but can also be misleading.
+
+---
+
+## Box Plot Overlay
+
+The embedded box plot adds summary statistics inside the violin shape: median line, interquartile range (IQR) box, and whiskers extending to 1.5x the IQR.
+
+```tsx
+// Violin with box plot (default)
+<ViolinChart
+  data={data}
+  x="group"
+  values="values"
+  showBoxplot
+/>
+
+// Violin only, no box plot
+<ViolinChart
+  data={data}
+  x="group"
+  values="values"
+  showBoxplot={false}
+/>
+
+// Violin with box plot and mean marker
+<ViolinChart
+  data={data}
+  x="group"
+  values="values"
+  showBoxplot
+  showMean
+/>
+```
+
+The box plot overlay gives your audience familiar reference points (median, quartiles) while the violin shape provides the full distributional context.
+
+---
+
+## Median and Mean Markers
+
+Show the center of each distribution with median and mean markers. The median is the 50th percentile. The mean is the average.
+
+```tsx
+// Median only (default)
+<ViolinChart
+  data={data}
+  x="group"
+  values="values"
+  showMedian
+  showMean={false}
+/>
+
+// Both median and mean
+<ViolinChart
+  data={data}
+  x="group"
+  values="values"
+  showMedian
+  showMean
+/>
+```
+
+When the median and mean are far apart, the distribution is skewed. The mean marker appears as a diamond, the median as a horizontal line, making them easy to distinguish visually.
+
+---
+
+## Horizontal and Vertical Orientation
+
+```tsx
+// Vertical violins (default): categories on x-axis, values on y-axis
+<ViolinChart
+  data={data}
+  x="group"
+  values="values"
+  orientation="vertical"
+/>
+
+// Horizontal violins: categories on y-axis, values on x-axis
+<ViolinChart
+  data={data}
+  x="group"
+  values="values"
+  orientation="horizontal"
+  className="h-96"
+/>
+```
+
+Horizontal orientation works well when category labels are long or when you have many groups, since the labels read naturally on the y-axis without rotation.
+
+---
+
+## Accessibility
+
+- **Screen readers**: Each violin announces its group name, median, mean, minimum, maximum, and sample size. The overall chart describes the number of groups and the value range.
+- **Keyboard navigation**: Tab to focus the chart, then use left/right arrow keys to move between violins. Summary statistics are read aloud for the focused group.
+- **ARIA roles**: The chart has `role="img"` with a descriptive `aria-label`. Each violin has `role="listitem"` with statistical summary details.
+- **Reduced motion**: When `prefers-reduced-motion` is enabled, violins render immediately without shape animation.
+- **Color independence**: Groups are distinguished by position along the category axis and by ARIA labels, ensuring the chart is usable without color vision.
+
+---
+
+## Real-World Examples
+
+### A/B test response times
+
+```tsx
+const responseData = [
+  { variant: "Baseline", values: [120, 145, 132, 198, 155, 140, 128, 160, 175, 138, 142, 151] },
+  { variant: "Variant A", values: [95, 110, 88, 105, 92, 115, 98, 102, 108, 90, 100, 96] },
+  { variant: "Variant B", values: [85, 130, 78, 145, 82, 125, 90, 110, 75, 140, 88, 135] },
+]
+
+<ViolinChart
+  data={responseData}
+  x="variant"
+  values="values"
+  showBoxplot
+  showMean
+  colors={["#a1a1aa", "#22c55e", "#3b82f6"]}
+  className="h-96 rounded-xl bg-zinc-950 p-4"
+/>
+```
+
+### Student test scores by subject
+
+```tsx
+const scoreData = [
+  { subject: "Math", values: [72, 85, 91, 68, 77, 83, 95, 60, 88, 79, 82, 90, 65, 74, 87] },
+  { subject: "Science", values: [80, 78, 92, 85, 70, 88, 76, 94, 82, 86, 73, 89, 81, 77, 90] },
+  { subject: "English", values: [88, 92, 75, 95, 82, 90, 86, 78, 93, 84, 91, 80, 87, 94, 76] },
+  { subject: "History", values: [65, 72, 80, 58, 75, 82, 68, 77, 85, 62, 70, 78, 83, 67, 74] },
+]
+
+<ViolinChart
+  data={scoreData}
+  x="subject"
+  values="values"
+  showBoxplot
+  showMedian
+  showMean
+  bandwidth={3}
+  colors={["#06b6d4", "#10b981", "#f59e0b", "#8b5cf6"]}
+  className="h-80"
+/>
+```
+
+### Salary distribution by department
+
+```tsx
+const salaryData = [
+  { dept: "Engineering", values: [95, 105, 120, 88, 115, 130, 98, 110, 125, 140, 92, 108] },
+  { dept: "Marketing", values: [65, 72, 80, 68, 75, 85, 70, 78, 62, 82, 74, 77] },
+  { dept: "Sales", values: [55, 90, 62, 105, 58, 95, 70, 85, 120, 60, 80, 110] },
+  { dept: "Support", values: [50, 55, 58, 52, 60, 56, 54, 62, 57, 53, 59, 51] },
+]
+
+<ViolinChart
+  data={salaryData}
+  x="dept"
+  values="values"
+  showBoxplot
+  showMean
+  orientation="horizontal"
+  trim
+  colors={["#3b82f6", "#f97316", "#22c55e", "#a855f7"]}
+  className="h-96"
+/>
+```

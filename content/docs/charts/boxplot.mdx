@@ -1,0 +1,199 @@
+---
+title: "Box Plot Chart"
+description: "Display statistical distributions showing median, quartiles, and outliers for comparing groups."
+badge: "Statistics"
+---
+
+## Quick Start
+
+```tsx
+import { BoxPlotChart } from "@chartts/react"
+
+const data = [
+  { department: "Engineering", values: [65, 70, 72, 75, 78, 80, 82, 85, 88, 92, 95, 110] },
+  { department: "Marketing", values: [55, 58, 60, 62, 65, 68, 70, 72, 75, 78, 82] },
+  { department: "Sales", values: [45, 50, 55, 58, 60, 62, 65, 70, 75, 85, 90, 120] },
+  { department: "Design", values: [60, 65, 68, 70, 72, 75, 78, 80, 82, 85] },
+]
+
+export function SalaryDistribution() {
+  return (
+    <BoxPlotChart
+      data={data}
+      x="department"
+      values="values"
+      showOutliers
+      showMean
+      className="h-80 w-full"
+    />
+  )
+}
+```
+
+## When to Use Box Plots
+
+Box plots (box-and-whisker plots) summarize a distribution with five key statistics: minimum, first quartile, median, third quartile, and maximum. They are essential for statistical comparison.
+
+**Use a box plot when:**
+- Comparing distributions across categories (salaries by department, scores by class)
+- You need to see spread, skewness, and outliers at a glance
+- Showing whether groups have similar or different variability
+- Summarizing large datasets where individual points would overlap
+
+**Don't use a box plot when:**
+- Your audience is unfamiliar with statistical charts (use a bar chart with error bars)
+- You have fewer than 5 values per group (too few for meaningful quartiles)
+- The shape of the distribution matters (use a histogram or violin plot)
+- You want to show individual data points (use a strip plot or swarm plot)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `x` | `keyof T` | required | Key for category labels |
+| `values` | `keyof T` | required | Key for the array of numeric values |
+| `showOutliers` | `boolean` | `true` | Display outlier points beyond whiskers |
+| `showMean` | `boolean` | `false` | Show a marker for the mean value |
+| `whiskerWidth` | `number` | `0.5` | Width of whisker caps relative to box (0 to 1) |
+| `boxWidth` | `number` | `0.6` | Width of each box relative to category space (0 to 1) |
+| `colors` | `string[]` | palette | Fill colors for each box |
+| `orientation` | `'vertical' \| 'horizontal'` | `'vertical'` | Chart orientation |
+| `animate` | `boolean` | `true` | Enable draw animation |
+| `className` | `string` | - | Tailwind classes on root SVG |
+
+---
+
+## Quartile Visualization
+
+The box represents the interquartile range (IQR), spanning from Q1 (25th percentile) to Q3 (75th percentile). The line inside the box marks the median (Q2):
+
+```tsx
+<BoxPlotChart
+  data={data}
+  x="group"
+  values="scores"
+  boxWidth={0.5}
+/>
+```
+
+Whiskers extend to the most extreme data points within 1.5 times the IQR from the box edges. This is the standard Tukey box plot definition.
+
+---
+
+## Outlier Display
+
+Points beyond the whiskers are plotted individually as circles. These are values more than 1.5 IQR from the box edges:
+
+```tsx
+<BoxPlotChart
+  data={data}
+  x="group"
+  values="measurements"
+  showOutliers
+/>
+```
+
+Outliers use the same color as their box but with reduced opacity. Hide them if outliers are distracting or not meaningful for your analysis:
+
+```tsx
+<BoxPlotChart
+  data={data}
+  x="group"
+  values="measurements"
+  showOutliers={false}
+/>
+```
+
+---
+
+## Mean Marker
+
+The median shows the center of the distribution, but the mean can tell a different story when data is skewed. Enable `showMean` to display a diamond marker:
+
+```tsx
+<BoxPlotChart
+  data={data}
+  x="department"
+  values="salaries"
+  showMean
+  showOutliers
+/>
+```
+
+When the mean and median diverge significantly, the distribution is skewed. The diamond marker makes this visible at a glance.
+
+---
+
+## Horizontal Orientation
+
+Flip the chart to horizontal when category labels are long or when you prefer the layout:
+
+```tsx
+<BoxPlotChart
+  data={data}
+  x="department"
+  values="responseTime"
+  orientation="horizontal"
+  showOutliers
+  className="h-96"
+/>
+```
+
+In horizontal mode, categories appear on the left and the value axis runs along the bottom.
+
+---
+
+## Accessibility
+
+- Each box element has an `aria-label` with the category, median, Q1, Q3, min, and max values
+- Outlier points are announced individually with their values
+- Screen readers describe the distribution shape (symmetric, left-skewed, right-skewed)
+- Keyboard navigation moves between groups and announces summary statistics
+
+---
+
+## Real-World Examples
+
+### Response time by endpoint
+```tsx
+<BoxPlotChart
+  data={endpointMetrics}
+  x="endpoint"
+  values="responseTimes"
+  orientation="horizontal"
+  showOutliers
+  showMean
+  colors={["#06b6d4"]}
+  className="h-80"
+/>
+```
+
+### Test score comparison
+```tsx
+<BoxPlotChart
+  data={classScores}
+  x="class"
+  values="scores"
+  showOutliers
+  showMean
+  boxWidth={0.4}
+  colors={["#8b5cf6", "#06b6d4", "#10b981", "#f59e0b"]}
+  className="h-72"
+/>
+```
+
+### Manufacturing quality control
+```tsx
+<BoxPlotChart
+  data={batchMeasurements}
+  x="batch"
+  values="measurements"
+  showOutliers
+  whiskerWidth={0.6}
+  colors={["#3b82f6"]}
+  className="h-72 w-full"
+/>
+```

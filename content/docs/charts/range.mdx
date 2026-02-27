@@ -1,0 +1,291 @@
+---
+title: "Range Chart"
+description: "Display data ranges with min/max bands. Perfect for temperature ranges, confidence intervals, and forecast uncertainty."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { RangeChart } from "@chartts/react"
+
+const data = [
+  { month: "Jan", low: -2, high: 5, avg: 1.5 },
+  { month: "Feb", low: -1, high: 7, avg: 3.0 },
+  { month: "Mar", low: 2, high: 12, avg: 7.0 },
+  { month: "Apr", low: 5, high: 16, avg: 10.5 },
+  { month: "May", low: 9, high: 21, avg: 15.0 },
+  { month: "Jun", low: 13, high: 26, avg: 19.5 },
+]
+
+export function TemperatureRange() {
+  return (
+    <RangeChart
+      data={data}
+      x="month"
+      min="low"
+      max="high"
+      mid="avg"
+      className="h-64 w-full"
+    />
+  )
+}
+```
+
+That renders a shaded band between the min and max values with an optional midline. Axes, tooltips, responsive scaling, and smooth band interpolation are all automatic.
+
+## When to Use Range Charts
+
+Range charts show the spread between two values across a continuous axis. The filled band communicates uncertainty, variability, or the extent of a range at each point.
+
+**Use a range chart when:**
+- Showing temperature ranges (daily low to high)
+- Displaying confidence intervals around a forecast or estimate
+- Visualizing min/max bounds for sensor readings, latency, or performance metrics
+- Communicating forecast uncertainty with prediction bands
+
+**Don't use a range chart when:**
+- You only have a single value per point (use a line chart)
+- The range is always zero or near-zero (just use a line chart)
+- You want to show the distribution shape at each point (use a violin or box plot)
+- Precise comparison of upper and lower bounds matters (use a table)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `x` | `keyof T` | required | Key for x-axis values |
+| `min` | `keyof T` | required | Key for the lower bound of the range |
+| `max` | `keyof T` | required | Key for the upper bound of the range |
+| `mid` | `keyof T` | - | Key for the midpoint/average line |
+| `fillColor` | `string` | `'#3b82f6'` | Fill color for the range band |
+| `fillOpacity` | `number` | `0.2` | Opacity of the range band fill (0 to 1) |
+| `strokeColor` | `string` | `'#3b82f6'` | Stroke color for the min/max boundary lines |
+| `showMidLine` | `boolean` | `true` | Show the midpoint line when `mid` is provided |
+| `showDots` | `boolean` | `false` | Show markers at mid, min, and max points |
+| `animate` | `boolean` | `true` | Enable draw animation on mount |
+| `className` | `string` | - | Tailwind classes on the root SVG |
+
+---
+
+## Range Band Fill
+
+The range band is the filled area between the min and max values. It is the primary visual element of a range chart.
+
+```tsx
+<RangeChart
+  data={data}
+  x="month"
+  min="low"
+  max="high"
+  fillColor="#3b82f6"
+  fillOpacity={0.2}
+  strokeColor="#3b82f6"
+  className="h-72"
+/>
+```
+
+The `fillOpacity` controls how transparent the band is. Lower values produce a subtle background wash. Higher values produce a more prominent band.
+
+```tsx
+// Subtle band
+<RangeChart
+  data={data}
+  x="month"
+  min="low"
+  max="high"
+  fillOpacity={0.1}
+/>
+
+// Prominent band
+<RangeChart
+  data={data}
+  x="month"
+  min="low"
+  max="high"
+  fillOpacity={0.4}
+/>
+```
+
+The boundary lines at the min and max edges help define the band's shape precisely. They use `strokeColor` which defaults to the same hue as the fill.
+
+---
+
+## Midline Overlay
+
+When you provide a `mid` prop, a solid line is drawn through the center of the range. This typically represents the mean, median, or primary forecast value.
+
+```tsx
+<RangeChart
+  data={data}
+  x="month"
+  min="low"
+  max="high"
+  mid="avg"
+  showMidLine
+  strokeColor="#2563eb"
+  fillColor="#3b82f6"
+  fillOpacity={0.15}
+  className="h-72"
+/>
+```
+
+The midline is styled with a slightly thicker stroke than the boundary lines so it stands out as the primary data line. Disable it with `showMidLine={false}` if you only want the band.
+
+```tsx
+// Band only, no midline
+<RangeChart
+  data={data}
+  x="month"
+  min="low"
+  max="high"
+  showMidLine={false}
+/>
+```
+
+---
+
+## Confidence Intervals
+
+Range charts are the standard way to visualize confidence intervals. The band represents the interval and the midline represents the point estimate.
+
+```tsx
+const forecast = [
+  { date: "Week 1", predicted: 1200, lower95: 1050, upper95: 1350 },
+  { date: "Week 2", predicted: 1350, lower95: 1120, upper95: 1580 },
+  { date: "Week 3", predicted: 1500, lower95: 1180, upper95: 1820 },
+  { date: "Week 4", predicted: 1620, lower95: 1210, upper95: 2030 },
+  { date: "Week 5", predicted: 1700, lower95: 1200, upper95: 2200 },
+]
+
+<RangeChart
+  data={forecast}
+  x="date"
+  min="lower95"
+  max="upper95"
+  mid="predicted"
+  fillColor="#8b5cf6"
+  fillOpacity={0.15}
+  strokeColor="#8b5cf6"
+  className="h-72 w-full"
+/>
+```
+
+The widening band communicates increasing uncertainty further into the future, which is exactly how forecast confidence intervals behave.
+
+---
+
+## Temperature Range Pattern
+
+Displaying daily temperature ranges is one of the most intuitive uses for a range chart. People naturally understand a band representing "low to high" temperatures.
+
+```tsx
+const weeklyTemps = [
+  { day: "Mon", low: 12, high: 22, avg: 17 },
+  { day: "Tue", low: 14, high: 25, avg: 19 },
+  { day: "Wed", low: 11, high: 20, avg: 15 },
+  { day: "Thu", low: 13, high: 23, avg: 18 },
+  { day: "Fri", low: 15, high: 27, avg: 21 },
+  { day: "Sat", low: 16, high: 28, avg: 22 },
+  { day: "Sun", low: 14, high: 24, avg: 19 },
+]
+
+<RangeChart
+  data={weeklyTemps}
+  x="day"
+  min="low"
+  max="high"
+  mid="avg"
+  fillColor="#f97316"
+  fillOpacity={0.2}
+  strokeColor="#f97316"
+  showDots
+  className="h-72 w-full"
+/>
+```
+
+Adding `showDots` marks the exact low, high, and average values at each point, making the chart useful for reading specific values as well as seeing the overall pattern.
+
+---
+
+## Accessibility
+
+- The chart has `role="img"` with an `aria-label` summarizing the overall range and number of data points
+- Each data point is announced with its x-value, min, max, and mid values
+- Keyboard navigation: Tab to focus the chart, arrow keys to move between data points
+- The tooltip follows the focused point and displays the full range values
+- Range boundaries are rendered as visible lines in addition to the filled area, ensuring readability at all opacity levels
+- Animation respects `prefers-reduced-motion`
+
+---
+
+## Real-World Examples
+
+### API response time range
+
+```tsx
+const latencyData = [
+  { hour: "00:00", p5: 12, p50: 45, p95: 180 },
+  { hour: "04:00", p5: 10, p50: 38, p95: 150 },
+  { hour: "08:00", p5: 15, p50: 62, p95: 280 },
+  { hour: "12:00", p5: 18, p50: 75, p95: 350 },
+  { hour: "16:00", p5: 20, p50: 80, p95: 310 },
+  { hour: "20:00", p5: 14, p50: 55, p95: 220 },
+]
+
+<RangeChart
+  data={latencyData}
+  x="hour"
+  min="p5"
+  max="p95"
+  mid="p50"
+  fillColor="#22c55e"
+  fillOpacity={0.15}
+  strokeColor="#22c55e"
+  className="h-64 w-full rounded-lg bg-zinc-950 p-4"
+/>
+```
+
+### Sales forecast with uncertainty
+
+```tsx
+<RangeChart
+  data={quarterlyForecast}
+  x="quarter"
+  min="lowerBound"
+  max="upperBound"
+  mid="forecast"
+  fillColor="#6366f1"
+  fillOpacity={0.2}
+  strokeColor="#6366f1"
+  showDots
+  className="h-72 w-full"
+/>
+```
+
+### Blood pressure tracking
+
+```tsx
+const bpReadings = [
+  { date: "Mon", systolic: 128, diastolic: 82 },
+  { date: "Tue", systolic: 135, diastolic: 88 },
+  { date: "Wed", systolic: 122, diastolic: 78 },
+  { date: "Thu", systolic: 130, diastolic: 85 },
+  { date: "Fri", systolic: 126, diastolic: 80 },
+]
+
+<RangeChart
+  data={bpReadings}
+  x="date"
+  min="diastolic"
+  max="systolic"
+  fillColor="#ef4444"
+  fillOpacity={0.15}
+  strokeColor="#ef4444"
+  showDots
+  className="h-64 w-full"
+/>
+```

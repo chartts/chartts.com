@@ -1,0 +1,266 @@
+---
+title: "Chord Diagram"
+description: "Show relationships and flow between groups arranged in a circle. Ribbons connect groups with width representing magnitude. Ideal for trade flows, migration patterns, and inter-group communication."
+badge: "Network"
+---
+
+## Quick Start
+
+```tsx
+import { ChordChart } from "@chartts/react"
+
+const data = [
+  { from: "Engineering", to: "Design", value: 45 },
+  { from: "Engineering", to: "Product", value: 80 },
+  { from: "Engineering", to: "Marketing", value: 20 },
+  { from: "Design", to: "Engineering", value: 30 },
+  { from: "Design", to: "Product", value: 60 },
+  { from: "Design", to: "Marketing", value: 35 },
+  { from: "Product", to: "Engineering", value: 70 },
+  { from: "Product", to: "Design", value: 50 },
+  { from: "Product", to: "Marketing", value: 55 },
+  { from: "Marketing", to: "Engineering", value: 15 },
+  { from: "Marketing", to: "Design", value: 25 },
+  { from: "Marketing", to: "Product", value: 40 },
+]
+
+export function TeamCommunication() {
+  return (
+    <ChordChart
+      data={data}
+      labels={["Engineering", "Design", "Product", "Marketing"]}
+      showLabels
+      showValues
+      className="h-[500px] w-[500px] mx-auto"
+    />
+  )
+}
+```
+
+That renders a circular diagram with arcs representing each group and ribbons connecting them. The width of each ribbon at its source and target encodes the flow magnitude. Hover any ribbon to highlight the connection and see exact values.
+
+## When to Use Chord Diagrams
+
+Chord diagrams reveal the relationships and flow volumes between groups arranged in a circle. Each group gets an arc proportional to its total flow, and ribbons between arcs show pairwise connections.
+
+**Use a chord diagram when:**
+- Showing inter-group communication, trade, or migration flows
+- Visualizing which departments or teams interact most frequently
+- Displaying import/export relationships between countries
+- The audience needs to see both the magnitude and direction of flows
+- You have 3 to 12 groups with many-to-many relationships
+
+**Don't use a chord diagram when:**
+- You have more than 12 groups (the diagram becomes cluttered)
+- Flows are predominantly one-directional (use a Sankey diagram)
+- Precise value comparison is more important than relationship overview
+- The data has a clear hierarchy (use a tree or treemap)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `FlowData[] \| number[][]` | required | Array of from/to/value objects, or a square matrix |
+| `labels` | `string[]` | required | Labels for each group, in order |
+| `colors` | `string[]` | palette | Colors for each group arc |
+| `padAngle` | `number` | `0.02` | Gap between arcs in radians |
+| `innerRadius` | `number` | `0.9` | Inner radius as a fraction of the outer radius (0 to 1) |
+| `showLabels` | `boolean` | `true` | Display group labels around the circle |
+| `showValues` | `boolean` | `false` | Display flow values on ribbons |
+| `opacity` | `number` | `0.65` | Ribbon opacity (0 to 1) |
+| `animate` | `boolean` | `true` | Enable ribbon draw animation |
+| `className` | `string` | - | Tailwind classes on root SVG |
+| `arcClassName` | `string` | - | Tailwind classes on group arcs |
+| `ribbonClassName` | `string` | - | Tailwind classes on ribbon paths |
+| `labelClassName` | `string` | - | Tailwind classes on label text |
+
+---
+
+## Data Formats
+
+Chord charts accept two data formats: an array of flow objects (more readable) or a square matrix (more compact).
+
+### Flow array format
+
+Each object specifies a source, target, and value. This format is self-documenting and easy to construct from databases.
+
+```tsx
+const data = [
+  { from: "A", to: "B", value: 100 },
+  { from: "A", to: "C", value: 50 },
+  { from: "B", to: "A", value: 80 },
+  { from: "B", to: "C", value: 60 },
+  { from: "C", to: "A", value: 40 },
+  { from: "C", to: "B", value: 70 },
+]
+
+<ChordChart data={data} labels={["A", "B", "C"]} />
+```
+
+### Matrix format
+
+A square matrix where `matrix[i][j]` is the flow from group `i` to group `j`. This format is compact and common in academic and scientific contexts.
+
+```tsx
+const matrix = [
+  [0, 100, 50],   // A -> B: 100, A -> C: 50
+  [80, 0, 60],    // B -> A: 80, B -> C: 60
+  [40, 70, 0],    // C -> A: 40, C -> B: 70
+]
+
+<ChordChart data={matrix} labels={["A", "B", "C"]} />
+```
+
+Both formats produce identical visualizations.
+
+---
+
+## Directional Flows
+
+Chord diagrams are inherently directional. The ribbon width at each end can differ, showing that the flow from A to B is not the same as from B to A.
+
+```tsx
+const tradeData = [
+  { from: "US", to: "China", value: 150 },
+  { from: "China", to: "US", value: 450 },
+  { from: "US", to: "EU", value: 300 },
+  { from: "EU", to: "US", value: 280 },
+  { from: "China", to: "EU", value: 200 },
+  { from: "EU", to: "China", value: 180 },
+]
+
+<ChordChart
+  data={tradeData}
+  labels={["US", "China", "EU"]}
+  showValues
+/>
+```
+
+The asymmetric ribbon widths immediately reveal trade imbalances. In this example, the China-to-US ribbon is much wider at the China end than at the US end.
+
+---
+
+## Pad Angle and Inner Radius
+
+Fine-tune the diagram's geometry for visual clarity.
+
+```tsx
+// Tight arcs, minimal gaps
+<ChordChart
+  data={data}
+  labels={labels}
+  padAngle={0.01}
+  innerRadius={0.95}
+/>
+
+// Wide gaps, thick arcs
+<ChordChart
+  data={data}
+  labels={labels}
+  padAngle={0.05}
+  innerRadius={0.8}
+/>
+
+// Default balance
+<ChordChart
+  data={data}
+  labels={labels}
+  padAngle={0.02}
+  innerRadius={0.9}
+/>
+```
+
+A larger `padAngle` creates more visible separation between groups. A smaller `innerRadius` makes the group arcs thicker, which can help when you want to display values on the arcs themselves.
+
+---
+
+## Opacity Control
+
+Ribbon opacity controls how transparent the connections are. Lower opacity helps when many ribbons overlap; higher opacity gives each connection more visual weight.
+
+```tsx
+// Transparent ribbons for dense connections
+<ChordChart data={data} labels={labels} opacity={0.4} />
+
+// Semi-opaque (default)
+<ChordChart data={data} labels={labels} opacity={0.65} />
+
+// Nearly opaque for few connections
+<ChordChart data={data} labels={labels} opacity={0.85} />
+```
+
+Hovered ribbons always display at full opacity, making the selected connection stand out from the rest.
+
+---
+
+## Accessibility
+
+- Each group arc announces its label and total incoming/outgoing flow
+- Each ribbon announces source, target, and flow value in both directions
+- Keyboard navigation: Tab to enter, arrow keys to move between groups, Enter to focus on a group's connections
+- Screen readers describe the overall flow structure and highlight the largest connections
+- Hovering a group highlights all its connections and dims unrelated ribbons
+
+---
+
+## Real-World Examples
+
+### International trade flows
+
+```tsx
+<ChordChart
+  data={[
+    { from: "US", to: "China", value: 120 },
+    { from: "US", to: "EU", value: 280 },
+    { from: "US", to: "Japan", value: 75 },
+    { from: "China", to: "US", value: 440 },
+    { from: "China", to: "EU", value: 200 },
+    { from: "China", to: "Japan", value: 140 },
+    { from: "EU", to: "US", value: 250 },
+    { from: "EU", to: "China", value: 170 },
+    { from: "EU", to: "Japan", value: 60 },
+    { from: "Japan", to: "US", value: 130 },
+    { from: "Japan", to: "China", value: 160 },
+    { from: "Japan", to: "EU", value: 80 },
+  ]}
+  labels={["US", "China", "EU", "Japan"]}
+  colors={["#3b82f6", "#ef4444", "#10b981", "#f59e0b"]}
+  showLabels
+  showValues
+  padAngle={0.03}
+  className="h-[500px] w-[500px] mx-auto"
+/>
+```
+
+### Cross-department collaboration
+
+```tsx
+<ChordChart
+  data={collaborationMatrix}
+  labels={["Engineering", "Design", "Product", "Sales", "Support"]}
+  colors={["#06b6d4", "#8b5cf6", "#f59e0b", "#10b981", "#ef4444"]}
+  innerRadius={0.85}
+  padAngle={0.04}
+  opacity={0.6}
+  showLabels
+  className="h-[450px] w-[450px] mx-auto"
+  labelClassName="text-sm font-semibold"
+/>
+```
+
+### Data migration between systems
+
+```tsx
+<ChordChart
+  data={migrationFlows}
+  labels={["Legacy DB", "Cloud SQL", "Data Lake", "Cache", "Archive"]}
+  showLabels
+  showValues
+  opacity={0.5}
+  animate
+  className="h-[500px] w-[500px] mx-auto"
+  arcClassName="stroke-2 stroke-white dark:stroke-zinc-900"
+/>
+```

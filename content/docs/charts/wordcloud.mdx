@@ -1,0 +1,279 @@
+---
+title: "Word Cloud"
+description: "Display words sized proportionally to their values. Uses spiral placement to pack words efficiently. Ideal for text analysis, tag clouds, and frequency visualization."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { WordCloudChart } from "@chartts/react"
+
+const data = [
+  { word: "JavaScript", value: 100 },
+  { word: "TypeScript", value: 85 },
+  { word: "React", value: 80 },
+  { word: "Node.js", value: 65 },
+  { word: "CSS", value: 60 },
+  { word: "HTML", value: 55 },
+  { word: "Python", value: 50 },
+  { word: "Rust", value: 40 },
+  { word: "Go", value: 35 },
+  { word: "SQL", value: 45 },
+  { word: "GraphQL", value: 30 },
+  { word: "Docker", value: 25 },
+]
+
+export function TechCloud() {
+  return (
+    <WordCloudChart
+      data={data}
+      minFontSize={12}
+      maxFontSize={64}
+      className="h-96 w-full"
+    />
+  )
+}
+```
+
+## When to Use Word Clouds
+
+Word clouds turn text data into a visual where the most important words are the largest.
+
+**Use a word cloud when:**
+- Showing relative frequency or importance of terms
+- Displaying tag clouds, keyword analysis, or survey responses
+- Creating a visual overview of topics or themes
+- The audience needs a quick sense of "what stands out" rather than precise values
+
+**Don't use a word cloud when:**
+- Precise comparison between values matters (use a bar chart instead)
+- You have fewer than 8 words (too sparse to be meaningful)
+- The words have a natural order (use a ranked list)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `{ word: string; value: number }[]` | required | Word-value pairs |
+| `minFontSize` | `number` | `10` | Minimum font size in pixels |
+| `maxFontSize` | `number` | auto | Maximum font size (auto-calculated from container) |
+| `spiral` | `'archimedean' \| 'rectangular'` | `'archimedean'` | Spiral placement algorithm |
+| `rotate` | `boolean` | `false` | Allow some words to be rotated 90 degrees |
+| `rotationAngles` | `number[]` | `[0, 90]` | Angles to choose from when `rotate` is true |
+| `padding` | `number` | `2` | Padding between words in pixels |
+| `fontFamily` | `string` | inherited | Font family for words |
+| `colorScale` | `string[]` | palette | Array of colors to assign to words |
+| `className` | `string` | - | Tailwind classes on root SVG |
+| `wordClassName` | `string` | - | Tailwind classes on word elements |
+| `animate` | `boolean` | `true` | Enable fade-in animation |
+| `responsive` | `boolean` | `true` | Auto-resize to container |
+
+---
+
+## Font Size Scaling
+
+Words are sized proportionally to their value. The word with the highest value gets `maxFontSize`, and the lowest gets `minFontSize`. Everything in between is linearly interpolated.
+
+```tsx
+// Small, dense cloud
+<WordCloudChart
+  data={data}
+  minFontSize={8}
+  maxFontSize={32}
+/>
+
+// Large, dramatic cloud with big contrast
+<WordCloudChart
+  data={data}
+  minFontSize={10}
+  maxFontSize={80}
+/>
+```
+
+If `maxFontSize` is not set, it is calculated automatically based on the container size to ensure all words fit.
+
+---
+
+## Spiral Placement
+
+The `spiral` prop controls how words are placed in the cloud.
+
+### `archimedean` (default)
+
+Words spiral outward from the center in a smooth curve. This produces organic, circular clouds:
+
+```tsx
+<WordCloudChart data={data} spiral="archimedean" />
+```
+
+### `rectangular`
+
+Words are placed in a rectangular spiral, filling from the center outward in a more structured pattern. Produces tighter, more rectangular layouts:
+
+```tsx
+<WordCloudChart data={data} spiral="rectangular" />
+```
+
+---
+
+## Rotation
+
+Enable `rotate` to allow some words to be placed vertically. This creates a more dynamic, visually interesting layout:
+
+```tsx
+<WordCloudChart
+  data={data}
+  rotate
+/>
+```
+
+By default, rotated words use 0 or 90 degrees. Customize with `rotationAngles`:
+
+```tsx
+// Only horizontal and vertical
+<WordCloudChart data={data} rotate rotationAngles={[0, 90]} />
+
+// Multiple angles for a scattered look
+<WordCloudChart data={data} rotate rotationAngles={[-45, 0, 45, 90]} />
+
+// Slight tilt only
+<WordCloudChart data={data} rotate rotationAngles={[-15, 0, 15]} />
+```
+
+---
+
+## Color
+
+By default, words are colored from the theme palette. Override with `colorScale`:
+
+```tsx
+// Monochrome cyan
+<WordCloudChart
+  data={data}
+  colorScale={["#06b6d4", "#22d3ee", "#67e8f9"]}
+/>
+
+// Rainbow
+<WordCloudChart
+  data={data}
+  colorScale={["#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6"]}
+/>
+
+// Single color with opacity variation
+<WordCloudChart
+  data={data}
+  colorScale={["#06b6d4"]}
+  wordClassName="opacity-70 hover:opacity-100 transition-opacity"
+/>
+```
+
+Colors are assigned to words in order of their value (highest value gets the first color), cycling through the array if there are more words than colors.
+
+---
+
+## Styling with Tailwind
+
+```tsx
+<WordCloudChart
+  data={data}
+  className="rounded-xl bg-zinc-950 p-8"
+  wordClassName="cursor-pointer hover:opacity-80 transition-opacity font-bold"
+/>
+```
+
+---
+
+## Interactive Hover
+
+Words respond to hover by default. On hover, the word scales slightly and shows a tooltip with the exact value.
+
+```tsx
+// Custom tooltip format
+<WordCloudChart
+  data={data}
+  tooltipFormat={(item) => `${item.word}: ${item.value} mentions`}
+/>
+
+// Disable tooltips
+<WordCloudChart data={data} tooltip={false} />
+```
+
+---
+
+## Responsive Sizing
+
+Word clouds resize automatically when the container changes. The layout recalculates to fit all words optimally.
+
+```tsx
+<div className="w-full aspect-video">
+  <WordCloudChart data={data} responsive />
+</div>
+```
+
+For fixed-size clouds:
+
+```tsx
+<WordCloudChart data={data} width={600} height={400} responsive={false} />
+```
+
+---
+
+## Performance
+
+Word cloud layout is computed once on mount (or when data changes). For typical datasets (under 200 words), layout completes in under 50ms.
+
+For very large datasets:
+- Keep words under 500 for smooth performance
+- Increase `padding` to reduce collision checks
+- Use `animate={false}` to skip the fade-in
+
+---
+
+## Accessibility
+
+- Each word has an `aria-label` with the word and its value
+- The cloud has a `role="img"` with a summary description
+- Tab navigation focuses words in order of value (largest first)
+- Pattern fills not applicable (text-based visualization)
+
+---
+
+## Real-World Examples
+
+### Survey response keywords
+```tsx
+<WordCloudChart
+  data={surveyKeywords}
+  minFontSize={12}
+  maxFontSize={56}
+  rotate
+  colorScale={["#06b6d4", "#10b981", "#f59e0b", "#8b5cf6"]}
+  className="h-80 rounded-xl"
+/>
+```
+
+### Technology stack overview
+```tsx
+<WordCloudChart
+  data={techStack.map(t => ({ word: t.name, value: t.usage }))}
+  maxFontSize={72}
+  fontFamily="monospace"
+  wordClassName="font-mono"
+  colorScale={["#22d3ee"]}
+/>
+```
+
+### Article tag cloud
+```tsx
+<WordCloudChart
+  data={tags}
+  minFontSize={10}
+  maxFontSize={36}
+  spiral="rectangular"
+  padding={4}
+  className="h-48"
+/>
+```

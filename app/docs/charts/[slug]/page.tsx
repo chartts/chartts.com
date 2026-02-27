@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { MDXRemote } from "next-mdx-remote/rsc";
+import rehypePrettyCode from "rehype-pretty-code";
+import remarkFrontmatter from "remark-frontmatter";
+import remarkGfm from "remark-gfm";
+import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import { CodeBlock } from "@/lib/highlight";
+import { getAllChartDocSlugs, getChartDocBySlug } from "@/lib/docs";
+import { mdxComponents } from "@/lib/mdx-components";
+import { renderChart } from "@/lib/charts";
 
 const chartDocs: Record<
   string,
@@ -696,6 +704,120 @@ const chartDocs: Record<
 />`,
     features: ["Automatic node positioning", "Curved flow paths", "Interactive node dragging", "Highlight connected paths", "Color by source/target", "Animated flow reveal"],
   },
+  violin: {
+    name: "Violin Plot",
+    description:
+      "Show the full distribution shape of data per category using mirrored density curves. Combines the statistical rigor of box plots with the visual clarity of kernel density estimation.",
+    props: [
+      { name: "data", type: "T[]", description: "Array of data objects with statistical values" },
+      { name: "x", type: "keyof T", description: "Key for categories" },
+      { name: "min", type: "keyof T", description: "Key for minimum values" },
+      { name: "q1", type: "keyof T", description: "Key for first quartile" },
+      { name: "median", type: "keyof T", description: "Key for median values" },
+      { name: "q3", type: "keyof T", description: "Key for third quartile" },
+      { name: "max", type: "keyof T", description: "Key for maximum values" },
+      { name: "showBox", type: "boolean", description: "Show inner box plot (Q1-Q3 + median). Default: true" },
+      { name: "bandwidth", type: "number", description: "KDE smoothing bandwidth. Default: auto" },
+    ],
+    usage: `import { ViolinChart } from "@chartts/react"
+
+<ViolinChart
+  data={distributionData}
+  x="category"
+  min="min" q1="q1" median="median" q3="q3" max="max"
+  showBox
+/>`,
+    features: [
+      "Mirrored kernel density estimation curves",
+      "Optional inner box plot overlay",
+      "Configurable KDE bandwidth",
+      "Multiple category comparison",
+      "Interactive tooltips per category",
+      "Animated density curve entry",
+    ],
+  },
+  pack: {
+    name: "Circle Packing",
+    description:
+      "Visualize proportional data as nested circles. Each circle's area is proportional to its value, creating an organic, space-efficient layout for comparing magnitudes.",
+    props: [
+      { name: "data", type: "T[]", description: "Array of data objects" },
+      { name: "value", type: "keyof T", description: "Key for circle size values" },
+      { name: "label", type: "keyof T", description: "Key for circle labels" },
+      { name: "color", type: "keyof T | string", description: "Color key or fixed color" },
+      { name: "padding", type: "number", description: "Padding between circles. Default: 2" },
+    ],
+    usage: `import { PackChart } from "@chartts/react"
+
+<PackChart
+  data={frameworkData}
+  value="stars"
+  label="name"
+  color="category"
+/>`,
+    features: [
+      "Area proportional to value",
+      "Automatic circle placement",
+      "Labels inside large circles",
+      "Color by category or value",
+      "Interactive hover highlighting",
+      "Animated packing on mount",
+    ],
+  },
+  voronoi: {
+    name: "Voronoi Diagram",
+    description:
+      "Partition a plane into regions based on nearest-neighbor distance. Each cell's color intensity encodes its value, creating a tessellation that reveals spatial patterns.",
+    props: [
+      { name: "data", type: "T[]", description: "Array of data objects" },
+      { name: "value", type: "keyof T", description: "Key for cell values (controls color intensity)" },
+      { name: "label", type: "keyof T", description: "Key for cell labels" },
+      { name: "color", type: "string", description: "Base color for cells. Default: palette[0]" },
+      { name: "showLabels", type: "boolean", description: "Show labels at cell centers. Default: true" },
+    ],
+    usage: `import { VoronoiChart } from "@chartts/react"
+
+<VoronoiChart
+  data={regionData}
+  value="intensity"
+  label="name"
+/>`,
+    features: [
+      "Automatic Voronoi tessellation",
+      "Value-encoded cell opacity",
+      "Cell labels at centroids",
+      "Interactive cell highlighting",
+      "Nearest-neighbor hit detection",
+      "Animated cell reveal",
+    ],
+  },
+  wordcloud: {
+    name: "Word Cloud",
+    description:
+      "Display words sized proportionally to their values. Uses spiral placement to pack words efficiently into the chart area. Ideal for text analysis, tag clouds, and frequency visualization.",
+    props: [
+      { name: "data", type: "{ word: string; value: number }[]", description: "Word-value pairs" },
+      { name: "minFontSize", type: "number", description: "Minimum font size in px. Default: 10" },
+      { name: "maxFontSize", type: "number", description: "Maximum font size in px. Default: auto" },
+      { name: "spiral", type: "'archimedean' | 'rectangular'", description: "Spiral type. Default: 'archimedean'" },
+      { name: "rotate", type: "boolean", description: "Allow rotated words. Default: false" },
+    ],
+    usage: `import { WordCloudChart } from "@chartts/react"
+
+<WordCloudChart
+  data={tagData}
+  minFontSize={12}
+  maxFontSize={64}
+/>`,
+    features: [
+      "Font size proportional to value",
+      "Archimedean spiral placement",
+      "Collision-free word packing",
+      "Color from palette",
+      "Interactive word hover",
+      "Responsive sizing",
+    ],
+  },
 };
 
 type PageProps = {
@@ -703,11 +825,21 @@ type PageProps = {
 };
 
 export async function generateStaticParams() {
-  return Object.keys(chartDocs).map((slug) => ({ slug }));
+  const hardcoded = Object.keys(chartDocs);
+  const mdxSlugs = getAllChartDocSlugs();
+  const all = [...new Set([...hardcoded, ...mdxSlugs])];
+  return all.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+  const mdxDoc = getChartDocBySlug(slug);
+  if (mdxDoc) {
+    return {
+      title: `${mdxDoc.title} | Chart.ts Documentation`,
+      description: mdxDoc.description,
+    };
+  }
   const chart = chartDocs[slug];
   if (!chart) return {};
   return {
@@ -718,15 +850,108 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ChartDocPage({ params }: PageProps) {
   const { slug } = await params;
-  const chart = chartDocs[slug];
 
+  // Check for MDX content first
+  const mdxDoc = getChartDocBySlug(slug);
+  if (mdxDoc) {
+    const svg = renderChart(slug, { width: 700, height: 380, theme: "dark" });
+    const svgLight = renderChart(slug, { width: 700, height: 380, theme: "light" });
+
+    return (
+      <article className="max-w-4xl">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-3">
+            <Link
+              href="/docs/charts"
+              className="section-label text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
+            >
+              Charts
+            </Link>
+            <span className="faint-text">/</span>
+            <p className="section-label muted-text">{mdxDoc.title}</p>
+          </div>
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight heading">
+            {mdxDoc.title}
+          </h1>
+          <p className="mt-4 text-lg body-text leading-relaxed">
+            {mdxDoc.description}
+          </p>
+        </div>
+
+        {/* Large chart preview */}
+        {svg && (
+          <div className="mb-12 rounded-xl card overflow-hidden p-6">
+            <div
+              className="w-full [&>svg]:w-full [&>svg]:h-auto hidden dark:block"
+              dangerouslySetInnerHTML={{ __html: svg }}
+            />
+            {svgLight && (
+              <div
+                className="w-full [&>svg]:w-full [&>svg]:h-auto dark:hidden"
+                dangerouslySetInnerHTML={{ __html: svgLight }}
+              />
+            )}
+          </div>
+        )}
+
+        {/* MDX content */}
+        <div className="prose-chartts">
+          <MDXRemote
+            source={mdxDoc.content}
+            components={mdxComponents}
+            options={{
+              mdxOptions: {
+                remarkPlugins: [remarkGfm, remarkFrontmatter, remarkMdxFrontmatter],
+                rehypePlugins: [
+                  [
+                    rehypePrettyCode,
+                    {
+                      theme: {
+                        dark: "github-dark-dimmed",
+                        light: "github-light",
+                      },
+                      keepBackground: false,
+                    },
+                  ],
+                ],
+              },
+            }}
+          />
+        </div>
+
+        {/* Navigation */}
+        <section className="mt-16">
+          <h2 className="text-lg font-bold heading mb-4">Other Charts</h2>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(chartDocs)
+              .filter(([key]) => key !== slug)
+              .map(([key, c]) => (
+                <Link
+                  key={key}
+                  href={`/docs/charts/${key}`}
+                  className="px-3 py-1.5 rounded-lg text-xs font-mono card body-text hover:text-cyan-400 hover:border-cyan-500/20 transition-all cursor-pointer"
+                >
+                  {c.name}
+                </Link>
+              ))}
+          </div>
+        </section>
+      </article>
+    );
+  }
+
+  // Fallback to hardcoded
+  const chart = chartDocs[slug];
   if (!chart) {
     notFound();
   }
 
+  const svg = renderChart(slug, { width: 700, height: 380, theme: "dark" });
+  const svgLight = renderChart(slug, { width: 700, height: 380, theme: "light" });
+
   return (
-    <article className="max-w-3xl">
-      <div className="mb-12">
+    <article className="max-w-4xl">
+      <div className="mb-8">
         <div className="flex items-center gap-3 mb-3">
           <Link
             href="/docs/charts"
@@ -745,6 +970,22 @@ export default async function ChartDocPage({ params }: PageProps) {
         </p>
       </div>
 
+      {/* Large chart preview */}
+      {svg && (
+        <div className="mb-12 rounded-xl card overflow-hidden p-6">
+          <div
+            className="w-full [&>svg]:w-full [&>svg]:h-auto hidden dark:block"
+            dangerouslySetInnerHTML={{ __html: svg }}
+          />
+          {svgLight && (
+            <div
+              className="w-full [&>svg]:w-full [&>svg]:h-auto dark:hidden"
+              dangerouslySetInnerHTML={{ __html: svgLight }}
+            />
+          )}
+        </div>
+      )}
+
       {/* Usage */}
       <section className="mb-12">
         <h2 className="text-xl font-bold heading mb-4">Usage</h2>
@@ -754,34 +995,34 @@ export default async function ChartDocPage({ params }: PageProps) {
       {/* Props */}
       <section className="mb-12">
         <h2 className="text-xl font-bold heading mb-4">Props</h2>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-lg" style={{ border: "1px solid var(--c-border)" }}>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b adaptive-border">
-                <th className="text-left py-3 pr-4 muted-text font-mono font-normal text-xs">
+              <tr style={{ borderBottom: "1px solid var(--c-border)", background: "var(--c-card-bg)" }}>
+                <th className="text-left py-3 px-4 muted-text font-mono font-normal text-xs">
                   Prop
                 </th>
-                <th className="text-left py-3 pr-4 muted-text font-mono font-normal text-xs">
+                <th className="text-left py-3 px-4 muted-text font-mono font-normal text-xs">
                   Type
                 </th>
-                <th className="text-left py-3 muted-text font-mono font-normal text-xs">
+                <th className="text-left py-3 px-4 muted-text font-mono font-normal text-xs">
                   Description
                 </th>
               </tr>
             </thead>
             <tbody>
-              {chart.props.map((prop) => (
+              {chart.props.map((prop, i) => (
                 <tr
                   key={prop.name}
-                  className="border-b" style={{ borderColor: 'var(--c-grid-subtle)' }}
+                  style={i < chart.props.length - 1 ? { borderBottom: "1px solid var(--c-grid-subtle)" } : undefined}
                 >
-                  <td className="py-3 pr-4 font-mono text-cyan-400 whitespace-nowrap">
+                  <td className="py-3 px-4 font-mono text-cyan-400 whitespace-nowrap text-sm">
                     {prop.name}
                   </td>
-                  <td className="py-3 pr-4 font-mono muted-text whitespace-nowrap text-xs">
+                  <td className="py-3 px-4 font-mono muted-text whitespace-nowrap text-xs">
                     {prop.type}
                   </td>
-                  <td className="py-3 body-text">{prop.description}</td>
+                  <td className="py-3 px-4 body-text text-sm">{prop.description}</td>
                 </tr>
               ))}
             </tbody>
@@ -792,9 +1033,9 @@ export default async function ChartDocPage({ params }: PageProps) {
       {/* Features */}
       <section className="mb-12">
         <h2 className="text-xl font-bold heading mb-4">Features</h2>
-        <ul className="space-y-2">
+        <div className="grid sm:grid-cols-2 gap-3">
           {chart.features.map((feature) => (
-            <li key={feature} className="flex items-start gap-3 body-text">
+            <div key={feature} className="flex items-start gap-3 p-3 rounded-lg card">
               <svg
                 className="w-4 h-4 mt-0.5 text-cyan-400 shrink-0"
                 fill="none"
@@ -808,10 +1049,10 @@ export default async function ChartDocPage({ params }: PageProps) {
                   d="M5 13l4 4L19 7"
                 />
               </svg>
-              {feature}
-            </li>
+              <span className="body-text text-sm">{feature}</span>
+            </div>
           ))}
-        </ul>
+        </div>
       </section>
 
       {/* Navigation */}

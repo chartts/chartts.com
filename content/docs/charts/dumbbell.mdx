@@ -1,0 +1,227 @@
+---
+title: "Dumbbell Chart"
+description: "Show the gap between two values per category. Perfect for before/after comparisons, range displays, and gap analysis."
+badge: "Comparison"
+---
+
+## Quick Start
+
+```tsx
+import { DumbbellChart } from "@chartts/react"
+
+const data = [
+  { department: "Engineering", before: 72, after: 91 },
+  { department: "Marketing", before: 65, after: 78 },
+  { department: "Sales", before: 80, after: 85 },
+  { department: "Support", before: 58, after: 88 },
+  { department: "Design", before: 70, after: 82 },
+]
+
+export function SatisfactionShift() {
+  return (
+    <DumbbellChart
+      data={data}
+      label="department"
+      start="before"
+      end="after"
+      showValues
+      showDelta
+      className="h-80 w-full"
+    />
+  )
+}
+```
+
+## When to Use Dumbbell Charts
+
+Dumbbell charts (also called connected dot plots) highlight the gap between two related values per category, making differences impossible to miss.
+
+**Use a dumbbell chart when:**
+- Comparing before and after values (pre/post intervention, year-over-year)
+- Showing the gap or range between two data points per category
+- Highlighting which categories improved most or least
+- You want to draw attention to the magnitude of change
+
+**Don't use a dumbbell when:**
+- You have more than two values per category (use a grouped bar chart)
+- Showing absolute values matters more than the gap (use a bar chart)
+- Categories have no paired relationship
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `label` | `keyof T` | required | Key for category labels |
+| `start` | `keyof T` | required | Key for the start/before value |
+| `end` | `keyof T` | required | Key for the end/after value |
+| `startColor` | `string` | `"#94a3b8"` | Color for the start dot |
+| `endColor` | `string` | `"#3b82f6"` | Color for the end dot |
+| `lineColor` | `string` | `"#cbd5e1"` | Color for the connecting line |
+| `dotSize` | `number` | `8` | Radius of endpoint dots in pixels |
+| `showValues` | `boolean` | `false` | Display numeric values at each dot |
+| `showDelta` | `boolean` | `false` | Display the difference between start and end |
+| `sorted` | `boolean \| 'asc' \| 'desc'` | `false` | Sort by gap size |
+| `animate` | `boolean` | `true` | Animate dots and lines on mount |
+| `className` | `string` | - | Tailwind classes on root SVG |
+
+---
+
+## Before/After Comparison
+
+The most common use case. The start dot represents the "before" state and the end dot represents the "after" state:
+
+```tsx
+<DumbbellChart
+  data={data}
+  label="department"
+  start="before"
+  end="after"
+  startColor="#94a3b8"
+  endColor="#10b981"
+  showValues
+/>
+```
+
+The connecting line between the two dots makes the gap immediately visible. Long lines mean big changes; short lines mean small changes.
+
+---
+
+## Delta Display
+
+Enable `showDelta` to annotate each row with the numeric difference:
+
+```tsx
+<DumbbellChart
+  data={data}
+  label="department"
+  start="q1"
+  end="q2"
+  showDelta
+/>
+```
+
+The delta appears alongside the connecting line, showing the exact magnitude of change. Positive deltas are styled differently from negative ones so improvements and regressions are clear at a glance.
+
+---
+
+## Color Coding
+
+Use colors to reinforce meaning:
+
+```tsx
+// Green for improvement
+<DumbbellChart
+  data={data}
+  label="metric"
+  start="baseline"
+  end="current"
+  startColor="#94a3b8"
+  endColor="#10b981"
+  lineColor="#d1d5db"
+/>
+
+// Red/green to show direction
+<DumbbellChart
+  data={data}
+  label="metric"
+  start="lastYear"
+  end="thisYear"
+  startColor="#ef4444"
+  endColor="#10b981"
+/>
+```
+
+When both dots use the same color, the chart emphasizes the gap itself rather than direction.
+
+---
+
+## Sorting by Gap
+
+Sort categories by the size of the gap to create a ranked view of biggest changes:
+
+```tsx
+// Largest gap first
+<DumbbellChart
+  data={data}
+  label="department"
+  start="before"
+  end="after"
+  sorted="desc"
+  showDelta
+/>
+
+// Smallest gap first
+<DumbbellChart
+  data={data}
+  label="department"
+  start="before"
+  end="after"
+  sorted="asc"
+/>
+```
+
+This makes it easy to identify which categories had the most or least change.
+
+---
+
+## Accessibility
+
+- Each row announces its label, start value, end value, and the delta
+- Screen readers describe the direction and magnitude of change
+- Color coding is supplemented with numeric annotations when `showDelta` is enabled
+- Keyboard navigation moves between rows in display order
+
+---
+
+## Real-World Examples
+
+### Gender pay gap by role
+```tsx
+<DumbbellChart
+  data={payData}
+  label="role"
+  start="femaleSalary"
+  end="maleSalary"
+  startColor="#ec4899"
+  endColor="#3b82f6"
+  showValues
+  showDelta
+  sorted="desc"
+  className="h-96"
+/>
+```
+
+### Year-over-year performance
+```tsx
+<DumbbellChart
+  data={metrics}
+  label="metric"
+  start="lastYear"
+  end="thisYear"
+  startColor="#94a3b8"
+  endColor="#10b981"
+  showValues
+  showDelta
+  dotSize={10}
+  className="h-72"
+/>
+```
+
+### Price range comparison
+```tsx
+<DumbbellChart
+  data={products}
+  label="product"
+  start="minPrice"
+  end="maxPrice"
+  startColor="#6366f1"
+  endColor="#6366f1"
+  lineColor="#a5b4fc"
+  showValues
+  sorted="desc"
+  className="h-80"
+/>
+```

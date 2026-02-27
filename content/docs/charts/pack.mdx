@@ -1,0 +1,389 @@
+---
+title: "Pack Chart"
+description: "Circle-packing layout for hierarchical data. Nested circles show parent-child relationships with area encoding value."
+badge: "Hierarchy"
+---
+
+## Quick Start
+
+```tsx
+import { PackChart } from "@chartts/react"
+
+const data = {
+  name: "Company",
+  children: [
+    {
+      name: "Engineering",
+      children: [
+        { name: "Frontend", value: 45 },
+        { name: "Backend", value: 60 },
+        { name: "DevOps", value: 25 },
+        { name: "QA", value: 20 },
+      ],
+    },
+    {
+      name: "Design",
+      children: [
+        { name: "Product", value: 30 },
+        { name: "Brand", value: 15 },
+      ],
+    },
+    {
+      name: "Marketing",
+      children: [
+        { name: "Content", value: 20 },
+        { name: "SEO", value: 12 },
+        { name: "Paid", value: 18 },
+      ],
+    },
+  ],
+}
+
+export function OrgChart() {
+  return (
+    <PackChart
+      data={data}
+      value="value"
+      label="name"
+      className="h-96 w-full"
+    />
+  )
+}
+```
+
+That renders a circle-packing chart where each leaf node is a circle sized by its value, nested inside parent circles representing departments. The layout automatically positions circles to minimize wasted space.
+
+## When to Use Pack Charts
+
+Pack charts (circle-packing) display hierarchical data as nested circles. The area of each circle encodes a numeric value, and nesting shows the hierarchy.
+
+**Use a pack chart when:**
+- Your data is hierarchical (org charts, file systems, taxonomies)
+- You want to show relative sizes within a hierarchy
+- The visual metaphor of containment (circles inside circles) matches your data
+- You have a moderate number of leaf nodes (10 to 200)
+
+**Don't use a pack chart when:**
+- You need precise size comparisons (circles are harder to compare than rectangles; use a treemap)
+- Your data is flat with no hierarchy (use a bar or pie chart)
+- You have thousands of nodes (the layout becomes cluttered)
+- Space efficiency matters more than aesthetics (treemaps use space more efficiently)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `HierarchyNode` | required | Hierarchical data object with `children` arrays |
+| `value` | `string` | required | Key for the numeric value on leaf nodes |
+| `label` | `string` | required | Key for the label text on each node |
+| `colors` | `string[]` | palette | Colors assigned by depth level |
+| `padding` | `number` | `3` | Padding between sibling circles in pixels |
+| `showLabels` | `boolean` | `true` | Display labels inside circles |
+| `showValues` | `boolean` | `false` | Display values inside circles |
+| `zoomable` | `boolean` | `false` | Enable click-to-zoom on parent circles |
+| `animate` | `boolean` | `true` | Enable circle entry animation on mount |
+| `className` | `string` | - | Tailwind classes on the root SVG |
+
+---
+
+## Nested Circle Packing
+
+The layout algorithm positions circles to minimize unused space. Each parent circle contains all of its children, and the area of each leaf circle is proportional to its value.
+
+```tsx
+const fileSystem = {
+  name: "root",
+  children: [
+    {
+      name: "src",
+      children: [
+        { name: "index.ts", value: 12 },
+        { name: "utils.ts", value: 8 },
+        {
+          name: "components",
+          children: [
+            { name: "Button.tsx", value: 5 },
+            { name: "Modal.tsx", value: 15 },
+            { name: "Table.tsx", value: 22 },
+          ],
+        },
+      ],
+    },
+    {
+      name: "tests",
+      children: [
+        { name: "index.test.ts", value: 10 },
+        { name: "utils.test.ts", value: 6 },
+      ],
+    },
+    { name: "package.json", value: 3 },
+    { name: "tsconfig.json", value: 2 },
+  ],
+}
+
+<PackChart
+  data={fileSystem}
+  value="value"
+  label="name"
+  showValues
+  className="h-[500px]"
+/>
+```
+
+---
+
+## Zoom on Click
+
+Enable `zoomable` to let users click on a parent circle to zoom into it. The view smoothly transitions to fill the chart area with the selected subtree. Click the background or the root circle to zoom back out.
+
+```tsx
+<PackChart
+  data={data}
+  value="value"
+  label="name"
+  zoomable
+  className="h-[500px]"
+/>
+```
+
+Zooming is especially useful for deep hierarchies where leaf-level labels are too small to read at the overview level. Users can drill down to any level and see full labels and values.
+
+---
+
+## Label Auto-Sizing
+
+Labels automatically adjust to fit inside their circle. Large circles show full text; small circles truncate or hide the label entirely. This prevents overlap and keeps the chart readable at every zoom level.
+
+```tsx
+// Labels and values
+<PackChart
+  data={data}
+  value="value"
+  label="name"
+  showLabels
+  showValues
+/>
+
+// Labels only
+<PackChart
+  data={data}
+  value="value"
+  label="name"
+  showLabels
+  showValues={false}
+/>
+
+// No labels (rely on tooltips)
+<PackChart
+  data={data}
+  value="value"
+  label="name"
+  showLabels={false}
+/>
+```
+
+---
+
+## Color by Depth
+
+By default, circles are colored by their depth in the hierarchy. The root level gets the first color, the next level gets the second, and so on.
+
+```tsx
+<PackChart
+  data={data}
+  value="value"
+  label="name"
+  colors={["#06b6d4", "#10b981", "#f59e0b", "#8b5cf6"]}
+/>
+```
+
+This creates a clear visual distinction between hierarchy levels. Parent circles at depth 0 are cyan, depth 1 is green, depth 2 is amber, and depth 3 is purple.
+
+### Custom color mapping
+
+```tsx
+// Cool tones
+<PackChart
+  data={data}
+  value="value"
+  label="name"
+  colors={["#1e3a5f", "#2563eb", "#60a5fa", "#bfdbfe"]}
+/>
+
+// Warm tones
+<PackChart
+  data={data}
+  value="value"
+  label="name"
+  colors={["#7c2d12", "#ea580c", "#fb923c", "#fed7aa"]}
+/>
+```
+
+---
+
+## Padding Control
+
+The `padding` prop controls the spacing between sibling circles within their parent. More padding makes the hierarchy clearer but reduces the area available for content.
+
+```tsx
+// Tight packing: minimal gaps
+<PackChart data={data} value="value" label="name" padding={1} />
+
+// Standard spacing
+<PackChart data={data} value="value" label="name" padding={3} />
+
+// Spacious: clear visual separation
+<PackChart data={data} value="value" label="name" padding={8} />
+```
+
+---
+
+## Accessibility
+
+- **Screen readers**: Each circle announces its label, value, depth level, and parent name. The overall chart describes the hierarchy depth and total number of nodes.
+- **Keyboard navigation**: Tab to focus the chart, then use arrow keys to traverse the hierarchy. Down arrow enters a child; up arrow goes to the parent. Left and right arrows move between siblings.
+- **ARIA roles**: The chart has `role="img"` with a descriptive `aria-label`. Each circle has `role="treeitem"` with hierarchy context.
+- **Reduced motion**: When `prefers-reduced-motion` is enabled, circles render immediately and zoom transitions are instant.
+- **Color independence**: Depth is communicated through nesting level and ARIA labels, not just color.
+
+---
+
+## Real-World Examples
+
+### Team headcount
+
+```tsx
+const orgData = {
+  name: "Company",
+  children: [
+    {
+      name: "Engineering",
+      children: [
+        { name: "Frontend", value: 12 },
+        { name: "Backend", value: 18 },
+        { name: "Mobile", value: 8 },
+        { name: "Infrastructure", value: 6 },
+      ],
+    },
+    {
+      name: "Product",
+      children: [
+        { name: "PMs", value: 5 },
+        { name: "Designers", value: 7 },
+        { name: "Researchers", value: 3 },
+      ],
+    },
+    {
+      name: "Operations",
+      children: [
+        { name: "HR", value: 4 },
+        { name: "Finance", value: 3 },
+        { name: "Legal", value: 2 },
+      ],
+    },
+  ],
+}
+
+<PackChart
+  data={orgData}
+  value="value"
+  label="name"
+  showValues
+  zoomable
+  colors={["#06b6d4", "#10b981", "#f59e0b"]}
+  className="h-[500px] rounded-xl bg-zinc-950 p-4"
+/>
+```
+
+### Disk usage breakdown
+
+```tsx
+const diskData = {
+  name: "Disk",
+  children: [
+    {
+      name: "Applications",
+      children: [
+        { name: "VS Code", value: 850 },
+        { name: "Chrome", value: 620 },
+        { name: "Docker", value: 2400 },
+        { name: "Xcode", value: 12000 },
+      ],
+    },
+    {
+      name: "Documents",
+      children: [
+        { name: "Projects", value: 5600 },
+        { name: "Downloads", value: 3200 },
+        { name: "Photos", value: 8400 },
+      ],
+    },
+    {
+      name: "System",
+      children: [
+        { name: "OS", value: 15000 },
+        { name: "Cache", value: 4200 },
+        { name: "Logs", value: 800 },
+      ],
+    },
+  ],
+}
+
+<PackChart
+  data={diskData}
+  value="value"
+  label="name"
+  showValues
+  zoomable
+  padding={4}
+  colors={["#3b82f6", "#8b5cf6", "#ec4899", "#f97316"]}
+  className="h-[500px]"
+/>
+```
+
+### NPM dependency tree
+
+```tsx
+const depsData = {
+  name: "my-app",
+  children: [
+    {
+      name: "react",
+      children: [
+        { name: "react-dom", value: 130 },
+        { name: "scheduler", value: 18 },
+      ],
+    },
+    {
+      name: "next",
+      children: [
+        { name: "webpack", value: 85 },
+        { name: "postcss", value: 22 },
+        { name: "swc", value: 45 },
+      ],
+    },
+    {
+      name: "tailwindcss",
+      children: [
+        { name: "postcss", value: 22 },
+        { name: "autoprefixer", value: 12 },
+      ],
+    },
+    { name: "typescript", value: 65 },
+    { name: "eslint", value: 38 },
+  ],
+}
+
+<PackChart
+  data={depsData}
+  value="value"
+  label="name"
+  showLabels
+  zoomable
+  padding={3}
+  colors={["#0f172a", "#334155", "#64748b", "#94a3b8"]}
+  className="h-96 rounded-lg bg-slate-950"
+/>
+```

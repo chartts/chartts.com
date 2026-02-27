@@ -1,0 +1,475 @@
+---
+title: "Scatter Chart"
+description: "Plot individual data points on two axes. Reveal correlations, clusters, and outliers in your data."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { ScatterChart } from "@chartts/react"
+
+const data = [
+  { height: 170, weight: 68, name: "Alice" },
+  { height: 175, weight: 74, name: "Bob" },
+  { height: 160, weight: 55, name: "Carol" },
+  { height: 182, weight: 82, name: "Dan" },
+  { height: 168, weight: 62, name: "Eve" },
+  { height: 190, weight: 90, name: "Frank" },
+  { height: 155, weight: 50, name: "Grace" },
+  { height: 178, weight: 78, name: "Hank" },
+]
+
+export function HeightWeightScatter() {
+  return (
+    <ScatterChart
+      data={data}
+      x="height"
+      y="weight"
+      className="h-80 w-full"
+    />
+  )
+}
+```
+
+That renders a fully interactive scatter plot with axes, tooltips, responsive scaling, and hover effects. Each data point appears as a circle positioned by its x and y values.
+
+## When to Use Scatter Charts
+
+Scatter charts plot individual observations on two numeric axes. Each point is one record in your dataset.
+
+**Use a scatter chart when:**
+- Exploring the relationship between two numeric variables (height vs. weight, price vs. demand)
+- Looking for correlations, clusters, or outliers
+- Your dataset has many individual observations (tens to thousands of points)
+- You want to encode a third variable through point size or color
+
+**Don't use a scatter chart when:**
+- One axis is categorical (use a bar chart or strip plot)
+- You want to show change over time with a connected path (use a line chart)
+- You have fewer than 5 data points (a table is clearer)
+- You need to show proportions of a whole (use a pie chart)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `x` | `keyof T` | required | Key for x-axis values (numeric) |
+| `y` | `keyof T` | required | Key for y-axis values (numeric) |
+| `size` | `keyof T \| number` | `6` | Point radius. A key maps values to radius; a number sets a fixed size |
+| `color` | `keyof T \| string` | theme default | Point fill. A key maps values to a color scale; a string sets a fixed color |
+| `shape` | `'circle' \| 'square' \| 'triangle' \| 'diamond'` | `'circle'` | Shape of each data point |
+| `className` | `string` | - | Tailwind classes on the root SVG |
+| `pointClassName` | `string` | - | Tailwind classes on each point |
+| `axisClassName` | `string` | - | Tailwind classes on axis elements |
+| `tooltipClassName` | `string` | - | Tailwind classes on tooltip |
+| `responsive` | `boolean` | `true` | Auto-resize to container width |
+| `animate` | `boolean` | `true` | Enable point entry animation |
+
+---
+
+## Size Encoding
+
+Map a numeric field to point radius to add a third dimension of information. This creates a bubble chart effect where larger values produce larger points.
+
+```tsx
+const data = [
+  { city: "Tokyo", population: 37400, gdp: 1920, area: 2194 },
+  { city: "Delhi", population: 30290, gdp: 370, area: 1484 },
+  { city: "Shanghai", population: 27058, gdp: 690, area: 6341 },
+  { city: "São Paulo", population: 22043, gdp: 580, area: 1521 },
+]
+
+<ScatterChart
+  data={data}
+  x="gdp"
+  y="population"
+  size="area"
+  className="h-96"
+/>
+```
+
+The radius scales proportionally. The smallest value in your data gets the minimum point size, the largest gets the maximum. Override the range with `sizeRange`:
+
+```tsx
+<ScatterChart
+  data={data}
+  x="gdp"
+  y="population"
+  size="area"
+  sizeRange={[4, 40]}
+/>
+```
+
+For a fixed size on all points, pass a number:
+
+```tsx
+<ScatterChart data={data} x="gdp" y="population" size={8} />
+```
+
+---
+
+## Color Encoding
+
+Map a field to color to distinguish categories or show a continuous gradient across a third variable.
+
+### Categorical color
+
+When the mapped field contains strings, each unique value gets a distinct color from the palette:
+
+```tsx
+<ScatterChart
+  data={studentData}
+  x="mathScore"
+  y="scienceScore"
+  color="grade"
+/>
+```
+
+A legend appears automatically showing which color maps to which category.
+
+### Continuous color
+
+When the mapped field contains numbers, values are mapped to a sequential color gradient:
+
+```tsx
+<ScatterChart
+  data={sensorReadings}
+  x="temperature"
+  y="humidity"
+  color="pressure"
+/>
+```
+
+Override the gradient with `colorRange`:
+
+```tsx
+<ScatterChart
+  data={sensorReadings}
+  x="temperature"
+  y="humidity"
+  color="pressure"
+  colorRange={["#06b6d4", "#ef4444"]}
+/>
+```
+
+### Fixed color
+
+Pass a CSS color string to apply a single color to all points:
+
+```tsx
+<ScatterChart data={data} x="x" y="y" color="#10b981" />
+```
+
+---
+
+## Point Shapes
+
+The `shape` prop controls the marker used for each point. Different shapes help distinguish groups, especially in print or for color-blind users.
+
+```tsx
+// Circle (default)
+<ScatterChart data={data} x="x" y="y" shape="circle" />
+
+// Square
+<ScatterChart data={data} x="x" y="y" shape="square" />
+
+// Triangle
+<ScatterChart data={data} x="x" y="y" shape="triangle" />
+
+// Diamond
+<ScatterChart data={data} x="x" y="y" shape="diamond" />
+```
+
+In multi-series mode, shapes can be assigned automatically per series so each group has a distinct shape and color. This provides a double encoding that remains readable in grayscale.
+
+---
+
+## Trend and Regression Lines
+
+Add a best-fit line to highlight the overall trend in your data:
+
+```tsx
+<ScatterChart
+  data={data}
+  x="studyHours"
+  y="examScore"
+  trendline
+/>
+```
+
+The default is a linear regression. Choose other methods:
+
+```tsx
+// Linear (y = mx + b)
+<ScatterChart data={data} x="x" y="y" trendline="linear" />
+
+// Polynomial
+<ScatterChart data={data} x="x" y="y" trendline="polynomial" />
+
+// Logarithmic
+<ScatterChart data={data} x="x" y="y" trendline="logarithmic" />
+```
+
+Style the trend line independently:
+
+```tsx
+<ScatterChart
+  data={data}
+  x="x"
+  y="y"
+  trendline
+  trendlineClassName="stroke-red-400 stroke-dashed stroke-1"
+/>
+```
+
+---
+
+## Zoom and Pan
+
+For datasets with many points, enable zoom and pan to let users explore dense regions:
+
+```tsx
+<ScatterChart
+  data={largeDataset}
+  x="x"
+  y="y"
+  zoom
+/>
+```
+
+- **Scroll** to zoom in and out
+- **Click and drag** to pan across the chart
+- **Double-click** to reset the view
+
+Constrain the zoom range:
+
+```tsx
+<ScatterChart
+  data={largeDataset}
+  x="x"
+  y="y"
+  zoom
+  zoomRange={[0.5, 10]}
+/>
+```
+
+---
+
+## Multi-Series
+
+Render multiple groups on the same chart. Each series gets a unique color and appears in the legend.
+
+### Using a group field
+
+When your data has a categorical field that defines groups, pass it to `group`:
+
+```tsx
+const data = [
+  { x: 12, y: 45, species: "setosa" },
+  { x: 18, y: 52, species: "versicolor" },
+  { x: 22, y: 60, species: "virginica" },
+  // ...more rows
+]
+
+<ScatterChart
+  data={data}
+  x="x"
+  y="y"
+  group="species"
+/>
+```
+
+### Custom series colors
+
+```tsx
+<ScatterChart
+  data={data}
+  x="x"
+  y="y"
+  group="species"
+  seriesClassName={{
+    setosa: "fill-cyan-500",
+    versicolor: "fill-emerald-500",
+    virginica: "fill-amber-500",
+  }}
+/>
+```
+
+---
+
+## Styling with Tailwind
+
+Every visual element exposes a `className` prop. Style scatter charts the same way you style the rest of your app.
+
+```tsx
+<ScatterChart
+  data={data}
+  x="height"
+  y="weight"
+  className="rounded-xl bg-zinc-900/50 p-4"
+  pointClassName="fill-cyan-400 hover:fill-cyan-300 transition-colors cursor-pointer"
+  axisClassName="text-zinc-500 text-xs"
+  tooltipClassName="bg-zinc-800 text-white rounded-lg shadow-xl px-3 py-2 text-sm"
+/>
+```
+
+Dark mode with Tailwind variants:
+
+```tsx
+<ScatterChart
+  data={data}
+  x="x"
+  y="y"
+  pointClassName="fill-blue-600 dark:fill-blue-400"
+  axisClassName="text-gray-600 dark:text-gray-400"
+/>
+```
+
+Conditional point styling based on value:
+
+```tsx
+<ScatterChart
+  data={data}
+  x="x"
+  y="y"
+  pointClassName={(point) =>
+    point.y > 100 ? "fill-red-500" : "fill-zinc-400"
+  }
+/>
+```
+
+---
+
+## Tooltips
+
+Tooltips appear on hover by default. They show the x-value, y-value, and any size or color field values for the hovered point.
+
+Disable tooltips:
+
+```tsx
+<ScatterChart data={data} x="x" y="y" tooltip={false} />
+```
+
+Custom tooltip format:
+
+```tsx
+<ScatterChart
+  data={data}
+  x="height"
+  y="weight"
+  tooltipFormat={(point) =>
+    `${point.name}: ${point.height}cm, ${point.weight}kg`
+  }
+/>
+```
+
+---
+
+## Accessibility
+
+Scatter charts include full accessibility support out of the box:
+
+- **Screen readers**: Each data point is announced with its x-value and y-value. The overall distribution is summarized (e.g., "Scatter chart with 150 points, x ranges from 10 to 95, y ranges from 20 to 80").
+- **Keyboard navigation**: Tab to focus the chart, then use arrow keys to move between data points. The tooltip follows the focused point.
+- **ARIA roles**: The chart has `role="img"` with a descriptive `aria-label`. Individual points have `role="listitem"`.
+- **Shape encoding**: Using distinct shapes alongside color ensures the chart remains readable for color-blind users.
+
+---
+
+## Real-World Examples
+
+### Student performance analysis
+
+```tsx
+const students = [
+  { studyHours: 2, examScore: 55, subject: "Math" },
+  { studyHours: 5, examScore: 72, subject: "Math" },
+  { studyHours: 8, examScore: 88, subject: "Math" },
+  { studyHours: 3, examScore: 61, subject: "Science" },
+  { studyHours: 6, examScore: 79, subject: "Science" },
+  { studyHours: 9, examScore: 92, subject: "Science" },
+  { studyHours: 1, examScore: 42, subject: "English" },
+  { studyHours: 4, examScore: 68, subject: "English" },
+  { studyHours: 7, examScore: 85, subject: "English" },
+]
+
+<ScatterChart
+  data={students}
+  x="studyHours"
+  y="examScore"
+  group="subject"
+  trendline
+  seriesClassName={{
+    Math: "fill-cyan-500",
+    Science: "fill-emerald-500",
+    English: "fill-amber-500",
+  }}
+  trendlineClassName="stroke-zinc-400 stroke-dashed"
+  className="h-96"
+/>
+```
+
+### Real estate pricing
+
+```tsx
+const properties = [
+  { sqft: 850, price: 320000, bedrooms: 1 },
+  { sqft: 1200, price: 450000, bedrooms: 2 },
+  { sqft: 1600, price: 580000, bedrooms: 3 },
+  { sqft: 2100, price: 720000, bedrooms: 4 },
+  { sqft: 2800, price: 950000, bedrooms: 5 },
+  { sqft: 1400, price: 410000, bedrooms: 2 },
+  { sqft: 1900, price: 670000, bedrooms: 3 },
+  { sqft: 3200, price: 1100000, bedrooms: 5 },
+]
+
+<ScatterChart
+  data={properties}
+  x="sqft"
+  y="price"
+  size="bedrooms"
+  sizeRange={[6, 28]}
+  color="bedrooms"
+  colorRange={["#06b6d4", "#7c3aed"]}
+  tooltipFormat={(p) =>
+    `${p.sqft} sqft, $${(p.price / 1000).toFixed(0)}k, ${p.bedrooms}BR`
+  }
+  trendline
+  className="h-96"
+/>
+```
+
+### Server performance monitoring
+
+```tsx
+const servers = [
+  { responseTime: 45, throughput: 1200, errorRate: 0.2, name: "us-east-1" },
+  { responseTime: 62, throughput: 980, errorRate: 0.8, name: "us-west-2" },
+  { responseTime: 38, throughput: 1400, errorRate: 0.1, name: "eu-west-1" },
+  { responseTime: 120, throughput: 450, errorRate: 3.2, name: "ap-south-1" },
+  { responseTime: 55, throughput: 1100, errorRate: 0.5, name: "eu-central-1" },
+  { responseTime: 200, throughput: 200, errorRate: 8.1, name: "sa-east-1" },
+]
+
+<ScatterChart
+  data={servers}
+  x="responseTime"
+  y="throughput"
+  size="errorRate"
+  sizeRange={[6, 32]}
+  pointClassName={(point) =>
+    point.errorRate > 3 ? "fill-red-500" : "fill-emerald-500"
+  }
+  tooltipFormat={(s) =>
+    `${s.name}: ${s.responseTime}ms, ${s.throughput} req/s, ${s.errorRate}% errors`
+  }
+  zoom
+  className="h-96 rounded-xl bg-zinc-950 p-4"
+  axisClassName="text-zinc-500 text-xs"
+  tooltipClassName="bg-zinc-800 text-white rounded-lg shadow-xl px-3 py-2 text-sm"
+/>
+```

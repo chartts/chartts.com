@@ -1,0 +1,307 @@
+---
+title: "Renko Chart"
+description: "Price chart using fixed-size bricks. A new brick forms only when price moves by the brick size. Eliminates time and focuses purely on price movement."
+badge: "Finance"
+---
+
+## Quick Start
+
+```tsx
+import { RenkoChart } from "@chartts/react"
+
+const data = [
+  { date: "2024-01-02", close: 172.1 },
+  { date: "2024-01-03", close: 174.9 },
+  { date: "2024-01-04", close: 173.5 },
+  { date: "2024-01-05", close: 177.6 },
+  { date: "2024-01-08", close: 176.2 },
+  { date: "2024-01-09", close: 179.8 },
+  { date: "2024-01-10", close: 182.4 },
+  { date: "2024-01-11", close: 180.1 },
+  { date: "2024-01-12", close: 184.5 },
+  { date: "2024-01-16", close: 187.3 },
+]
+
+export function PriceRenko() {
+  return (
+    <RenkoChart
+      data={data}
+      date="date"
+      close="close"
+      brickSize={2}
+      className="h-80 w-full"
+    />
+  )
+}
+```
+
+That renders a Renko chart where each brick represents a $2 price move. Green bricks stack upward for rising prices, red bricks stack downward for falling prices, and time is completely removed from the equation.
+
+## When to Use Renko Charts
+
+Renko charts use uniform bricks to show price movement. A new brick only appears when price moves by the exact brick size, filtering out all smaller fluctuations.
+
+**Use a Renko chart when:**
+- You want a clean, noise-free view of price trends
+- Identifying support and resistance levels visually
+- Detecting trend reversals without time distortion
+- Simplifying price action for pattern recognition
+
+**Don't use a Renko chart when:**
+- Time context is important for your analysis (use candlestick or line charts)
+- You need to see exact intraday price movement
+- Your data has fewer than 20 data points (not enough to form meaningful bricks)
+- Volume data is a critical part of your analysis
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects with date and price fields |
+| `date` | `keyof T` | required | Key for the date/timestamp field |
+| `close` | `keyof T` | required | Key for the closing price field |
+| `brickSize` | `number` | `1` | Fixed price amount each brick represents |
+| `upColor` | `string` | `'#22c55e'` | Color for rising bricks |
+| `downColor` | `string` | `'#ef4444'` | Color for falling bricks |
+| `showValues` | `boolean` | `false` | Display price values on bricks |
+| `gapBetweenBricks` | `number` | `1` | Pixel gap between adjacent bricks |
+| `animate` | `boolean` | `true` | Enable brick entry animation on mount |
+| `className` | `string` | - | Tailwind classes on the root SVG |
+
+---
+
+## Brick Size Configuration
+
+The brick size is the single most important parameter. It determines how much price must move to create a new brick. Smaller bricks capture more detail; larger bricks show only major moves.
+
+```tsx
+// Small bricks: more detail, more bricks
+<RenkoChart
+  data={data}
+  date="date"
+  close="close"
+  brickSize={1}
+/>
+
+// Large bricks: less detail, cleaner trends
+<RenkoChart
+  data={data}
+  date="date"
+  close="close"
+  brickSize={5}
+/>
+```
+
+### Choosing the right brick size
+
+A common approach is to use the asset's Average True Range (ATR) as the brick size. If a stock typically moves $3 per day, a brick size of $3 produces roughly one brick per day of significant movement.
+
+For different asset classes:
+- **Large-cap stocks ($100-$500 range)**: Try brick sizes of 2 to 5
+- **Small-cap stocks ($10-$50 range)**: Try brick sizes of 0.5 to 2
+- **Crypto (BTC at $40k+)**: Try brick sizes of 500 to 2000
+- **Forex (EUR/USD around 1.08)**: Try brick sizes of 0.002 to 0.01
+
+---
+
+## Directional Coloring
+
+Bricks are colored by direction. Rising bricks are green by default, falling bricks are red. Customize both colors to match your application's theme.
+
+```tsx
+<RenkoChart
+  data={data}
+  date="date"
+  close="close"
+  brickSize={2}
+  upColor="#22c55e"
+  downColor="#ef4444"
+/>
+```
+
+### Alternative color schemes
+
+```tsx
+// Blue/orange for a softer look
+<RenkoChart
+  data={data}
+  date="date"
+  close="close"
+  brickSize={2}
+  upColor="#3b82f6"
+  downColor="#f97316"
+/>
+
+// Monochrome with subtle contrast
+<RenkoChart
+  data={data}
+  date="date"
+  close="close"
+  brickSize={2}
+  upColor="#a1a1aa"
+  downColor="#52525b"
+/>
+```
+
+---
+
+## Gap Control
+
+The `gapBetweenBricks` prop adjusts the spacing between adjacent bricks. Tighter gaps create a more connected look; wider gaps make individual bricks more distinct.
+
+```tsx
+// No gap: bricks touch each other
+<RenkoChart
+  data={data}
+  date="date"
+  close="close"
+  brickSize={2}
+  gapBetweenBricks={0}
+/>
+
+// Standard gap
+<RenkoChart
+  data={data}
+  date="date"
+  close="close"
+  brickSize={2}
+  gapBetweenBricks={1}
+/>
+
+// Wide gap: bricks clearly separated
+<RenkoChart
+  data={data}
+  date="date"
+  close="close"
+  brickSize={2}
+  gapBetweenBricks={3}
+/>
+```
+
+---
+
+## Trend Visualization
+
+Renko charts make trends visually obvious. A sequence of same-colored bricks indicates a sustained trend. Direction changes stand out because the brick color switches.
+
+```tsx
+// Show values on each brick to see exact price levels
+<RenkoChart
+  data={longTermData}
+  date="date"
+  close="close"
+  brickSize={3}
+  showValues
+  upColor="#4ade80"
+  downColor="#f87171"
+  className="h-96"
+/>
+```
+
+### Reading Renko patterns
+
+- **Long run of up bricks**: Strong bullish trend. The longer the run, the stronger the trend.
+- **Long run of down bricks**: Strong bearish trend.
+- **Alternating bricks**: Choppy, range-bound market. Price is oscillating around a level without committing to a direction.
+- **First opposite brick after a run**: Potential trend reversal signal. A single down brick after ten up bricks is the earliest warning of a change.
+
+---
+
+## Accessibility
+
+- **Screen readers**: Each brick is announced with its direction (rising or falling), price level, and position in the sequence. A summary describes the overall trend direction and total number of bricks.
+- **Keyboard navigation**: Tab to focus the chart, then use left/right arrow keys to move between bricks. The tooltip follows the focused brick.
+- **ARIA roles**: The chart has `role="img"` with a descriptive `aria-label`. Each brick has `role="listitem"` with direction and price details.
+- **Reduced motion**: When `prefers-reduced-motion` is enabled, bricks render immediately without entry animation.
+- **Color independence**: Brick direction is communicated through position (up bricks move diagonally up-right, down bricks move diagonally down-right) and ARIA labels, not just color.
+
+---
+
+## Real-World Examples
+
+### Stock trend tracker
+
+```tsx
+const stockData = [
+  { date: "2024-03-01", close: 178.2 },
+  { date: "2024-03-04", close: 180.7 },
+  { date: "2024-03-05", close: 182.6 },
+  { date: "2024-03-06", close: 181.4 },
+  { date: "2024-03-07", close: 184.8 },
+  { date: "2024-03-08", close: 186.1 },
+  { date: "2024-03-11", close: 183.9 },
+  { date: "2024-03-12", close: 187.5 },
+  { date: "2024-03-13", close: 190.2 },
+  { date: "2024-03-14", close: 189.0 },
+]
+
+<RenkoChart
+  data={stockData}
+  date="date"
+  close="close"
+  brickSize={2}
+  upColor="#22c55e"
+  downColor="#ef4444"
+  showValues
+  className="h-96 rounded-xl bg-zinc-950 p-4"
+/>
+```
+
+### Crypto price action
+
+```tsx
+const btcData = [
+  { date: "2024-01-10", close: 46200 },
+  { date: "2024-01-11", close: 46950 },
+  { date: "2024-01-12", close: 46600 },
+  { date: "2024-01-13", close: 47650 },
+  { date: "2024-01-14", close: 47300 },
+  { date: "2024-01-15", close: 48200 },
+  { date: "2024-01-16", close: 49100 },
+  { date: "2024-01-17", close: 48400 },
+  { date: "2024-01-18", close: 49800 },
+  { date: "2024-01-19", close: 51200 },
+]
+
+<RenkoChart
+  data={btcData}
+  date="date"
+  close="close"
+  brickSize={1000}
+  upColor="#4ade80"
+  downColor="#fb923c"
+  gapBetweenBricks={2}
+  className="h-80 rounded-lg bg-gray-950"
+/>
+```
+
+### Forex clean trend view
+
+```tsx
+const eurUsd = [
+  { date: "2024-02-01", close: 1.0812 },
+  { date: "2024-02-02", close: 1.0788 },
+  { date: "2024-02-05", close: 1.0745 },
+  { date: "2024-02-06", close: 1.0762 },
+  { date: "2024-02-07", close: 1.0778 },
+  { date: "2024-02-08", close: 1.0805 },
+  { date: "2024-02-09", close: 1.0832 },
+  { date: "2024-02-12", close: 1.0793 },
+  { date: "2024-02-13", close: 1.0820 },
+  { date: "2024-02-14", close: 1.0855 },
+]
+
+<RenkoChart
+  data={eurUsd}
+  date="date"
+  close="close"
+  brickSize={0.003}
+  upColor="#3b82f6"
+  downColor="#a855f7"
+  showValues
+  gapBetweenBricks={1}
+  className="h-72"
+/>
+```

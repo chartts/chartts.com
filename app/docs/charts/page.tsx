@@ -36,6 +36,10 @@ const charts: { name: string; slug: string; description: string; color: string }
   { name: "Calendar", slug: "calendar", description: "Daily activity, contribution grids", color: "#10b981" },
   { name: "Combo", slug: "combo", description: "Mixed chart types, dual axis", color: "#22d3ee" },
   { name: "Sankey", slug: "sankey", description: "Flow diagrams, user journeys", color: "#f59e0b" },
+  { name: "Violin Plot", slug: "violin", description: "Distribution shapes, density curves", color: "#8b5cf6" },
+  { name: "Circle Packing", slug: "pack", description: "Hierarchical circles, proportional sizing", color: "#10b981" },
+  { name: "Voronoi", slug: "voronoi", description: "Tessellation, nearest-neighbor regions", color: "#22d3ee" },
+  { name: "Word Cloud", slug: "wordcloud", description: "Word frequency, text analysis", color: "#f59e0b" },
 ];
 
 export default function ChartsOverviewPage() {

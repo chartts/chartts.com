@@ -1,0 +1,225 @@
+---
+title: "Donut Chart"
+description: "A pie chart with a center cutout. Display a key metric in the center while showing proportional data around it."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { DonutChart } from "@chartts/react"
+
+const data = [
+  { source: "Desktop", visitors: 55000 },
+  { source: "Mobile", visitors: 35000 },
+  { source: "Tablet", visitors: 10000 },
+]
+
+export function TrafficDonut() {
+  return (
+    <DonutChart
+      data={data}
+      value="visitors"
+      label="source"
+      centerLabel="100k"
+      className="h-80 w-80 mx-auto"
+    />
+  )
+}
+```
+
+## When to Use Donut Charts
+
+Donut charts show parts of a whole with a hollow center that can display a summary metric.
+
+**Use a donut chart when:**
+- You want the same thing as a pie chart but with a center label
+- Showing a single KPI with its breakdown (total revenue + sources)
+- You have 2 to 6 categories
+- The center metric adds context that a pie chart alone would lack
+
+**Prefer a pie chart when:**
+- You don't need a center label
+- The segments themselves are the whole story
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `value` | `keyof T` | required | Key for segment values |
+| `label` | `keyof T` | required | Key for segment labels |
+| `innerRadius` | `number` | `0.6` | Inner radius ratio (0 to 1) |
+| `centerLabel` | `string \| ReactNode` | - | Content in the donut center |
+| `padAngle` | `number` | `2` | Padding between segments in degrees |
+| `cornerRadius` | `number` | `4` | Rounded corners on segment edges |
+| `startAngle` | `number` | `0` | Starting angle in degrees |
+| `labels` | `'inside' \| 'outside' \| 'none'` | `'outside'` | Label placement |
+| `showPercent` | `boolean` | `true` | Show percentages in labels |
+| `colors` | `string[]` | palette | Custom color array |
+| `animate` | `boolean` | `true` | Animated reveal on mount |
+| `className` | `string` | - | Tailwind classes on root |
+| `segmentClassName` | `string` | - | Tailwind classes on segments |
+
+---
+
+## Center Label
+
+The defining feature of a donut chart. Display any content in the hollow center.
+
+### Simple text
+```tsx
+<DonutChart data={data} value="amount" label="category" centerLabel="$2.4M" />
+```
+
+### Rich content (React)
+```tsx
+<DonutChart
+  data={data}
+  value="amount"
+  label="category"
+  centerLabel={
+    <div className="text-center">
+      <div className="text-3xl font-bold heading">73%</div>
+      <div className="text-sm muted-text">Complete</div>
+    </div>
+  }
+/>
+```
+
+### Dynamic center (shows hovered segment)
+```tsx
+<DonutChart
+  data={data}
+  value="amount"
+  label="category"
+  onHover={(segment) => setCenterText(segment?.category ?? "Total")}
+  centerLabel={centerText}
+/>
+```
+
+---
+
+## Inner Radius
+
+Controls how thick the donut ring is. `0` is a solid pie, `1` is an infinitely thin ring.
+
+```tsx
+// Thin ring (mostly hollow)
+<DonutChart data={data} value="v" label="l" innerRadius={0.8} />
+
+// Standard donut
+<DonutChart data={data} value="v" label="l" innerRadius={0.6} />
+
+// Thick ring
+<DonutChart data={data} value="v" label="l" innerRadius={0.35} />
+```
+
+---
+
+## Segment Styling
+
+### Padding and rounding
+```tsx
+<DonutChart
+  data={data}
+  value="amount"
+  label="category"
+  padAngle={4}
+  cornerRadius={8}
+/>
+```
+
+### Custom colors
+```tsx
+<DonutChart
+  data={data}
+  value="amount"
+  label="category"
+  colors={["#06b6d4", "#10b981", "#f59e0b", "#ef4444"]}
+/>
+```
+
+### Tailwind hover effects
+```tsx
+<DonutChart
+  data={data}
+  value="amount"
+  label="category"
+  segmentClassName="hover:opacity-80 transition-opacity cursor-pointer"
+/>
+```
+
+---
+
+## Progress Ring
+
+A common pattern: a two-segment donut that shows completion:
+
+```tsx
+<DonutChart
+  data={[
+    { label: "Done", value: 73 },
+    { label: "Left", value: 27 },
+  ]}
+  value="value"
+  label="label"
+  innerRadius={0.78}
+  centerLabel="73%"
+  colors={["#10b981", "#1e1e24"]}
+  labels="none"
+  padAngle={0}
+  className="h-32 w-32"
+/>
+```
+
+---
+
+## Accessibility
+
+- Segments are announced with label, value, and percentage
+- Keyboard navigation between segments with arrow keys
+- Center label is read as a summary
+- Pattern fills available for color-blind users
+
+---
+
+## Real-World Examples
+
+### Revenue breakdown with total
+```tsx
+<DonutChart
+  data={revenueStreams}
+  value="revenue"
+  label="stream"
+  innerRadius={0.65}
+  centerLabel={
+    <div className="text-center">
+      <div className="text-2xl font-bold">$4.2M</div>
+      <div className="text-xs muted-text">Total Revenue</div>
+    </div>
+  }
+  padAngle={3}
+  cornerRadius={6}
+  className="h-96"
+/>
+```
+
+### Storage usage
+```tsx
+<DonutChart
+  data={[
+    { type: "Photos", size: 45 },
+    { type: "Videos", size: 28 },
+    { type: "Documents", size: 15 },
+    { type: "Free", size: 12 },
+  ]}
+  value="size"
+  label="type"
+  innerRadius={0.7}
+  centerLabel="88% used"
+  colors={["#3b82f6", "#8b5cf6", "#f59e0b", "#27272a"]}
+/>
+```

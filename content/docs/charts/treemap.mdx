@@ -1,0 +1,203 @@
+---
+title: "Treemap"
+description: "Visualize hierarchical data as nested rectangles. Area represents magnitude. Great for showing proportions within a hierarchy."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { TreemapChart } from "@chartts/react"
+
+const data = [
+  { company: "Apple", marketCap: 3200, sector: "Tech" },
+  { company: "Microsoft", marketCap: 2800, sector: "Tech" },
+  { company: "Amazon", marketCap: 1900, sector: "Tech" },
+  { company: "JPMorgan", marketCap: 600, sector: "Finance" },
+  { company: "Visa", marketCap: 550, sector: "Finance" },
+  { company: "Johnson & Johnson", marketCap: 400, sector: "Health" },
+  { company: "Exxon", marketCap: 450, sector: "Energy" },
+]
+
+export function MarketCapMap() {
+  return (
+    <TreemapChart
+      data={data}
+      value="marketCap"
+      label="company"
+      color="sector"
+      className="h-96 w-full"
+    />
+  )
+}
+```
+
+## When to Use Treemaps
+
+Treemaps show how a total is divided into parts, with area encoding the size of each part.
+
+**Use a treemap when:**
+- Showing proportional size across many items (market cap, disk usage, budget)
+- Data has a hierarchical structure (categories with sub-items)
+- You have too many items for a pie chart (treemaps handle 50+ items well)
+- Relative size matters more than exact values
+
+**Don't use a treemap when:**
+- You need to compare exact values precisely (use a bar chart)
+- You have fewer than 5 items (use a pie or donut)
+- The data has no hierarchical or categorical structure
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `value` | `keyof T` | required | Key for rectangle area sizing |
+| `label` | `keyof T` | required | Key for cell labels |
+| `color` | `keyof T \| string` | palette | Color by category key or fixed color |
+| `padding` | `number` | `2` | Padding between cells in pixels |
+| `showLabels` | `boolean` | `true` | Display labels inside cells |
+| `showValues` | `boolean` | `false` | Display values inside cells |
+| `valueFormat` | `(v: number) => string` | - | Custom value formatter |
+| `algorithm` | `'squarify' \| 'binary' \| 'slice' \| 'dice'` | `'squarify'` | Layout algorithm |
+| `animate` | `boolean` | `true` | Enable animation |
+| `className` | `string` | - | Tailwind classes on root |
+| `cellClassName` | `string` | - | Tailwind classes on cells |
+
+---
+
+## Color by Category
+
+When `color` references a data key, items with the same category value get the same color:
+
+```tsx
+<TreemapChart
+  data={stocks}
+  value="marketCap"
+  label="ticker"
+  color="sector"
+/>
+```
+
+This groups items visually by sector even though the layout is based on size.
+
+### Custom colors
+
+```tsx
+<TreemapChart
+  data={stocks}
+  value="marketCap"
+  label="ticker"
+  colors={["#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"]}
+/>
+```
+
+---
+
+## Labels
+
+Labels auto-size to fit inside each cell. Large cells show the full label; small cells truncate or hide the label.
+
+```tsx
+// Labels and values
+<TreemapChart
+  data={data}
+  value="size"
+  label="name"
+  showLabels
+  showValues
+  valueFormat={(v) => `${(v / 1000).toFixed(1)}B`}
+/>
+
+// No labels (rely on tooltips)
+<TreemapChart data={data} value="size" label="name" showLabels={false} />
+```
+
+---
+
+## Layout Algorithms
+
+### `squarify` (default)
+Produces cells closest to squares. Best readability. Most common choice.
+
+### `binary`
+Recursively partitions into two roughly equal groups. Good for showing hierarchy.
+
+### `slice`
+All cells in horizontal rows. Good when order matters.
+
+### `dice`
+All cells in vertical columns. Good when order matters.
+
+```tsx
+<TreemapChart data={data} value="size" label="name" algorithm="squarify" />
+```
+
+---
+
+## Padding
+
+```tsx
+// Tight (minimal gaps)
+<TreemapChart data={data} value="size" label="name" padding={1} />
+
+// Standard
+<TreemapChart data={data} value="size" label="name" padding={2} />
+
+// Spacious
+<TreemapChart data={data} value="size" label="name" padding={4} />
+```
+
+---
+
+## Accessibility
+
+- Each cell announces its label, value, and percentage of total
+- Keyboard navigation between cells in size order
+- Screen readers describe the treemap as a proportional breakdown
+
+---
+
+## Real-World Examples
+
+### Stock market heatmap
+```tsx
+<TreemapChart
+  data={sp500}
+  value="marketCap"
+  label="ticker"
+  color="sector"
+  showValues
+  valueFormat={(v) => `$${(v / 1000).toFixed(0)}B`}
+  cellClassName="hover:opacity-90 transition-opacity cursor-pointer"
+  className="h-[500px]"
+/>
+```
+
+### Disk usage
+```tsx
+<TreemapChart
+  data={files}
+  value="sizeBytes"
+  label="name"
+  color="type"
+  showValues
+  valueFormat={(v) => formatBytes(v)}
+  padding={1}
+/>
+```
+
+### Portfolio allocation
+```tsx
+<TreemapChart
+  data={holdings}
+  value="currentValue"
+  label="name"
+  color="assetClass"
+  showLabels
+  showValues
+  valueFormat={(v) => `$${(v / 1000).toFixed(0)}k`}
+/>
+```

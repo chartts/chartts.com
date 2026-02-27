@@ -1,0 +1,197 @@
+---
+title: "Histogram Chart"
+description: "Visualize the frequency distribution of continuous data by grouping values into bins."
+badge: "Statistics"
+---
+
+## Quick Start
+
+```tsx
+import { HistogramChart } from "@chartts/react"
+
+const data = [
+  { id: 1, responseTime: 120 },
+  { id: 2, responseTime: 245 },
+  { id: 3, responseTime: 180 },
+  { id: 4, responseTime: 310 },
+  { id: 5, responseTime: 95 },
+  { id: 6, responseTime: 275 },
+  { id: 7, responseTime: 150 },
+  { id: 8, responseTime: 420 },
+  // ... more data points
+]
+
+export function ResponseTimeDistribution() {
+  return (
+    <HistogramChart
+      data={data}
+      value="responseTime"
+      bins={12}
+      color="#6366f1"
+      className="h-72 w-full"
+    />
+  )
+}
+```
+
+## When to Use Histograms
+
+Histograms show how continuous data distributes across a range. Unlike bar charts which compare categories, histograms reveal the shape, center, and spread of a single variable.
+
+**Use a histogram when:**
+- Exploring the distribution of a continuous variable (response times, ages, prices)
+- Checking for normality, skewness, or multimodality
+- Identifying clusters, gaps, or outliers in your data
+- Understanding the spread and central tendency of measurements
+
+**Don't use a histogram when:**
+- Your data is categorical (use a bar chart)
+- You want to compare distributions across groups (use box plots side by side)
+- You have fewer than 20 data points (the shape becomes unreliable)
+- Precise individual values matter (use a strip or dot plot)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `value` | `keyof T` | required | Key for the numeric values to bin |
+| `bins` | `number` | `'auto'` | Number of bins (or auto-calculated) |
+| `binWidth` | `number` | - | Fixed width for each bin (overrides bins) |
+| `color` | `string` | `"#3b82f6"` | Fill color for the bars |
+| `showCurve` | `boolean` | `false` | Overlay a normal distribution curve |
+| `showValues` | `boolean` | `false` | Display count labels on bins |
+| `cumulative` | `boolean` | `false` | Show cumulative frequency |
+| `animate` | `boolean` | `true` | Enable bar grow animation |
+| `className` | `string` | - | Tailwind classes on root SVG |
+
+---
+
+## Auto-Binning
+
+By default, the bin count is calculated automatically using the Sturges formula, which works well for most datasets. Override it when you need more or fewer bins:
+
+```tsx
+// Auto bins (default)
+<HistogramChart data={data} value="score" />
+
+// Fewer bins for a smoother shape
+<HistogramChart data={data} value="score" bins={8} />
+
+// More bins for finer detail
+<HistogramChart data={data} value="score" bins={30} />
+```
+
+Too few bins hide the distribution shape. Too many bins create noise. Start with auto and adjust.
+
+---
+
+## Custom Bin Width
+
+Instead of specifying the number of bins, set a fixed bin width. This is useful when your data has natural intervals:
+
+```tsx
+// 10-unit bins (0-10, 10-20, 20-30, ...)
+<HistogramChart
+  data={data}
+  value="age"
+  binWidth={10}
+/>
+
+// 5-minute bins for response times
+<HistogramChart
+  data={data}
+  value="responseTime"
+  binWidth={5}
+/>
+```
+
+When `binWidth` is set, it takes priority over `bins`. The number of bins is determined by the data range divided by the bin width.
+
+---
+
+## Distribution Curve Overlay
+
+Enable `showCurve` to overlay a smooth normal distribution curve on top of the histogram bars:
+
+```tsx
+<HistogramChart
+  data={data}
+  value="measurement"
+  bins={20}
+  showCurve
+  color="#8b5cf6"
+/>
+```
+
+The curve is fitted to the mean and standard deviation of your data. This helps visualize how closely your data follows a normal distribution. The curve scales to match the histogram's bar heights.
+
+---
+
+## Cumulative Mode
+
+Switch to cumulative mode to show a running total. Each bar represents the count of all values up to and including that bin:
+
+```tsx
+<HistogramChart
+  data={data}
+  value="deliveryDays"
+  cumulative
+  bins={15}
+  color="#06b6d4"
+/>
+```
+
+Cumulative histograms are useful for answering questions like "what percentage of orders arrive within 3 days?" The final bar always equals the total count.
+
+---
+
+## Accessibility
+
+- Each bin has an `aria-label` with the range and count (e.g., "120 to 140: 15 items")
+- Screen readers announce the overall distribution summary (mean, median, range)
+- Keyboard navigation moves between bins from left to right
+- The distribution curve, when present, has a descriptive aria-label
+
+---
+
+## Real-World Examples
+
+### Page load time analysis
+```tsx
+<HistogramChart
+  data={pageLoads}
+  value="loadTime"
+  bins={20}
+  showCurve
+  showValues
+  color="#ef4444"
+  className="h-72"
+/>
+```
+
+### Employee tenure distribution
+```tsx
+<HistogramChart
+  data={employees}
+  value="yearsAtCompany"
+  binWidth={1}
+  color="#10b981"
+  showValues
+  className="h-64"
+/>
+```
+
+### Price distribution for listings
+```tsx
+<HistogramChart
+  data={listings}
+  value="price"
+  bins={25}
+  cumulative
+  color="#f59e0b"
+  className="h-72 w-full"
+/>
+```

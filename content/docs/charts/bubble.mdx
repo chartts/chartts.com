@@ -1,0 +1,221 @@
+---
+title: "Bubble Chart"
+description: "Plot three dimensions of data using position and size, revealing correlations and clusters."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { BubbleChart } from "@chartts/react"
+
+const data = [
+  { country: "US", gdp: 63000, population: 331, co2: 15.5 },
+  { country: "China", gdp: 12500, population: 1412, co2: 7.4 },
+  { country: "Germany", gdp: 51000, population: 83, co2: 8.1 },
+  { country: "India", gdp: 2200, population: 1408, co2: 1.9 },
+  { country: "Brazil", gdp: 8900, population: 214, co2: 2.3 },
+]
+
+export function GdpVsEmissions() {
+  return (
+    <BubbleChart
+      data={data}
+      x="gdp"
+      y="co2"
+      size="population"
+      label="country"
+      className="h-80 w-full"
+    />
+  )
+}
+```
+
+## When to Use Bubble Charts
+
+Bubble charts extend scatter plots by encoding a third variable as bubble size. They reveal relationships between three quantitative dimensions at once.
+
+**Use a bubble chart when:**
+- You have three numeric dimensions to compare (x, y, and size)
+- Looking for correlations between variables while showing magnitude
+- Comparing entities across multiple metrics (countries, products, teams)
+- You want to highlight outliers with unusually large or small bubbles
+
+**Don't use a bubble chart when:**
+- You only have two dimensions (use a scatter plot instead)
+- Precise size comparison matters (area perception is imprecise)
+- You have more than 50 data points (chart becomes cluttered)
+- The size variable has very little variance
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `x` | `keyof T` | required | Key for horizontal position |
+| `y` | `keyof T` | required | Key for vertical position |
+| `size` | `keyof T` | required | Key for bubble size |
+| `color` | `keyof T \| string` | `"#3b82f6"` | Key for color encoding or fixed color |
+| `label` | `keyof T` | - | Key for bubble labels |
+| `minRadius` | `number` | `4` | Minimum bubble radius in pixels |
+| `maxRadius` | `number` | `40` | Maximum bubble radius in pixels |
+| `sizeScale` | `'linear' \| 'sqrt'` | `'sqrt'` | Scale function for size mapping |
+| `showLabels` | `boolean` | `false` | Display labels on bubbles |
+| `animate` | `boolean` | `true` | Enable bubble entrance animation |
+| `className` | `string` | - | Tailwind classes on root SVG |
+
+---
+
+## Size Encoding
+
+The `size` prop maps a numeric field to bubble area. By default, a square root scale is used so that doubling the value doubles the perceived area, not the radius:
+
+```tsx
+<BubbleChart
+  data={data}
+  x="revenue"
+  y="growth"
+  size="marketCap"
+  minRadius={6}
+  maxRadius={50}
+/>
+```
+
+Switch to a linear scale if your data range is narrow and you want more visual separation:
+
+```tsx
+<BubbleChart
+  data={data}
+  x="revenue"
+  y="growth"
+  size="marketCap"
+  sizeScale="linear"
+/>
+```
+
+---
+
+## Color Encoding
+
+Use a data key for color to add a fourth dimension, or set a fixed color string:
+
+```tsx
+// Color by category field
+<BubbleChart
+  data={data}
+  x="gdp"
+  y="lifeExpectancy"
+  size="population"
+  color="continent"
+/>
+
+// Fixed color
+<BubbleChart
+  data={data}
+  x="gdp"
+  y="lifeExpectancy"
+  size="population"
+  color="#10b981"
+/>
+```
+
+When color maps to a categorical field, each unique value gets a distinct color from the palette.
+
+---
+
+## Labels on Bubbles
+
+Enable `showLabels` to render text centered inside each bubble. Labels only appear on bubbles large enough to contain them:
+
+```tsx
+<BubbleChart
+  data={data}
+  x="revenue"
+  y="employees"
+  size="valuation"
+  label="company"
+  showLabels
+/>
+```
+
+Small bubbles skip their label to prevent overlap. The label text color adapts to the bubble fill for readability.
+
+---
+
+## Multi-Group Bubbles
+
+When using a categorical `color` key, bubbles are visually grouped by color. Combine with labels for a rich comparison:
+
+```tsx
+<BubbleChart
+  data={techCompanies}
+  x="revenue"
+  y="rndSpend"
+  size="employees"
+  color="sector"
+  label="name"
+  showLabels
+  maxRadius={45}
+  className="h-96 w-full"
+/>
+```
+
+---
+
+## Accessibility
+
+- Each bubble has an `aria-label` with the label, x value, y value, and size value
+- Keyboard navigation: Tab to the chart, arrow keys cycle through bubbles
+- Screen readers announce all encoded dimensions for each bubble
+- Tooltips on hover show the full data for each point
+
+---
+
+## Real-World Examples
+
+### Startup landscape
+```tsx
+<BubbleChart
+  data={startups}
+  x="annualRevenue"
+  y="growthRate"
+  size="funding"
+  label="name"
+  color="stage"
+  showLabels
+  maxRadius={40}
+  className="h-96"
+/>
+```
+
+### City quality of life
+```tsx
+<BubbleChart
+  data={cities}
+  x="costOfLiving"
+  y="qualityScore"
+  size="population"
+  label="city"
+  showLabels
+  color="#8b5cf6"
+  minRadius={8}
+  maxRadius={50}
+/>
+```
+
+### Product portfolio analysis
+```tsx
+<BubbleChart
+  data={products}
+  x="marketShare"
+  y="growthRate"
+  size="revenue"
+  label="product"
+  color="category"
+  showLabels
+  sizeScale="sqrt"
+  className="h-80 w-full"
+/>
+```

@@ -1,0 +1,209 @@
+---
+title: "Waterfall Chart"
+description: "Show how an initial value is affected by positive and negative changes. Perfect for financial breakdowns and variance analysis."
+badge: "Finance"
+---
+
+## Quick Start
+
+```tsx
+import { WaterfallChart } from "@chartts/react"
+
+const data = [
+  { category: "Revenue", amount: 100000, isTotal: false },
+  { category: "COGS", amount: -40000, isTotal: false },
+  { category: "Gross Profit", amount: 60000, isTotal: true },
+  { category: "Marketing", amount: -15000, isTotal: false },
+  { category: "R&D", amount: -20000, isTotal: false },
+  { category: "Net Income", amount: 25000, isTotal: true },
+]
+
+export function ProfitBreakdown() {
+  return (
+    <WaterfallChart
+      data={data}
+      x="category"
+      y="amount"
+      total="isTotal"
+      className="h-80 w-full"
+    />
+  )
+}
+```
+
+## When to Use Waterfall Charts
+
+Waterfalls show how an initial value changes through a series of positive and negative contributions to reach a final value.
+
+**Use a waterfall chart when:**
+- Breaking down profit and loss (revenue minus costs equals profit)
+- Showing variance analysis (budget vs actual by category)
+- Explaining how a metric changed from one period to another
+- Making bridge charts between two summary values
+
+**Don't use a waterfall when:**
+- All values are positive (use a stacked bar)
+- There's no running total concept
+- You're comparing independent categories (use a bar chart)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `x` | `keyof T` | required | Key for category labels |
+| `y` | `keyof T` | required | Key for values (positive = increase, negative = decrease) |
+| `total` | `keyof T` | - | Key for boolean flag marking total/subtotal bars |
+| `upColor` | `string` | `'#10b981'` | Color for positive changes |
+| `downColor` | `string` | `'#ef4444'` | Color for negative changes |
+| `totalColor` | `string` | `'#22d3ee'` | Color for total/subtotal bars |
+| `showConnectors` | `boolean` | `true` | Draw connector lines between bars |
+| `showValues` | `boolean` | `true` | Display values on bars |
+| `valueFormat` | `(v: number) => string` | - | Custom value formatter |
+| `radius` | `number` | `4` | Bar corner radius |
+| `animate` | `boolean` | `true` | Enable animation |
+| `className` | `string` | - | Tailwind classes on root |
+
+---
+
+## Total Bars
+
+Mark specific entries as totals using the `total` prop. Total bars start from the baseline (zero) instead of floating:
+
+```tsx
+const data = [
+  { label: "Starting Balance", value: 50000, isTotal: true },
+  { label: "Sales", value: 30000, isTotal: false },
+  { label: "Refunds", value: -5000, isTotal: false },
+  { label: "Expenses", value: -18000, isTotal: false },
+  { label: "Ending Balance", value: 57000, isTotal: true },
+]
+
+<WaterfallChart data={data} x="label" y="value" total="isTotal" />
+```
+
+Without the `total` prop, the chart calculates a running total automatically and every bar floats.
+
+---
+
+## Colors
+
+Positive, negative, and total bars each get distinct colors:
+
+```tsx
+<WaterfallChart
+  data={data}
+  x="label"
+  y="value"
+  total="isTotal"
+  upColor="#10b981"
+  downColor="#ef4444"
+  totalColor="#06b6d4"
+/>
+```
+
+Or use Tailwind-style colors:
+
+```tsx
+<WaterfallChart
+  data={data}
+  x="label"
+  y="value"
+  upColor="rgb(16 185 129)"
+  downColor="rgb(239 68 68)"
+  totalColor="rgb(6 182 212)"
+/>
+```
+
+---
+
+## Connector Lines
+
+Connector lines (dashed lines between bars) show the running total progression:
+
+```tsx
+// Connectors on (default)
+<WaterfallChart data={data} x="l" y="v" showConnectors />
+
+// Connectors off
+<WaterfallChart data={data} x="l" y="v" showConnectors={false} />
+```
+
+---
+
+## Value Labels
+
+Format the values displayed on each bar:
+
+```tsx
+<WaterfallChart
+  data={data}
+  x="category"
+  y="amount"
+  showValues
+  valueFormat={(v) => {
+    const prefix = v >= 0 ? "+" : ""
+    return `${prefix}$${(Math.abs(v) / 1000).toFixed(0)}k`
+  }}
+/>
+```
+
+---
+
+## Styling
+
+```tsx
+<WaterfallChart
+  data={data}
+  x="category"
+  y="amount"
+  total="isTotal"
+  radius={6}
+  className="rounded-xl"
+/>
+```
+
+---
+
+## Accessibility
+
+- Each bar announces whether it's an increase, decrease, or total
+- The running total is provided in screen reader context
+- Keyboard navigation between bars with value announcements
+
+---
+
+## Real-World Examples
+
+### Quarterly P&L bridge
+```tsx
+<WaterfallChart
+  data={pnlData}
+  x="item"
+  y="amount"
+  total="isSummary"
+  showValues
+  valueFormat={(v) => `$${(v / 1000000).toFixed(1)}M`}
+  className="h-96"
+/>
+```
+
+### Budget variance
+```tsx
+<WaterfallChart
+  data={[
+    { item: "Budget", amount: 500000, isTotal: true },
+    { item: "Labor Savings", amount: 25000, isTotal: false },
+    { item: "Material Overrun", amount: -40000, isTotal: false },
+    { item: "Timeline Delay", amount: -15000, isTotal: false },
+    { item: "Actual", amount: 470000, isTotal: true },
+  ]}
+  x="item"
+  y="amount"
+  total="isTotal"
+  showValues
+  valueFormat={(v) => `$${(v / 1000).toFixed(0)}k`}
+/>
+```

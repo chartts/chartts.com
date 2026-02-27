@@ -1,0 +1,315 @@
+---
+title: "Step Chart"
+description: "Step/staircase line chart where values change at discrete points. Perfect for pricing tiers, state changes, and discrete data."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { StepChart } from "@chartts/react"
+
+const data = [
+  { date: "Jan", price: 9.99 },
+  { date: "Mar", price: 12.99 },
+  { date: "Jun", price: 12.99 },
+  { date: "Aug", price: 14.99 },
+  { date: "Oct", price: 14.99 },
+  { date: "Dec", price: 19.99 },
+]
+
+export function PricingHistory() {
+  return (
+    <StepChart
+      data={data}
+      x="date"
+      y="price"
+      className="h-64 w-full"
+    />
+  )
+}
+```
+
+That renders a staircase line where the value holds flat between data points and then jumps to the next value. Axes, tooltips, responsive scaling, and step interpolation are all automatic.
+
+## When to Use Step Charts
+
+Step charts display data that changes at discrete moments rather than continuously. The flat segments between steps emphasize that the value did not change between those points.
+
+**Use a step chart when:**
+- Showing pricing tiers or rate changes over time
+- Displaying state transitions (on/off, active/inactive, status codes)
+- Visualizing inventory levels that change in discrete jumps
+- Your data represents something that holds steady between updates (interest rates, subscription plans)
+
+**Don't use a step chart when:**
+- Your data changes continuously (use a line chart with monotone or linear interpolation)
+- You want to emphasize the rate of change between points (use a line chart)
+- You have many data points very close together (the steps will be invisible)
+- You want to show proportions (use a pie or bar chart)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `x` | `keyof T` | required | Key for x-axis values |
+| `y` | `keyof T` | required | Key for y-axis values |
+| `step` | `'before' \| 'after' \| 'middle'` | `'after'` | When the step transition occurs relative to the data point |
+| `color` | `string` | `'#3b82f6'` | Stroke color for the step line |
+| `fill` | `boolean \| string` | `false` | Fill the area under the step line. Pass `true` for auto color or a CSS color string |
+| `showDots` | `boolean` | `true` | Show markers at each data point |
+| `lineWidth` | `number` | `2` | Stroke width in pixels |
+| `animate` | `boolean` | `true` | Enable draw animation on mount |
+| `className` | `string` | - | Tailwind classes on the root SVG |
+
+---
+
+## Step Modes
+
+The `step` prop controls where the transition between values occurs. This choice changes the meaning of your visualization.
+
+### step-after (default)
+
+The value holds at the current level and jumps to the new value at the next data point. This is the most common mode: the value is "in effect" until the next change.
+
+```tsx
+<StepChart
+  data={data}
+  x="date"
+  y="price"
+  step="after"
+/>
+```
+
+Use step-after for pricing tiers, subscription levels, and anything where a value is set and stays in effect until the next update.
+
+### step-before
+
+The value jumps to the new level before the data point, then holds. The transition happens at the start of each period rather than the end.
+
+```tsx
+<StepChart
+  data={data}
+  x="date"
+  y="price"
+  step="before"
+/>
+```
+
+Use step-before when the data point represents the end of a period and you want the new value to apply retroactively to the beginning of that period.
+
+### step-middle
+
+The value transitions halfway between consecutive data points. This creates a symmetric staircase where the step occurs at the midpoint.
+
+```tsx
+<StepChart
+  data={data}
+  x="date"
+  y="price"
+  step="middle"
+/>
+```
+
+Use step-middle when neither "before" nor "after" is semantically correct, or when you want a balanced visual appearance.
+
+---
+
+## Area Fill
+
+Set `fill` to shade the region between the step line and the x-axis. This adds visual weight and makes it easier to perceive the magnitude of values.
+
+```tsx
+// Auto fill color (derived from line color with transparency)
+<StepChart
+  data={data}
+  x="date"
+  y="inventory"
+  fill
+  color="#22c55e"
+  className="h-72"
+/>
+
+// Custom fill color
+<StepChart
+  data={data}
+  x="date"
+  y="inventory"
+  fill="#22c55e20"
+  color="#22c55e"
+  className="h-72"
+/>
+```
+
+When `fill` is set to `true`, the fill color is automatically derived from the line color with reduced opacity. Pass a CSS color string for full control.
+
+---
+
+## Dot Markers
+
+By default, markers appear at each data point. These are useful for identifying exactly where values changed.
+
+```tsx
+// With dots (default)
+<StepChart
+  data={data}
+  x="date"
+  y="price"
+  showDots
+/>
+
+// Without dots for a cleaner look
+<StepChart
+  data={data}
+  x="date"
+  y="price"
+  showDots={false}
+/>
+```
+
+Dots are especially helpful when data points are irregularly spaced. They clarify which points are actual data versus interpolated flat segments.
+
+---
+
+## Styling
+
+Customize the appearance with `color`, `lineWidth`, and `className`:
+
+```tsx
+<StepChart
+  data={data}
+  x="date"
+  y="price"
+  color="#a855f7"
+  lineWidth={3}
+  fill="#a855f720"
+  showDots
+  className="h-72 rounded-xl bg-zinc-950 p-4"
+/>
+```
+
+### Dark mode
+
+```tsx
+<StepChart
+  data={data}
+  x="date"
+  y="price"
+  color="#60a5fa"
+  fill="#60a5fa15"
+  className="bg-white dark:bg-zinc-900 rounded-lg"
+/>
+```
+
+### Dashed step line
+
+For reference lines or projections, combine with CSS:
+
+```tsx
+<StepChart
+  data={projectedPricing}
+  x="date"
+  y="price"
+  color="#9ca3af"
+  lineWidth={1.5}
+  showDots={false}
+  className="[&_path]:stroke-dashed h-64"
+/>
+```
+
+---
+
+## Accessibility
+
+- The chart has `role="img"` with an `aria-label` summarizing the data range and number of steps
+- Each data point marker has an `aria-label` with its x-value and y-value
+- Keyboard navigation: Tab to focus the chart, arrow keys to move between data points
+- The tooltip follows the focused point and announces the current value
+- Step transitions are conveyed to screen readers as value changes between consecutive points
+- Animation respects `prefers-reduced-motion`
+
+---
+
+## Real-World Examples
+
+### Subscription pricing history
+
+```tsx
+const pricingHistory = [
+  { date: "2020-01", plan: 9.99 },
+  { date: "2021-03", plan: 12.99 },
+  { date: "2022-06", plan: 14.99 },
+  { date: "2023-01", plan: 14.99 },
+  { date: "2024-01", plan: 19.99 },
+]
+
+<StepChart
+  data={pricingHistory}
+  x="date"
+  y="plan"
+  step="after"
+  color="#8b5cf6"
+  fill="#8b5cf615"
+  showDots
+  lineWidth={2}
+  className="h-64 w-full"
+/>
+```
+
+### Server status timeline
+
+```tsx
+const statusLog = [
+  { time: "00:00", status: 1 },
+  { time: "03:15", status: 0 },
+  { time: "03:42", status: 1 },
+  { time: "08:00", status: 1 },
+  { time: "12:30", status: 0 },
+  { time: "12:35", status: 1 },
+  { time: "18:00", status: 1 },
+]
+
+<StepChart
+  data={statusLog}
+  x="time"
+  y="status"
+  step="after"
+  color="#22c55e"
+  fill="#22c55e20"
+  showDots={false}
+  lineWidth={2}
+  className="h-32 w-full"
+/>
+```
+
+### Interest rate changes
+
+```tsx
+const fedFundsRate = [
+  { date: "2022-03", rate: 0.25 },
+  { date: "2022-05", rate: 0.75 },
+  { date: "2022-06", rate: 1.50 },
+  { date: "2022-07", rate: 2.25 },
+  { date: "2022-09", rate: 3.00 },
+  { date: "2022-11", rate: 3.75 },
+  { date: "2022-12", rate: 4.25 },
+  { date: "2023-02", rate: 4.50 },
+  { date: "2023-03", rate: 4.75 },
+  { date: "2023-05", rate: 5.00 },
+  { date: "2023-07", rate: 5.25 },
+]
+
+<StepChart
+  data={fedFundsRate}
+  x="date"
+  y="rate"
+  step="after"
+  color="#ef4444"
+  fill="#ef444415"
+  showDots
+  className="h-72 w-full"
+/>
+```

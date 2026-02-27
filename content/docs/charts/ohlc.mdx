@@ -1,0 +1,345 @@
+---
+title: "OHLC Chart"
+description: "Open-High-Low-Close bars for financial data. Alternative to candlestick with tick marks instead of bodies."
+badge: "Finance"
+---
+
+## Quick Start
+
+```tsx
+import { OHLCChart } from "@chartts/react"
+
+const data = [
+  { date: "2024-01-02", open: 170.2, high: 173.8, low: 169.5, close: 172.1 },
+  { date: "2024-01-03", open: 172.1, high: 175.4, low: 171.0, close: 174.9 },
+  { date: "2024-01-04", open: 174.9, high: 176.2, low: 172.8, close: 173.5 },
+  { date: "2024-01-05", open: 173.5, high: 178.1, low: 173.0, close: 177.6 },
+  { date: "2024-01-08", open: 177.6, high: 179.3, low: 175.9, close: 176.2 },
+  { date: "2024-01-09", open: 176.2, high: 180.5, low: 175.4, close: 179.8 },
+]
+
+export function StockPriceChart() {
+  return (
+    <OHLCChart
+      data={data}
+      date="date"
+      open="open"
+      high="high"
+      low="low"
+      close="close"
+      className="h-80 w-full"
+    />
+  )
+}
+```
+
+That renders OHLC bars with tick marks for open (left) and close (right) prices, a vertical line for the high-low range, and directional coloring. Axes, crosshair tooltips, and responsive scaling are all automatic.
+
+## When to Use OHLC Charts
+
+OHLC charts encode the same four data points per period as candlestick charts but use a different visual form: a vertical line for the range with horizontal ticks for the open and close.
+
+**Use an OHLC chart when:**
+- Displaying stock, crypto, or forex data and you prefer a cleaner look than candlesticks
+- Your audience is comfortable reading traditional bar notation
+- You want to reduce visual weight when showing many periods at once
+- Pairing with technical indicators where thinner bars leave more room for overlays
+
+**Don't use an OHLC chart when:**
+- Your audience is unfamiliar with financial charts (use a line chart)
+- Pattern recognition matters (candlestick bodies make patterns like doji and hammer easier to spot)
+- You only have a single price series (use a line chart)
+- Your data is not time-series or lacks OHLC fields
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects with OHLC fields |
+| `date` | `keyof T` | required | Key for the time axis (date/timestamp) |
+| `open` | `keyof T` | required | Key for the opening price |
+| `high` | `keyof T` | required | Key for the highest price |
+| `low` | `keyof T` | required | Key for the lowest price |
+| `close` | `keyof T` | required | Key for the closing price |
+| `upColor` | `string` | `'#22c55e'` | Color for bars where close is above open |
+| `downColor` | `string` | `'#ef4444'` | Color for bars where close is below open |
+| `barWidth` | `number` | `0.6` | Width of the tick marks as a ratio from 0 to 1 |
+| `showVolume` | `boolean` | `false` | Render volume bars beneath the price bars |
+| `volumeHeight` | `number` | `0.2` | Fraction of chart height allocated to volume (0 to 1) |
+| `animate` | `boolean` | `true` | Enable entry animation on mount |
+| `className` | `string` | - | Tailwind classes on the root SVG |
+
+---
+
+## OHLC vs Candlestick
+
+Both chart types show the same four prices per period. The difference is purely visual.
+
+### OHLC bars
+
+Each bar is a vertical line from low to high with a left tick at the open price and a right tick at the close price. The bar takes up less horizontal space, which makes dense charts easier to read.
+
+```tsx
+<OHLCChart
+  data={data}
+  date="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  className="h-80"
+/>
+```
+
+### When to pick OHLC over candlestick
+
+- **Dense time ranges**: OHLC bars are thinner, so more periods fit on screen without overlap
+- **Technical analysis overlays**: Thinner bars leave more room for moving averages, Bollinger bands, and other indicators
+- **Print and export**: OHLC bars reproduce well in black and white because the tick positions encode direction independently of color
+- **Preference**: Many professional traders use OHLC as the default chart style
+
+### Reading an OHLC bar
+
+```tsx
+// Visual structure of a single OHLC bar:
+//
+//         |         <- high
+//   ---   |         <- open (left tick)
+//         |
+//         |   ---   <- close (right tick)
+//         |         <- low
+```
+
+The left tick is always the open price. The right tick is always the close price. If the right tick is higher than the left tick, the period was bullish (price went up).
+
+---
+
+## Volume Overlay
+
+Financial charts often include volume bars beneath the price bars. Pass `showVolume` along with a volume field in your data:
+
+```tsx
+const data = [
+  { date: "2024-01-02", open: 170.2, high: 173.8, low: 169.5, close: 172.1, vol: 48200000 },
+  { date: "2024-01-03", open: 172.1, high: 175.4, low: 171.0, close: 174.9, vol: 52100000 },
+  { date: "2024-01-04", open: 174.9, high: 176.2, low: 172.8, close: 173.5, vol: 39800000 },
+]
+
+<OHLCChart
+  data={data}
+  date="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  showVolume
+  volumeHeight={0.2}
+  className="h-96"
+/>
+```
+
+Volume bars inherit the up/down color of their corresponding OHLC bar. The `volumeHeight` prop controls how much vertical space volume occupies as a fraction of the total chart height. Default is `0.2` (20%).
+
+---
+
+## Directional Coloring
+
+By default, bars where the close is above the open are green and bars where the close is below the open are red. Customize with `upColor` and `downColor`:
+
+```tsx
+<OHLCChart
+  data={data}
+  date="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  upColor="#4ade80"
+  downColor="#f87171"
+/>
+```
+
+### Monochrome
+
+For a neutral look that does not imply good or bad:
+
+```tsx
+<OHLCChart
+  data={data}
+  date="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  upColor="#a1a1aa"
+  downColor="#52525b"
+/>
+```
+
+### Black and white
+
+Because OHLC bars encode direction through tick position (left for open, right for close), a single color still communicates all four prices:
+
+```tsx
+<OHLCChart
+  data={data}
+  date="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  upColor="#18181b"
+  downColor="#18181b"
+/>
+```
+
+---
+
+## Bar Width
+
+The `barWidth` prop controls how wide the horizontal tick marks are, as a ratio of available space:
+
+```tsx
+// Narrow ticks for dense charts
+<OHLCChart
+  data={yearOfData}
+  date="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  barWidth={0.3}
+/>
+
+// Wide ticks for sparse charts
+<OHLCChart
+  data={weekOfData}
+  date="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  barWidth={0.8}
+/>
+```
+
+Lower values produce minimal tick marks that prioritize the vertical range. Higher values produce more prominent ticks that make open and close prices easier to read at a glance.
+
+---
+
+## Zoom and Pan
+
+For datasets spanning many periods, enable interactive zoom and pan:
+
+```tsx
+<OHLCChart
+  data={yearOfData}
+  date="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  zoom
+  pan
+  initialRange={90}
+  className="h-96"
+/>
+```
+
+- **Scroll wheel**: Zoom in and out on the time axis
+- **Click and drag**: Pan left and right across the time range
+- **Pinch gesture**: Zoom on touch devices
+- **Double click**: Reset to the initial view
+
+The `initialRange` prop sets how many bars are visible on first render.
+
+---
+
+## Accessibility
+
+- Each bar has an `aria-label` with its date, open, high, low, close, and direction (up or down)
+- The chart has `role="img"` with a summary of the date range and price range
+- Keyboard navigation: Tab to focus the chart, arrow keys to move between bars
+- The tooltip follows the focused bar and announces values to screen readers
+- Directional information is encoded in tick position (left for open, right for close), not only in color, so the chart remains readable for color-blind users
+- Animation respects `prefers-reduced-motion`
+
+---
+
+## Real-World Examples
+
+### Stock tracker with volume
+
+```tsx
+<OHLCChart
+  data={appleDaily}
+  date="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  showVolume
+  volumeHeight={0.15}
+  zoom
+  pan
+  initialRange={60}
+  upColor="#22c55e"
+  downColor="#ef4444"
+  className="h-96 rounded-xl bg-zinc-950 p-4"
+/>
+```
+
+### Intraday forex
+
+```tsx
+const eurUsd = [
+  { ts: "09:00", open: 1.0782, high: 1.0801, low: 1.0765, close: 1.0793 },
+  { ts: "09:30", open: 1.0793, high: 1.0810, low: 1.0748, close: 1.0762 },
+  { ts: "10:00", open: 1.0762, high: 1.0785, low: 1.0732, close: 1.0745 },
+  { ts: "10:30", open: 1.0745, high: 1.0790, low: 1.0740, close: 1.0778 },
+]
+
+<OHLCChart
+  data={eurUsd}
+  date="ts"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  upColor="#3b82f6"
+  downColor="#a855f7"
+  barWidth={0.5}
+  className="h-72"
+/>
+```
+
+### Commodity comparison dashboard
+
+```tsx
+<div className="grid grid-cols-2 gap-4">
+  <OHLCChart
+    data={goldData}
+    date="date"
+    open="open"
+    high="high"
+    low="low"
+    close="close"
+    upColor="#eab308"
+    downColor="#78716c"
+    className="h-64"
+  />
+  <OHLCChart
+    data={silverData}
+    date="date"
+    open="open"
+    high="high"
+    low="low"
+    close="close"
+    upColor="#94a3b8"
+    downColor="#475569"
+    className="h-64"
+  />
+</div>
+```

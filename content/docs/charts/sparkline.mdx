@@ -1,0 +1,217 @@
+---
+title: "Sparkline Chart"
+description: "Tiny inline charts that show trends at a glance, perfect for dashboards and data tables."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { SparklineChart } from "@chartts/react"
+
+const data = [
+  { day: 1, value: 42 },
+  { day: 2, value: 38 },
+  { day: 3, value: 55 },
+  { day: 4, value: 47 },
+  { day: 5, value: 63 },
+  { day: 6, value: 58 },
+  { day: 7, value: 71 },
+]
+
+export function WeeklyTrend() {
+  return (
+    <SparklineChart
+      data={data}
+      value="value"
+      color="#10b981"
+      height={32}
+      showEndDot
+    />
+  )
+}
+```
+
+## When to Use Sparkline Charts
+
+Sparklines are word-sized charts coined by Edward Tufte. They convey trend, shape, and variation in minimal space.
+
+**Use a sparkline when:**
+- Showing trends inline alongside text, numbers, or table cells
+- Building dashboards with many KPIs that each need a visual trend
+- Space is extremely limited and you need maximum data density
+- You want to show direction and shape rather than precise values
+
+**Don't use a sparkline when:**
+- Precise values matter (use a full-sized chart with axes)
+- You need to compare multiple series in detail
+- The data has fewer than 5 points (a number is more informative)
+- Interactivity like tooltips or zooming is required
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `value` | `keyof T` | required | Key for the numeric values |
+| `type` | `'line' \| 'bar' \| 'area'` | `'line'` | Visual style of the sparkline |
+| `color` | `string` | `"#3b82f6"` | Stroke or fill color |
+| `height` | `number` | `32` | Height of the sparkline in pixels |
+| `showEndDot` | `boolean` | `false` | Show a dot at the last data point |
+| `showMinMax` | `boolean` | `false` | Highlight the minimum and maximum values |
+| `showRange` | `boolean` | `false` | Shade the area between min and max |
+| `animate` | `boolean` | `true` | Enable draw-in animation |
+| `className` | `string` | - | Tailwind classes on root SVG |
+
+---
+
+## Inline Usage
+
+Sparklines are designed to sit inline with text and table cells. They automatically scale to fit their container width:
+
+```tsx
+<div className="flex items-center gap-3">
+  <span className="text-2xl font-bold">$12,847</span>
+  <SparklineChart
+    data={revenueHistory}
+    value="amount"
+    color="#10b981"
+    height={28}
+    showEndDot
+    className="w-24"
+  />
+  <span className="text-sm text-emerald-600">+12.3%</span>
+</div>
+```
+
+In a data table, sparklines add trend context to every row:
+
+```tsx
+<td className="w-32">
+  <SparklineChart
+    data={row.history}
+    value="price"
+    type="area"
+    height={24}
+    color="#6366f1"
+  />
+</td>
+```
+
+---
+
+## Line, Bar, and Area Variants
+
+The `type` prop switches between three visual styles:
+
+```tsx
+// Line (default) - clean trend line
+<SparklineChart data={data} value="val" type="line" />
+
+// Bar - discrete values, good for counts
+<SparklineChart data={data} value="val" type="bar" />
+
+// Area - filled region, emphasizes volume
+<SparklineChart data={data} value="val" type="area" />
+```
+
+Line is best for continuous trends. Bar works well for discrete counts (daily signups, weekly commits). Area adds visual weight to show volume or magnitude.
+
+---
+
+## End Dot Indicator
+
+The `showEndDot` prop places a small circle on the last data point, drawing the eye to the current value:
+
+```tsx
+<SparklineChart
+  data={data}
+  value="price"
+  showEndDot
+  color="#f59e0b"
+  height={32}
+/>
+```
+
+The dot color matches the sparkline color. This is particularly effective in dashboard cards where the latest value accompanies the sparkline.
+
+---
+
+## Min/Max Markers
+
+Highlight the lowest and highest points in the series:
+
+```tsx
+<SparklineChart
+  data={data}
+  value="temperature"
+  showMinMax
+  color="#ef4444"
+  height={36}
+/>
+```
+
+The minimum point gets a small dot in a muted color, and the maximum gets a dot in the sparkline color. This gives immediate context about the range without needing axes.
+
+---
+
+## Accessibility
+
+- The root element has `role="img"` with an `aria-label` summarizing the trend
+- The aria-label includes the start value, end value, min, and max
+- Sparklines are decorative by default but become informative with `aria-label`
+- Sufficient color contrast is maintained against both light and dark backgrounds
+
+---
+
+## Real-World Examples
+
+### KPI dashboard card
+```tsx
+<div className="rounded-lg border p-4">
+  <p className="text-sm text-zinc-500">Monthly Active Users</p>
+  <div className="mt-1 flex items-end gap-3">
+    <span className="text-3xl font-bold">48.2k</span>
+    <SparklineChart
+      data={mauHistory}
+      value="count"
+      type="area"
+      color="#06b6d4"
+      height={40}
+      showEndDot
+      className="w-28"
+    />
+  </div>
+</div>
+```
+
+### Stock ticker row
+```tsx
+<div className="flex items-center justify-between">
+  <span className="font-mono">AAPL</span>
+  <SparklineChart
+    data={priceHistory}
+    value="close"
+    height={24}
+    color={change > 0 ? "#10b981" : "#ef4444"}
+    showEndDot
+    className="w-20"
+  />
+  <span className="font-mono">$187.42</span>
+</div>
+```
+
+### Server health table
+```tsx
+<SparklineChart
+  data={cpuHistory}
+  value="usage"
+  type="bar"
+  height={20}
+  color="#f59e0b"
+  showMinMax
+  className="w-24"
+/>
+```

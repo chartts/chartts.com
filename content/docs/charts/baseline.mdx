@@ -1,0 +1,317 @@
+---
+title: "Baseline Chart"
+description: "Line chart split by a baseline value. Areas above and below the baseline get different colors. Great for profit/loss and above/below average."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { BaselineChart } from "@chartts/react"
+
+const data = [
+  { month: "Jan", profit: 12000 },
+  { month: "Feb", profit: -3500 },
+  { month: "Mar", profit: 8200 },
+  { month: "Apr", profit: -1200 },
+  { month: "May", profit: 15600 },
+  { month: "Jun", profit: 22400 },
+]
+
+export function ProfitLossChart() {
+  return (
+    <BaselineChart
+      data={data}
+      x="month"
+      y="profit"
+      baseline={0}
+      className="h-64 w-full"
+    />
+  )
+}
+```
+
+That renders a line chart where the area above zero is filled with one color and the area below zero is filled with another. The baseline reference line, dual-color fills, axes, tooltips, and responsive scaling are all automatic.
+
+## When to Use Baseline Charts
+
+Baseline charts highlight the relationship between a data series and a reference value. By coloring areas above and below the baseline differently, they make it immediately obvious when values cross the threshold.
+
+**Use a baseline chart when:**
+- Showing profit and loss relative to zero
+- Displaying temperature deviation from average
+- Comparing actual performance against a target or budget
+- Visualizing any metric where being above or below a threshold is meaningful
+
+**Don't use a baseline chart when:**
+- All values are on the same side of the baseline (use a simple area chart)
+- You have multiple series that each need their own baseline (too complex)
+- The baseline has no meaningful interpretation for your data
+- You want to show proportions (use a pie or stacked bar chart)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `x` | `keyof T` | required | Key for x-axis values |
+| `y` | `keyof T` | required | Key for y-axis values |
+| `baseline` | `number` | `0` | The reference value that splits the chart into above and below regions |
+| `aboveColor` | `string` | `'#22c55e'` | Stroke color for the line when above the baseline |
+| `belowColor` | `string` | `'#ef4444'` | Stroke color for the line when below the baseline |
+| `aboveFill` | `string` | auto | Fill color for the area above the baseline. Defaults to `aboveColor` with opacity |
+| `belowFill` | `string` | auto | Fill color for the area below the baseline. Defaults to `belowColor` with opacity |
+| `showBaseline` | `boolean` | `true` | Render a horizontal reference line at the baseline value |
+| `lineWidth` | `number` | `2` | Stroke width of the data line in pixels |
+| `animate` | `boolean` | `true` | Enable draw animation on mount |
+| `className` | `string` | - | Tailwind classes on the root SVG |
+
+---
+
+## Split Coloring
+
+The defining feature of a baseline chart is that the line and fill change color as the data crosses the baseline. The transition is precise: the color switches at the exact intersection point, not at the nearest data point.
+
+```tsx
+<BaselineChart
+  data={data}
+  x="month"
+  y="profit"
+  baseline={0}
+  aboveColor="#22c55e"
+  belowColor="#ef4444"
+/>
+```
+
+This split coloring creates an immediate visual signal: green means above the baseline (good), red means below (bad). The viewer does not need to check the y-axis to understand the story.
+
+### Custom color pairs
+
+```tsx
+// Blue/orange for neutral positive/negative
+<BaselineChart
+  data={data}
+  x="month"
+  y="deviation"
+  baseline={0}
+  aboveColor="#3b82f6"
+  belowColor="#f97316"
+/>
+
+// Teal/pink for warm/cool temperatures
+<BaselineChart
+  data={temperatureData}
+  x="date"
+  y="temp"
+  baseline={20}
+  aboveColor="#ef4444"
+  belowColor="#3b82f6"
+/>
+```
+
+---
+
+## Custom Baseline Value
+
+The baseline does not have to be zero. Set it to any meaningful reference value: an average, a target, a budget, or a threshold.
+
+```tsx
+// Performance vs target
+<BaselineChart
+  data={salesData}
+  x="month"
+  y="actual"
+  baseline={50000}
+  aboveColor="#22c55e"
+  belowColor="#ef4444"
+/>
+```
+
+```tsx
+// Temperature vs comfortable threshold
+<BaselineChart
+  data={thermostatData}
+  x="hour"
+  y="temp"
+  baseline={21}
+  aboveColor="#ef4444"
+  belowColor="#3b82f6"
+/>
+```
+
+The baseline value is shown as a horizontal reference line by default. It provides essential context for understanding what "above" and "below" mean in your data.
+
+---
+
+## Fill Above and Below
+
+By default, the areas above and below the baseline are filled with a semi-transparent version of the respective line color. Override with `aboveFill` and `belowFill` for full control:
+
+```tsx
+<BaselineChart
+  data={data}
+  x="month"
+  y="profit"
+  baseline={0}
+  aboveColor="#22c55e"
+  belowColor="#ef4444"
+  aboveFill="#22c55e20"
+  belowFill="#ef444420"
+/>
+```
+
+### Fill only (no line color split)
+
+For a subtler effect, use the same line color for both regions and differentiate only with fills:
+
+```tsx
+<BaselineChart
+  data={data}
+  x="month"
+  y="profit"
+  baseline={0}
+  aboveColor="#6b7280"
+  belowColor="#6b7280"
+  aboveFill="#22c55e25"
+  belowFill="#ef444425"
+  lineWidth={1.5}
+/>
+```
+
+### No fill
+
+Set both fills to transparent to show only the color-split line:
+
+```tsx
+<BaselineChart
+  data={data}
+  x="month"
+  y="profit"
+  baseline={0}
+  aboveFill="transparent"
+  belowFill="transparent"
+  lineWidth={2}
+/>
+```
+
+---
+
+## Baseline Marker Line
+
+The `showBaseline` prop controls whether a horizontal reference line is rendered at the baseline value.
+
+```tsx
+// With baseline line (default)
+<BaselineChart
+  data={data}
+  x="month"
+  y="profit"
+  baseline={0}
+  showBaseline
+/>
+
+// Without baseline line
+<BaselineChart
+  data={data}
+  x="month"
+  y="profit"
+  baseline={0}
+  showBaseline={false}
+/>
+```
+
+The baseline line is rendered as a dashed line in a neutral color (gray) so it does not compete with the data line. It serves as a visual anchor that helps the viewer interpret the above/below regions.
+
+---
+
+## Accessibility
+
+- The chart has `role="img"` with an `aria-label` summarizing the baseline value, how many data points are above it, and how many are below
+- Each data point has an `aria-label` with its x-value, y-value, and its position relative to the baseline (above or below)
+- Keyboard navigation: Tab to focus the chart, arrow keys to move between data points
+- The tooltip follows the focused point and announces the value and its relationship to the baseline
+- Above/below status is communicated through ARIA labels, not only through color, ensuring accessibility for color-blind users
+- Animation respects `prefers-reduced-motion`
+
+---
+
+## Real-World Examples
+
+### Monthly profit and loss
+
+```tsx
+const monthlyPL = [
+  { month: "Jan", pnl: 45000 },
+  { month: "Feb", pnl: -12000 },
+  { month: "Mar", pnl: 28000 },
+  { month: "Apr", pnl: -5000 },
+  { month: "May", pnl: 62000 },
+  { month: "Jun", pnl: 78000 },
+  { month: "Jul", pnl: -18000 },
+  { month: "Aug", pnl: 34000 },
+]
+
+<BaselineChart
+  data={monthlyPL}
+  x="month"
+  y="pnl"
+  baseline={0}
+  aboveColor="#22c55e"
+  belowColor="#ef4444"
+  lineWidth={2}
+  className="h-72 w-full rounded-xl bg-zinc-950 p-4"
+/>
+```
+
+### Performance vs budget
+
+```tsx
+const performance = [
+  { quarter: "Q1 2023", actual: 120, budget: 100 },
+  { quarter: "Q2 2023", actual: 95, budget: 100 },
+  { quarter: "Q3 2023", actual: 110, budget: 100 },
+  { quarter: "Q4 2023", actual: 88, budget: 100 },
+  { quarter: "Q1 2024", actual: 130, budget: 100 },
+]
+
+<BaselineChart
+  data={performance}
+  x="quarter"
+  y="actual"
+  baseline={100}
+  aboveColor="#22c55e"
+  belowColor="#f59e0b"
+  showBaseline
+  className="h-64 w-full"
+/>
+```
+
+### Temperature deviation from seasonal average
+
+```tsx
+const tempDeviations = [
+  { date: "Jan 1", deviation: -2.5 },
+  { date: "Jan 8", deviation: 1.2 },
+  { date: "Jan 15", deviation: 3.8 },
+  { date: "Jan 22", deviation: -0.5 },
+  { date: "Jan 29", deviation: -4.1 },
+  { date: "Feb 5", deviation: 2.0 },
+  { date: "Feb 12", deviation: 5.3 },
+  { date: "Feb 19", deviation: -1.8 },
+]
+
+<BaselineChart
+  data={tempDeviations}
+  x="date"
+  y="deviation"
+  baseline={0}
+  aboveColor="#ef4444"
+  belowColor="#3b82f6"
+  aboveFill="#ef444420"
+  belowFill="#3b82f620"
+  showBaseline
+  className="h-64 w-full"
+/>
+```

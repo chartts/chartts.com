@@ -1,0 +1,339 @@
+---
+title: "Tree Chart"
+description: "Visualize hierarchical data as connected nodes. Perfect for org charts, file structures, decision trees, and taxonomy displays."
+badge: "Hierarchy"
+---
+
+## Quick Start
+
+```tsx
+import { TreeChart } from "@chartts/react"
+
+const data = {
+  label: "CEO",
+  children: [
+    {
+      label: "CTO",
+      children: [
+        { label: "Engineering" },
+        { label: "DevOps" },
+        { label: "QA" },
+      ],
+    },
+    {
+      label: "CFO",
+      children: [
+        { label: "Accounting" },
+        { label: "Finance" },
+      ],
+    },
+    {
+      label: "COO",
+      children: [
+        { label: "Operations" },
+        { label: "HR" },
+        { label: "Legal" },
+      ],
+    },
+  ],
+}
+
+export function OrgChart() {
+  return (
+    <TreeChart
+      data={data}
+      label="label"
+      layout="vertical"
+      className="h-[500px] w-full"
+    />
+  )
+}
+```
+
+That renders a top-down tree with smooth curved links connecting each node. Hover any node to highlight its branch. Click a node to collapse or expand its children.
+
+## When to Use Tree Charts
+
+Tree charts show parent-child relationships in hierarchical data. Each node branches into its children, creating a visual structure that mirrors the data hierarchy.
+
+**Use a tree chart when:**
+- Displaying organizational structures with reporting lines
+- Showing file system or directory hierarchies
+- Mapping decision trees with branches and outcomes
+- Rendering taxonomy or classification trees
+- Any data where every node has exactly one parent (except the root)
+
+**Don't use a tree chart when:**
+- Nodes have multiple parents (use a graph/network chart)
+- You want to show proportional sizes (use a treemap)
+- The hierarchy is flat with only one level (use a list or bar chart)
+- Relationships are bidirectional (use a graph chart)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `TreeNode` | required | Hierarchical data with `children` arrays |
+| `label` | `string` | required | Key to use for node labels |
+| `layout` | `'horizontal' \| 'vertical' \| 'radial'` | `'vertical'` | Direction of the tree expansion |
+| `nodeSize` | `number` | `24` | Diameter of node circles in pixels |
+| `linkStyle` | `'curve' \| 'step' \| 'straight'` | `'curve'` | Style of links between nodes |
+| `showLabels` | `boolean` | `true` | Display text labels on nodes |
+| `collapsible` | `boolean` | `true` | Allow clicking nodes to collapse/expand subtrees |
+| `animate` | `boolean` | `true` | Enable expand/collapse animation |
+| `className` | `string` | - | Tailwind classes on root SVG |
+| `nodeClassName` | `string` | - | Tailwind classes on node circles |
+| `linkClassName` | `string` | - | Tailwind classes on link paths |
+| `labelClassName` | `string` | - | Tailwind classes on label text |
+
+---
+
+## Layout Directions
+
+### Vertical (top-down)
+
+The default layout. Root at the top, children expand downward. Best for org charts and decision trees where the hierarchy reads top to bottom.
+
+```tsx
+<TreeChart data={data} label="label" layout="vertical" />
+```
+
+### Horizontal (left-to-right)
+
+Root on the left, children expand to the right. Works well for deep hierarchies that would be too tall in vertical mode.
+
+```tsx
+<TreeChart data={data} label="label" layout="horizontal" />
+```
+
+### Radial
+
+Root at the center, children expand outward in all directions. Produces a compact, circular layout that uses space efficiently for wide trees.
+
+```tsx
+<TreeChart
+  data={data}
+  label="label"
+  layout="radial"
+  className="h-[600px] w-[600px] mx-auto"
+/>
+```
+
+Radial layout is particularly effective for taxonomy trees and classification hierarchies where every level has many branches.
+
+---
+
+## Link Styles
+
+The connection lines between parent and child nodes can be styled in three ways:
+
+```tsx
+// Smooth curves (default) - organic, flowing connections
+<TreeChart data={data} label="label" linkStyle="curve" />
+
+// Right-angle steps - clean, structured appearance
+<TreeChart data={data} label="label" linkStyle="step" />
+
+// Straight lines - direct, minimal connections
+<TreeChart data={data} label="label" linkStyle="straight" />
+```
+
+Step links work especially well for org charts and file trees where the rigid geometry reinforces the structured nature of the data. Curves feel more natural for biological or conceptual hierarchies.
+
+---
+
+## Collapsible Nodes
+
+When `collapsible` is enabled, clicking a parent node toggles its children. Collapsed nodes show a filled indicator to signal that hidden children exist.
+
+```tsx
+<TreeChart
+  data={data}
+  label="label"
+  collapsible
+  animate
+/>
+```
+
+Subtrees animate in and out smoothly. The transition repositions sibling branches to fill the vacated space.
+
+### Start collapsed
+
+Pass a `collapsed` property on any node to start it in the collapsed state:
+
+```tsx
+const data = {
+  label: "Root",
+  children: [
+    {
+      label: "Branch A",
+      collapsed: true,
+      children: [
+        { label: "Leaf 1" },
+        { label: "Leaf 2" },
+      ],
+    },
+    {
+      label: "Branch B",
+      children: [
+        { label: "Leaf 3" },
+      ],
+    },
+  ],
+}
+
+<TreeChart data={data} label="label" collapsible />
+```
+
+This is useful for large trees where you want the user to explore progressively rather than seeing everything at once.
+
+---
+
+## Node Sizing
+
+Control the size of node circles. Larger nodes work better when labels are short; smaller nodes keep dense trees compact.
+
+```tsx
+// Small nodes for dense trees
+<TreeChart data={data} label="label" nodeSize={16} />
+
+// Default size
+<TreeChart data={data} label="label" nodeSize={24} />
+
+// Large nodes for sparse trees
+<TreeChart data={data} label="label" nodeSize={36} />
+```
+
+---
+
+## Accessibility
+
+- Each node announces its label, depth level, and number of children
+- Keyboard navigation: arrow keys move between sibling nodes, Enter expands/collapses
+- Screen readers describe the tree structure and current position (for example, "Engineering, level 3, 0 children, under CTO")
+- Collapsed state is announced so users know hidden content exists
+- Focus ring is visible on the currently selected node
+
+---
+
+## Real-World Examples
+
+### Company org chart
+
+```tsx
+const orgData = {
+  label: "Sarah Chen - CEO",
+  children: [
+    {
+      label: "Mike Ross - CTO",
+      children: [
+        { label: "Frontend Team (8)" },
+        { label: "Backend Team (12)" },
+        { label: "Platform Team (5)" },
+      ],
+    },
+    {
+      label: "Lisa Park - VP Sales",
+      children: [
+        { label: "Enterprise (6)" },
+        { label: "Mid-Market (10)" },
+        { label: "SMB (15)" },
+      ],
+    },
+    {
+      label: "James Wu - VP Product",
+      children: [
+        { label: "Core Product (4)" },
+        { label: "Growth (3)" },
+      ],
+    },
+  ],
+}
+
+<TreeChart
+  data={orgData}
+  label="label"
+  layout="vertical"
+  linkStyle="step"
+  nodeSize={28}
+  collapsible
+  className="h-[500px] w-full"
+  nodeClassName="fill-blue-500 stroke-blue-600"
+  linkClassName="stroke-zinc-300 dark:stroke-zinc-600"
+  labelClassName="text-sm font-medium"
+/>
+```
+
+### File system browser
+
+```tsx
+const fileTree = {
+  label: "src/",
+  children: [
+    {
+      label: "components/",
+      children: [
+        { label: "Button.tsx" },
+        { label: "Modal.tsx" },
+        { label: "Table.tsx" },
+      ],
+    },
+    {
+      label: "hooks/",
+      children: [
+        { label: "useAuth.ts" },
+        { label: "useQuery.ts" },
+      ],
+    },
+    { label: "index.ts" },
+    { label: "App.tsx" },
+  ],
+}
+
+<TreeChart
+  data={fileTree}
+  label="label"
+  layout="horizontal"
+  linkStyle="step"
+  nodeSize={18}
+  collapsible
+  className="h-96 w-full"
+/>
+```
+
+### Decision tree
+
+```tsx
+const decisionTree = {
+  label: "User signed up?",
+  children: [
+    {
+      label: "Yes: Completed onboarding?",
+      children: [
+        { label: "Yes: Send welcome email" },
+        { label: "No: Send reminder in 24h" },
+      ],
+    },
+    {
+      label: "No: Visited pricing?",
+      children: [
+        { label: "Yes: Show discount popup" },
+        { label: "No: Retarget with blog content" },
+      ],
+    },
+  ],
+}
+
+<TreeChart
+  data={decisionTree}
+  label="label"
+  layout="vertical"
+  linkStyle="curve"
+  nodeSize={20}
+  className="h-[450px] w-full"
+  nodeClassName="fill-emerald-500"
+  linkClassName="stroke-emerald-300"
+/>
+```

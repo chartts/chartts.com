@@ -1,0 +1,232 @@
+---
+title: "Combo Chart"
+description: "Combine bars and lines in a single chart with optional dual y-axes. Show related metrics with different scales and visual encodings."
+badge: "Advanced"
+---
+
+## Quick Start
+
+```tsx
+import { ComboChart } from "@chartts/react"
+
+const data = [
+  { month: "Jan", revenue: 42000, orders: 320, conversionRate: 3.2 },
+  { month: "Feb", revenue: 48000, orders: 380, conversionRate: 3.5 },
+  { month: "Mar", revenue: 51000, orders: 410, conversionRate: 3.8 },
+  { month: "Apr", revenue: 46000, orders: 350, conversionRate: 3.1 },
+  { month: "May", revenue: 55000, orders: 440, conversionRate: 4.0 },
+  { month: "Jun", revenue: 62000, orders: 520, conversionRate: 4.2 },
+]
+
+export function RevenueAndConversion() {
+  return (
+    <ComboChart
+      data={data}
+      x="month"
+      series={[
+        { key: "revenue", type: "bar", color: "#3b82f6" },
+        { key: "conversionRate", type: "line", yAxis: "right", color: "#10b981" },
+      ]}
+      dualAxis
+      showLegend
+      className="h-80 w-full"
+    />
+  )
+}
+```
+
+## When to Use Combo Charts
+
+Combo charts overlay different chart types on the same axes, showing how metrics with different units or scales relate to each other.
+
+**Use a combo chart when:**
+- Comparing metrics with different units (revenue in dollars + conversion rate as percentage)
+- One metric provides context for another (bars show volume, line shows trend)
+- You want to show absolute values (bars) alongside rates or ratios (lines)
+- Dashboard space is limited and two charts would waste room
+
+**Don't use a combo when:**
+- Both metrics use the same scale (use a grouped bar or multi-line chart)
+- There are more than 3 to 4 series (the chart becomes too busy)
+- The dual axes could mislead viewers into thinking unrelated metrics are correlated
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `x` | `keyof T` | required | Key for the x-axis categories |
+| `series` | `SeriesConfig[]` | required | Array of series configurations (see below) |
+| `dualAxis` | `boolean` | `false` | Enable a second y-axis on the right |
+| `showLegend` | `boolean` | `true` | Display a legend for all series |
+| `animate` | `boolean` | `true` | Animate bars and lines on mount |
+| `className` | `string` | - | Tailwind classes on root SVG |
+
+### SeriesConfig
+
+Each entry in the `series` array describes one data series:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `key` | `keyof T` | Data key for this series |
+| `type` | `'bar' \| 'line' \| 'area'` | Visual encoding |
+| `yAxis` | `'left' \| 'right'` | Which y-axis to use (default: left) |
+| `color` | `string` | Color for this series |
+
+---
+
+## Mixing Bars and Lines
+
+The most common combo is bars for volume and a line for rate or trend:
+
+```tsx
+<ComboChart
+  data={data}
+  x="month"
+  series={[
+    { key: "revenue", type: "bar", color: "#3b82f6" },
+    { key: "growth", type: "line", color: "#f59e0b" },
+  ]}
+/>
+```
+
+Bars are rendered first (behind), then lines are drawn on top so they remain visible.
+
+You can also combine bars with area fills:
+
+```tsx
+<ComboChart
+  data={data}
+  x="month"
+  series={[
+    { key: "sales", type: "bar", color: "#8b5cf6" },
+    { key: "target", type: "area", color: "#10b981" },
+  ]}
+/>
+```
+
+---
+
+## Dual Y-Axis
+
+When series have different scales, enable `dualAxis` and assign each series to a side:
+
+```tsx
+<ComboChart
+  data={data}
+  x="month"
+  series={[
+    { key: "revenue", type: "bar", yAxis: "left", color: "#3b82f6" },
+    { key: "conversionRate", type: "line", yAxis: "right", color: "#10b981" },
+  ]}
+  dualAxis
+/>
+```
+
+The left axis scales to the bar values (e.g., $0 to $60,000). The right axis scales to the line values (e.g., 0% to 5%). Each axis gets labeled with its own ticks and units.
+
+Without `dualAxis`, all series share a single y-axis. This works when scales are compatible.
+
+---
+
+## Multiple Series Types
+
+You can include more than two series:
+
+```tsx
+<ComboChart
+  data={data}
+  x="quarter"
+  series={[
+    { key: "productA", type: "bar", color: "#3b82f6" },
+    { key: "productB", type: "bar", color: "#8b5cf6" },
+    { key: "totalGrowth", type: "line", yAxis: "right", color: "#10b981" },
+  ]}
+  dualAxis
+  showLegend
+/>
+```
+
+Multiple bars are grouped side by side within each category, just like a grouped bar chart. Lines overlay on top.
+
+---
+
+## Independent Colors Per Series
+
+Each series gets its own color, making it easy to distinguish:
+
+```tsx
+<ComboChart
+  data={data}
+  x="month"
+  series={[
+    { key: "online", type: "bar", color: "#06b6d4" },
+    { key: "inStore", type: "bar", color: "#f59e0b" },
+    { key: "margin", type: "line", yAxis: "right", color: "#ef4444" },
+  ]}
+  dualAxis
+  showLegend
+/>
+```
+
+The legend shows each series name with its color and chart type icon (square for bars, line for lines).
+
+---
+
+## Accessibility
+
+- Each series is announced with its name, type, and axis assignment
+- Screen readers describe bar values and line data points independently
+- Dual axes are clearly labeled so the reader knows which scale applies to which series
+- Legend entries are keyboard-navigable to toggle series visibility
+
+---
+
+## Real-World Examples
+
+### E-commerce dashboard
+```tsx
+<ComboChart
+  data={monthlyData}
+  x="month"
+  series={[
+    { key: "orders", type: "bar", color: "#3b82f6" },
+    { key: "avgOrderValue", type: "line", yAxis: "right", color: "#f59e0b" },
+  ]}
+  dualAxis
+  showLegend
+  className="h-80"
+/>
+```
+
+### Marketing spend vs. leads
+```tsx
+<ComboChart
+  data={marketingData}
+  x="week"
+  series={[
+    { key: "adSpend", type: "bar", color: "#ef4444" },
+    { key: "leadsGenerated", type: "line", yAxis: "right", color: "#10b981" },
+  ]}
+  dualAxis
+  showLegend
+  className="h-72"
+/>
+```
+
+### Temperature and precipitation
+```tsx
+<ComboChart
+  data={weatherData}
+  x="month"
+  series={[
+    { key: "precipitation", type: "bar", color: "#60a5fa" },
+    { key: "avgTemp", type: "line", yAxis: "right", color: "#f97316" },
+  ]}
+  dualAxis
+  showLegend
+  className="h-72"
+/>
+```

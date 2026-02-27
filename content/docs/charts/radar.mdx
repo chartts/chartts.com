@@ -1,0 +1,408 @@
+---
+title: "Radar Chart"
+description: "Compare multiple variables on a radial layout. Ideal for skill assessments, performance profiles, and multi-attribute comparisons."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { RadarChart } from "@chartts/react"
+
+const data = [
+  { skill: "JavaScript", level: 90 },
+  { skill: "TypeScript", level: 85 },
+  { skill: "React", level: 88 },
+  { skill: "Node.js", level: 75 },
+  { skill: "CSS", level: 70 },
+  { skill: "Testing", level: 65 },
+]
+
+export function SkillRadar() {
+  return (
+    <RadarChart
+      data={data}
+      axes={["skill"]}
+      value="level"
+      className="h-80 w-80 mx-auto"
+    />
+  )
+}
+```
+
+That renders an interactive radar chart with labeled axes, gridlines, and smooth polygon shapes. Hover any axis to see the exact value.
+
+## When to Use Radar Charts
+
+Radar charts display multivariate data on axes radiating from a center point. Each variable gets its own axis, and the data shape reveals strengths and weaknesses at a glance.
+
+**Use a radar chart when:**
+- Comparing an entity across 3 to 8 dimensions (skill profiles, product attributes)
+- Overlaying two or three profiles to spot differences
+- The audience cares about the overall shape, not exact values
+- All variables share a similar scale or can be normalized
+
+**Don't use a radar chart when:**
+- You have more than 8 axes (the chart becomes cluttered and hard to read)
+- Precise value comparison matters (use a bar chart)
+- Variables have vastly different scales without normalization
+- You only have one or two dimensions
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `axes` | `(keyof T)[]` | required | Keys to use as radial axes |
+| `fill` | `boolean` | `true` | Fill the polygon area |
+| `fillOpacity` | `number` | `0.2` | Opacity of the filled area (0 to 1) |
+| `gridLevels` | `number` | `5` | Number of concentric grid rings |
+| `className` | `string` | - | Tailwind classes on root SVG |
+| `lineClassName` | `string` | - | Tailwind classes on polygon outline |
+| `areaClassName` | `string` | - | Tailwind classes on filled polygon |
+| `axisClassName` | `string` | - | Tailwind classes on axis lines |
+| `labelClassName` | `string` | - | Tailwind classes on axis labels |
+| `animate` | `boolean` | `true` | Enable polygon draw animation on mount |
+| `responsive` | `boolean` | `true` | Auto-resize to container width |
+
+---
+
+## Multi-Series Overlay
+
+Pass multiple data arrays to overlay profiles on the same chart. This is the core strength of radar charts: spotting where two profiles diverge.
+
+```tsx
+const frontendDev = [
+  { axis: "JavaScript", value: 92 },
+  { axis: "CSS", value: 88 },
+  { axis: "React", value: 95 },
+  { axis: "Testing", value: 60 },
+  { axis: "DevOps", value: 40 },
+  { axis: "Design", value: 72 },
+]
+
+const backendDev = [
+  { axis: "JavaScript", value: 80 },
+  { axis: "CSS", value: 35 },
+  { axis: "React", value: 50 },
+  { axis: "Testing", value: 85 },
+  { axis: "DevOps", value: 78 },
+  { axis: "Design", value: 30 },
+]
+
+<RadarChart
+  data={[frontendDev, backendDev]}
+  axes={["axis"]}
+  value="value"
+  seriesLabels={["Frontend", "Backend"]}
+  seriesClassName={{
+    0: "stroke-cyan-500 fill-cyan-500/20",
+    1: "stroke-amber-500 fill-amber-500/20",
+  }}
+/>
+```
+
+The overlapping areas highlight shared strengths. The gaps between shapes reveal where the two profiles differ most.
+
+---
+
+## Grid Levels
+
+The `gridLevels` prop controls how many concentric rings appear behind the data. More rings make it easier to estimate exact values. Fewer rings keep the chart clean.
+
+```tsx
+// Minimal grid (3 rings)
+<RadarChart data={data} axes={["skill"]} value="level" gridLevels={3} />
+
+// Detailed grid (10 rings, good for precise reading)
+<RadarChart data={data} axes={["skill"]} value="level" gridLevels={10} />
+
+// Default (5 rings)
+<RadarChart data={data} axes={["skill"]} value="level" gridLevels={5} />
+```
+
+Grid rings are evenly spaced from the center to the outer edge. Each ring represents an equal increment of the axis scale.
+
+---
+
+## Fill vs Outline Mode
+
+By default, the polygon is filled with a semi-transparent color. Set `fill` to `false` for an outline-only mode.
+
+```tsx
+// Filled (default) - emphasizes the overall shape and area
+<RadarChart
+  data={data}
+  axes={["skill"]}
+  value="level"
+  fill
+  fillOpacity={0.25}
+/>
+
+// Outline only - cleaner look, especially with multiple overlapping series
+<RadarChart
+  data={data}
+  axes={["skill"]}
+  value="level"
+  fill={false}
+  lineClassName="stroke-2"
+/>
+```
+
+For multi-series charts, outline mode often works better because filled polygons can obscure each other. If you do use fill with multiple series, lower the `fillOpacity` to 0.1 or 0.15 so all shapes remain visible.
+
+---
+
+## Axis Configuration
+
+### Custom Labels
+
+Override the default axis labels derived from data keys:
+
+```tsx
+<RadarChart
+  data={data}
+  axes={["js", "ts", "react", "node", "css", "test"]}
+  value="score"
+  axisLabels={{
+    js: "JavaScript",
+    ts: "TypeScript",
+    react: "React",
+    node: "Node.js",
+    css: "CSS/Styling",
+    test: "Testing",
+  }}
+/>
+```
+
+### Axis Range
+
+By default, axes scale from 0 to the maximum value in the data. Set explicit ranges when you need consistent scales across charts:
+
+```tsx
+<RadarChart
+  data={data}
+  axes={["skill"]}
+  value="level"
+  min={0}
+  max={100}
+/>
+```
+
+This ensures all axes run from 0 to 100 regardless of the actual data values. Useful when comparing charts side by side.
+
+---
+
+## Custom Scales
+
+When axes represent different metrics with different ranges, normalize them or provide per-axis scales:
+
+```tsx
+const productData = [
+  { axis: "Price", value: 8 },       // out of 10
+  { axis: "Quality", value: 7 },     // out of 10
+  { axis: "Support", value: 9 },     // out of 10
+  { axis: "Features", value: 6 },    // out of 10
+  { axis: "Speed", value: 8 },       // out of 10
+]
+
+<RadarChart
+  data={productData}
+  axes={["axis"]}
+  value="value"
+  min={0}
+  max={10}
+  gridLevels={5}
+/>
+```
+
+For data with different scales per axis, normalize values to a 0-100 range before passing them to the chart. This prevents one axis from visually dominating the others.
+
+---
+
+## Styling with Tailwind
+
+Every element is styleable through className props. Build charts that match your design system exactly.
+
+```tsx
+<RadarChart
+  data={data}
+  axes={["skill"]}
+  value="level"
+  className="rounded-xl bg-zinc-900/50 p-6"
+  lineClassName="stroke-cyan-400 stroke-2"
+  areaClassName="fill-cyan-400/15"
+  axisClassName="stroke-zinc-700"
+  labelClassName="text-xs text-zinc-400 font-medium"
+/>
+```
+
+Dark mode works with Tailwind's `dark:` variants:
+
+```tsx
+<RadarChart
+  data={data}
+  axes={["skill"]}
+  value="level"
+  lineClassName="stroke-blue-600 dark:stroke-blue-400"
+  areaClassName="fill-blue-600/10 dark:fill-blue-400/15"
+  axisClassName="stroke-gray-300 dark:stroke-zinc-700"
+  labelClassName="text-gray-600 dark:text-gray-400"
+/>
+```
+
+For multi-series styling:
+
+```tsx
+<RadarChart
+  data={[teamA, teamB]}
+  axes={["axis"]}
+  value="value"
+  seriesClassName={{
+    0: "stroke-emerald-500 fill-emerald-500/10",
+    1: "stroke-rose-500 fill-rose-500/10",
+  }}
+/>
+```
+
+---
+
+## Animation
+
+The radar polygon animates in by expanding from the center on mount. The shape starts as a point at the center and grows outward to its final shape over 600ms.
+
+```tsx
+// Disable animation for instant rendering
+<RadarChart data={data} axes={["skill"]} value="level" animate={false} />
+```
+
+The animation respects `prefers-reduced-motion`. When the user has motion reduction enabled, the chart renders immediately without animation.
+
+For multi-series charts, each series animates in sequence with a stagger delay, so viewers can see each profile appear one at a time.
+
+---
+
+## Accessibility
+
+Radar charts include full accessibility support out of the box:
+
+- **Screen readers**: The chart is announced as a radar chart with a summary of all axis values. Each data point is described with its axis label and value.
+- **Keyboard navigation**: Tab to focus the chart, then use arrow keys to move between axis points. The tooltip follows the focused point.
+- **ARIA roles**: The chart has `role="img"` with a descriptive `aria-label`. Each data point has `role="listitem"` with its axis name and value.
+- **High contrast**: Polygon outlines remain visible even without fill, supporting users who need stronger visual boundaries.
+
+---
+
+## Real-World Examples
+
+### Skill assessment
+
+Display a developer's skill profile for a performance review or portfolio page.
+
+```tsx
+const skills = [
+  { skill: "Frontend", level: 92 },
+  { skill: "Backend", level: 78 },
+  { skill: "Database", level: 70 },
+  { skill: "DevOps", level: 55 },
+  { skill: "Testing", level: 82 },
+  { skill: "Architecture", level: 68 },
+]
+
+<RadarChart
+  data={skills}
+  axes={["skill"]}
+  value="level"
+  min={0}
+  max={100}
+  gridLevels={5}
+  fillOpacity={0.2}
+  lineClassName="stroke-cyan-500 stroke-2"
+  areaClassName="fill-cyan-500/20"
+  labelClassName="text-sm font-medium"
+  className="h-96 w-96 mx-auto"
+/>
+```
+
+### Product comparison
+
+Compare two competing products across multiple attributes.
+
+```tsx
+const productA = [
+  { attr: "Performance", score: 9 },
+  { attr: "Reliability", score: 8 },
+  { attr: "Ease of Use", score: 7 },
+  { attr: "Price Value", score: 6 },
+  { attr: "Support", score: 8 },
+  { attr: "Features", score: 9 },
+]
+
+const productB = [
+  { attr: "Performance", score: 7 },
+  { attr: "Reliability", score: 9 },
+  { attr: "Ease of Use", score: 9 },
+  { attr: "Price Value", score: 8 },
+  { attr: "Support", score: 6 },
+  { attr: "Features", score: 7 },
+]
+
+<RadarChart
+  data={[productA, productB]}
+  axes={["attr"]}
+  value="score"
+  min={0}
+  max={10}
+  seriesLabels={["Product A", "Product B"]}
+  seriesClassName={{
+    0: "stroke-emerald-500 fill-emerald-500/15",
+    1: "stroke-violet-500 fill-violet-500/15",
+  }}
+  gridLevels={5}
+  fillOpacity={0.15}
+  labelClassName="text-sm font-medium"
+  className="h-96 w-full max-w-lg mx-auto"
+/>
+```
+
+### Team performance
+
+Track a team's quarterly performance across key metrics.
+
+```tsx
+const q3 = [
+  { metric: "Velocity", value: 85 },
+  { metric: "Quality", value: 92 },
+  { metric: "Collaboration", value: 78 },
+  { metric: "Innovation", value: 65 },
+  { metric: "Delivery", value: 88 },
+  { metric: "Satisfaction", value: 90 },
+]
+
+const q4 = [
+  { metric: "Velocity", value: 90 },
+  { metric: "Quality", value: 88 },
+  { metric: "Collaboration", value: 85 },
+  { metric: "Innovation", value: 72 },
+  { metric: "Delivery", value: 92 },
+  { metric: "Satisfaction", value: 87 },
+]
+
+<RadarChart
+  data={[q3, q4]}
+  axes={["metric"]}
+  value="value"
+  min={0}
+  max={100}
+  seriesLabels={["Q3", "Q4"]}
+  seriesClassName={{
+    0: "stroke-zinc-400 fill-zinc-400/10 stroke-dashed",
+    1: "stroke-blue-500 fill-blue-500/15 stroke-2",
+  }}
+  gridLevels={5}
+  labelClassName="text-xs font-semibold uppercase tracking-wide"
+  className="h-80 w-full max-w-md mx-auto"
+/>
+```

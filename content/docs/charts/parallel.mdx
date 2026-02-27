@@ -1,0 +1,234 @@
+---
+title: "Parallel Coordinates"
+description: "Compare items across multiple dimensions simultaneously. Each axis represents a variable, and each line traces one data point across all axes. Ideal for multi-attribute analysis and filtering."
+badge: "Advanced"
+---
+
+## Quick Start
+
+```tsx
+import { ParallelChart } from "@chartts/react"
+
+const data = [
+  { car: "Model S", price: 80000, range: 405, hp: 670, weight: 4766, rating: 4.8 },
+  { car: "Model 3", price: 43000, range: 358, hp: 283, weight: 3862, rating: 4.7 },
+  { car: "Taycan", price: 86000, range: 246, hp: 402, weight: 5121, rating: 4.6 },
+  { car: "i4", price: 56000, range: 301, hp: 335, weight: 4682, rating: 4.4 },
+  { car: "Ioniq 6", price: 42000, range: 361, hp: 320, weight: 4541, rating: 4.5 },
+  { car: "EQS", price: 105000, range: 350, hp: 329, weight: 5888, rating: 4.3 },
+]
+
+export function EVComparison() {
+  return (
+    <ParallelChart
+      data={data}
+      dimensions={["price", "range", "hp", "weight", "rating"]}
+      color="#06b6d4"
+      className="h-96 w-full"
+    />
+  )
+}
+```
+
+That renders a set of vertical axes, one per dimension, with lines connecting each data point's values across all axes. Hover a line to highlight it and see exact values.
+
+## When to Use Parallel Coordinates
+
+Parallel coordinates plots display multivariate data by drawing one vertical axis for each variable. Every data point becomes a polyline crossing all axes. Patterns like clusters, outliers, and trade-offs become visible through the line shapes.
+
+**Use parallel coordinates when:**
+- Comparing items across 4 or more numeric dimensions simultaneously
+- Looking for trade-offs between variables (high on one axis, low on another)
+- Filtering high-dimensional data interactively by brushing axis ranges
+- Spotting clusters of similar items that cross axes in similar patterns
+- The audience needs to explore which dimensions separate groups
+
+**Don't use parallel coordinates when:**
+- You have fewer than 3 dimensions (use a scatter plot or bar chart)
+- Data has only categorical variables (parallel coordinates need numeric axes)
+- Exact value comparison matters more than pattern recognition
+- You have more than 200 data points without filtering (lines become unreadable)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `dimensions` | `(keyof T)[]` | required | Keys to use as parallel axes, in display order |
+| `color` | `string` | `'#06b6d4'` | Default line color |
+| `colorBy` | `keyof T` | - | Key to use for categorical coloring |
+| `showAxes` | `boolean` | `true` | Display axis lines and tick labels |
+| `brushable` | `boolean` | `false` | Enable brush selection on axes for filtering |
+| `lineOpacity` | `number` | `0.4` | Base opacity of lines (0 to 1) |
+| `animate` | `boolean` | `true` | Enable line draw animation on mount |
+| `className` | `string` | - | Tailwind classes on root SVG |
+| `lineClassName` | `string` | - | Tailwind classes on polyline elements |
+| `axisClassName` | `string` | - | Tailwind classes on axis elements |
+| `labelClassName` | `string` | - | Tailwind classes on axis label text |
+
+---
+
+## Color by Category
+
+When `colorBy` references a categorical key, each unique value gets a distinct color. This reveals how groups differ across dimensions.
+
+```tsx
+const data = [
+  { name: "A", type: "sedan", price: 35000, mpg: 32, hp: 200, weight: 3400 },
+  { name: "B", type: "suv", price: 45000, mpg: 24, hp: 280, weight: 4800 },
+  { name: "C", type: "sedan", price: 28000, mpg: 38, hp: 160, weight: 3000 },
+  { name: "D", type: "truck", price: 52000, mpg: 20, hp: 400, weight: 5500 },
+  { name: "E", type: "suv", price: 40000, mpg: 26, hp: 260, weight: 4600 },
+]
+
+<ParallelChart
+  data={data}
+  dimensions={["price", "mpg", "hp", "weight"]}
+  colorBy="type"
+/>
+```
+
+Sedans cluster at the high-mpg, low-weight end. Trucks sit at the opposite extreme. SUVs land in between. The color grouping makes these patterns jump out.
+
+---
+
+## Brushable Axes
+
+Enable `brushable` to let users drag a range selection on any axis. Only lines that pass through all active brush ranges remain highlighted. Everything else fades out.
+
+```tsx
+<ParallelChart
+  data={data}
+  dimensions={["price", "range", "hp", "weight", "rating"]}
+  brushable
+  lineOpacity={0.3}
+/>
+```
+
+Brushing is the primary interaction pattern for parallel coordinates. It turns a dense visualization into a powerful filter tool. Users can progressively narrow down to items that meet criteria across multiple dimensions.
+
+### Multiple axis brushes
+
+Users can brush multiple axes simultaneously. A line must pass through every active brush to stay highlighted. This creates an AND filter across all brushed dimensions.
+
+For example, brushing "price" to the lower half and "rating" to the upper quarter shows only affordable, highly-rated items.
+
+---
+
+## Line Opacity
+
+Dense datasets benefit from low opacity so overlapping lines create a heat-like effect. Sparse datasets look better with higher opacity.
+
+```tsx
+// Dense data (100+ items) - low opacity reveals density
+<ParallelChart
+  data={largeDataset}
+  dimensions={dims}
+  lineOpacity={0.1}
+/>
+
+// Sparse data (under 20 items) - higher opacity for clarity
+<ParallelChart
+  data={smallDataset}
+  dimensions={dims}
+  lineOpacity={0.6}
+/>
+
+// Medium density (20-100 items)
+<ParallelChart
+  data={mediumDataset}
+  dimensions={dims}
+  lineOpacity={0.3}
+/>
+```
+
+Hovered lines always render at full opacity regardless of the `lineOpacity` setting, so the selected item stands out clearly.
+
+---
+
+## Dimension Ordering
+
+The order of keys in the `dimensions` array determines the left-to-right order of axes. Place correlated dimensions next to each other to make patterns more visible.
+
+```tsx
+// Group related dimensions together
+<ParallelChart
+  data={data}
+  dimensions={["price", "hp", "weight", "mpg", "rating"]}
+/>
+
+// Reorder to highlight different patterns
+<ParallelChart
+  data={data}
+  dimensions={["rating", "mpg", "price", "hp", "weight"]}
+/>
+```
+
+Try different orderings to discover which arrangement reveals the most interesting patterns in your data.
+
+---
+
+## Accessibility
+
+- Each axis announces its label and range
+- Each line announces the data point's label and all dimension values
+- Keyboard navigation: Tab to enter the chart, arrow keys to move between lines
+- Brushable axes are keyboard-accessible with Shift+Arrow to set brush ranges
+- Screen readers describe the highlighted subset when brushes are active
+- High-contrast mode thickens lines and adds distinct stroke patterns per category
+
+---
+
+## Real-World Examples
+
+### Employee performance review
+
+```tsx
+const employees = [
+  { name: "Alice", productivity: 92, quality: 88, teamwork: 95, innovation: 78, attendance: 98 },
+  { name: "Bob", productivity: 85, quality: 92, teamwork: 80, innovation: 90, attendance: 88 },
+  { name: "Carol", productivity: 78, quality: 95, teamwork: 92, innovation: 85, attendance: 95 },
+  { name: "Dave", productivity: 95, quality: 75, teamwork: 70, innovation: 92, attendance: 82 },
+]
+
+<ParallelChart
+  data={employees}
+  dimensions={["productivity", "quality", "teamwork", "innovation", "attendance"]}
+  colorBy="name"
+  lineOpacity={0.7}
+  showAxes
+  className="h-96 w-full"
+  labelClassName="text-sm font-medium"
+/>
+```
+
+### Wine dataset exploration
+
+```tsx
+<ParallelChart
+  data={wines}
+  dimensions={["alcohol", "acidity", "sugar", "pH", "sulphates", "quality"]}
+  colorBy="quality"
+  brushable
+  lineOpacity={0.15}
+  className="h-[500px] w-full"
+/>
+```
+
+### Server metrics comparison
+
+```tsx
+<ParallelChart
+  data={servers}
+  dimensions={["cpu", "memory", "disk", "network", "latency", "uptime"]}
+  color="#10b981"
+  brushable
+  lineOpacity={0.3}
+  showAxes
+  className="h-96 w-full"
+  axisClassName="stroke-zinc-300 dark:stroke-zinc-600"
+  labelClassName="text-xs font-semibold uppercase tracking-wide"
+/>
+```

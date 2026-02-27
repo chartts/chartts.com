@@ -1,0 +1,252 @@
+---
+title: "Calendar Chart"
+description: "Visualize daily data over a year as a grid of colored cells. The classic contribution heatmap for activity tracking and time patterns."
+badge: "Time"
+---
+
+## Quick Start
+
+```tsx
+import { CalendarChart } from "@chartts/react"
+
+const data = [
+  { date: "2025-01-01", value: 3 },
+  { date: "2025-01-02", value: 7 },
+  { date: "2025-01-03", value: 0 },
+  { date: "2025-01-04", value: 12 },
+  // ... daily entries for the year
+]
+
+export function ContributionGrid() {
+  return (
+    <CalendarChart
+      data={data}
+      date="date"
+      value="value"
+      year={2025}
+      showMonthLabels
+      showDayLabels
+      className="w-full"
+    />
+  )
+}
+```
+
+## When to Use Calendar Charts
+
+Calendar charts map data onto the familiar grid of weeks and months, making seasonal patterns and daily habits visible at a glance.
+
+**Use a calendar chart when:**
+- Showing daily activity over a year (commits, workouts, sales)
+- Identifying patterns by day of week or time of year
+- Tracking streaks and consistency
+- The audience is familiar with GitHub-style contribution grids
+
+**Don't use a calendar chart when:**
+- Data is not daily (use a line chart for hourly, or a bar chart for monthly)
+- You need to compare exact values precisely (cells are small)
+- Your data spans less than a few months (the grid looks sparse)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects with dates |
+| `date` | `keyof T` | required | Key for the date string (ISO format) |
+| `value` | `keyof T` | required | Key for the numeric value |
+| `year` | `number` | current year | Which year to display |
+| `colorScale` | `string[]` | green scale | Array of colors from low to high |
+| `cellSize` | `number` | `12` | Size of each day cell in pixels |
+| `cellGap` | `number` | `2` | Gap between cells in pixels |
+| `showMonthLabels` | `boolean` | `true` | Display month names along the top |
+| `showDayLabels` | `boolean` | `false` | Display day-of-week labels on the left |
+| `emptyColor` | `string` | `"#ebedf0"` | Color for days with no data |
+| `animate` | `boolean` | `true` | Animate cells on mount |
+| `className` | `string` | - | Tailwind classes on root SVG |
+
+---
+
+## Color Scales
+
+The color scale maps value intensity to color. Lower values get lighter colors, higher values get darker ones:
+
+```tsx
+// Default green scale (GitHub-style)
+<CalendarChart
+  data={data}
+  date="date"
+  value="value"
+  year={2025}
+/>
+
+// Blue scale
+<CalendarChart
+  data={data}
+  date="date"
+  value="value"
+  colorScale={["#dbeafe", "#93c5fd", "#3b82f6", "#1d4ed8"]}
+/>
+
+// Purple scale
+<CalendarChart
+  data={data}
+  date="date"
+  value="value"
+  colorScale={["#f3e8ff", "#c084fc", "#9333ea", "#581c87"]}
+/>
+
+// Red/heat scale
+<CalendarChart
+  data={data}
+  date="date"
+  value="value"
+  colorScale={["#fee2e2", "#fca5a5", "#ef4444", "#991b1b"]}
+/>
+```
+
+Values are automatically bucketed across the scale. Four colors means four intensity levels.
+
+---
+
+## Year Navigation
+
+Display a specific year by setting the `year` prop:
+
+```tsx
+<CalendarChart
+  data={data2024}
+  date="date"
+  value="value"
+  year={2024}
+  showMonthLabels
+/>
+```
+
+To build a year picker, manage `year` in state and pass different data for each year:
+
+```tsx
+const [year, setYear] = useState(2025)
+
+<CalendarChart
+  data={data.filter(d => d.date.startsWith(String(year)))}
+  date="date"
+  value="value"
+  year={year}
+  showMonthLabels
+/>
+```
+
+---
+
+## Month and Day Labels
+
+Labels orient the viewer within the grid:
+
+```tsx
+// Month labels along the top
+<CalendarChart
+  data={data}
+  date="date"
+  value="value"
+  showMonthLabels
+/>
+
+// Day-of-week labels on the left (Mon, Wed, Fri)
+<CalendarChart
+  data={data}
+  date="date"
+  value="value"
+  showDayLabels
+/>
+
+// Both
+<CalendarChart
+  data={data}
+  date="date"
+  value="value"
+  showMonthLabels
+  showDayLabels
+/>
+```
+
+Day labels typically show abbreviated names for Monday, Wednesday, and Friday to avoid crowding.
+
+---
+
+## Cell Sizing
+
+Adjust cell size and gap to control density:
+
+```tsx
+// Compact (small cells, tight gaps)
+<CalendarChart data={data} date="date" value="value" cellSize={8} cellGap={1} />
+
+// Standard (default)
+<CalendarChart data={data} date="date" value="value" cellSize={12} cellGap={2} />
+
+// Large (bigger cells, more breathing room)
+<CalendarChart data={data} date="date" value="value" cellSize={16} cellGap={3} />
+```
+
+Smaller cells work well in sidebar widgets. Larger cells are better for full-page views where individual days need to be clickable.
+
+---
+
+## Accessibility
+
+- Each cell has an `aria-label` with the date and value
+- Keyboard navigation moves between cells by day, with week-jumping via up/down arrows
+- Screen readers announce the date and value for each cell
+- The empty color is distinct enough to differentiate no-data days from low-value days
+
+---
+
+## Real-World Examples
+
+### GitHub-style contribution grid
+```tsx
+<CalendarChart
+  data={commits}
+  date="date"
+  value="count"
+  year={2025}
+  colorScale={["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"]}
+  cellSize={11}
+  cellGap={2}
+  showMonthLabels
+  showDayLabels
+  emptyColor="#ebedf0"
+  className="w-full"
+/>
+```
+
+### Exercise tracking
+```tsx
+<CalendarChart
+  data={workouts}
+  date="date"
+  value="minutes"
+  year={2025}
+  colorScale={["#fef3c7", "#fbbf24", "#f59e0b", "#d97706"]}
+  showMonthLabels
+  showDayLabels
+  cellSize={14}
+/>
+```
+
+### Revenue by day
+```tsx
+<CalendarChart
+  data={dailyRevenue}
+  date="date"
+  value="revenue"
+  year={2025}
+  colorScale={["#dbeafe", "#60a5fa", "#2563eb", "#1e3a8a"]}
+  showMonthLabels
+  cellSize={12}
+  cellGap={2}
+  className="w-full"
+/>
+```

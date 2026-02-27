@@ -1,0 +1,299 @@
+---
+title: "Pictorial Bar Chart"
+description: "Represent data with repeated symbols instead of plain bars. Turn boring numbers into engaging visuals with circles, icons, and custom shapes for infographic-style presentations."
+badge: "Infographic"
+---
+
+## Quick Start
+
+```tsx
+import { PictorialBarChart } from "@chartts/react"
+
+const data = [
+  { fruit: "Apples", sold: 120 },
+  { fruit: "Bananas", sold: 95 },
+  { fruit: "Oranges", sold: 80 },
+  { fruit: "Grapes", sold: 65 },
+  { fruit: "Mangoes", sold: 45 },
+]
+
+export function FruitSales() {
+  return (
+    <PictorialBarChart
+      data={data}
+      value="sold"
+      label="fruit"
+      symbol="circle"
+      symbolRepeat
+      className="h-80 w-full"
+    />
+  )
+}
+```
+
+That renders a chart where each bar is made of repeated circles, with the number of symbols proportional to the value. Hover any symbol row to see the exact value.
+
+## When to Use Pictorial Bar Charts
+
+Pictorial bar charts replace plain rectangular bars with symbols, making data more visually engaging and memorable. They are a staple of infographic design.
+
+**Use a pictorial bar chart when:**
+- Creating infographics or editorial data visualizations
+- The audience is non-technical and benefits from visual metaphors
+- Comparing a small number of categories (3 to 8 items)
+- You want a memorable, shareable visual instead of a standard bar chart
+- The data represents countable things (people, units, items)
+
+**Don't use a pictorial bar chart when:**
+- Precise comparison matters (the shapes make exact values harder to read)
+- You have more than 10 categories (use a standard bar chart)
+- The data changes frequently and needs to update in real time
+- The audience expects conventional, formal charts
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `value` | `keyof T` | required | Key for the numeric value |
+| `label` | `keyof T` | required | Key for the category label |
+| `symbol` | `'circle' \| 'rect' \| 'triangle' \| 'diamond' \| 'custom'` | `'circle'` | Shape used for bar symbols |
+| `symbolSize` | `number` | `20` | Size of each symbol in pixels |
+| `symbolRepeat` | `boolean` | `false` | Repeat symbols to fill the bar length |
+| `horizontal` | `boolean` | `false` | Render bars horizontally instead of vertically |
+| `colors` | `string[]` | palette | Array of colors, one per category |
+| `showValues` | `boolean` | `true` | Display numeric values alongside bars |
+| `animate` | `boolean` | `true` | Enable symbol fill animation on mount |
+| `className` | `string` | - | Tailwind classes on root SVG |
+| `symbolClassName` | `string` | - | Tailwind classes on symbol elements |
+| `labelClassName` | `string` | - | Tailwind classes on label text |
+
+---
+
+## Symbol Types
+
+### Circle
+
+The default symbol. Clean, modern look suitable for most use cases.
+
+```tsx
+<PictorialBarChart
+  data={data}
+  value="sold"
+  label="fruit"
+  symbol="circle"
+/>
+```
+
+### Rectangle
+
+Block-like symbols that tile neatly. Good for pixel-art or grid-based infographics.
+
+```tsx
+<PictorialBarChart
+  data={data}
+  value="sold"
+  label="fruit"
+  symbol="rect"
+/>
+```
+
+### Triangle
+
+Pointed symbols that add visual energy. Work well for growth or achievement themes.
+
+```tsx
+<PictorialBarChart
+  data={data}
+  value="sold"
+  label="fruit"
+  symbol="triangle"
+/>
+```
+
+### Diamond
+
+Rotated squares that create a jewel-like appearance. Good for value or premium themes.
+
+```tsx
+<PictorialBarChart
+  data={data}
+  value="sold"
+  label="fruit"
+  symbol="diamond"
+/>
+```
+
+### Custom SVG path
+
+Pass a custom SVG path string for any shape you need. This is how you create people icons, product shapes, or brand-specific symbols.
+
+```tsx
+<PictorialBarChart
+  data={data}
+  value="count"
+  label="category"
+  symbol="custom"
+  symbolPath="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"
+/>
+```
+
+---
+
+## Repeating Symbols
+
+When `symbolRepeat` is enabled, the bar length is represented by a row (or column) of discrete symbols. Each symbol represents a fixed unit of the value. This creates the classic infographic look where you count symbols to read the value.
+
+```tsx
+<PictorialBarChart
+  data={data}
+  value="sold"
+  label="fruit"
+  symbolRepeat
+  symbolSize={16}
+/>
+```
+
+Without `symbolRepeat`, a single symbol is scaled to match the bar length. The symbol stretches or compresses proportionally.
+
+```tsx
+// Single scaled symbol per bar
+<PictorialBarChart
+  data={data}
+  value="sold"
+  label="fruit"
+  symbolRepeat={false}
+  symbol="circle"
+/>
+```
+
+Repeating symbols work best when the maximum value in the data produces a reasonable number of symbols (10 to 30). For larger values, increase `symbolSize` so fewer symbols are needed.
+
+---
+
+## Horizontal Layout
+
+Switch to horizontal bars when labels are long or when the horizontal flow feels more natural for the data.
+
+```tsx
+<PictorialBarChart
+  data={data}
+  value="sold"
+  label="fruit"
+  horizontal
+  symbolRepeat
+  className="h-80 w-full"
+/>
+```
+
+Horizontal pictorial bars work especially well for ranking-style infographics where the reader scans from top to bottom.
+
+---
+
+## Symbol Sizing
+
+Control the size of individual symbols. Larger symbols create bolder, more graphic visuals. Smaller symbols allow more granularity.
+
+```tsx
+// Small symbols for detailed counts
+<PictorialBarChart
+  data={data}
+  value="sold"
+  label="fruit"
+  symbolSize={12}
+  symbolRepeat
+/>
+
+// Large symbols for bold infographics
+<PictorialBarChart
+  data={data}
+  value="sold"
+  label="fruit"
+  symbolSize={32}
+  symbolRepeat
+/>
+```
+
+---
+
+## Accessibility
+
+- Each bar announces its label, value, and the symbol shape used
+- Symbols are grouped as a single bar element for screen readers rather than individual shapes
+- Keyboard navigation moves between bars with arrow keys
+- Screen readers describe the chart as a comparison of values across categories
+- Values are always accessible via aria-labels even when `showValues` is false
+
+---
+
+## Real-World Examples
+
+### Population comparison
+
+```tsx
+const countries = [
+  { country: "China", population: 1400 },
+  { country: "India", population: 1380 },
+  { country: "USA", population: 330 },
+  { country: "Indonesia", population: 270 },
+  { country: "Brazil", population: 210 },
+]
+
+<PictorialBarChart
+  data={countries}
+  value="population"
+  label="country"
+  symbol="circle"
+  symbolRepeat
+  symbolSize={14}
+  horizontal
+  showValues
+  colors={["#ef4444", "#f59e0b", "#3b82f6", "#10b981", "#8b5cf6"]}
+  className="h-72 w-full"
+  labelClassName="text-sm font-semibold"
+/>
+```
+
+### Customer satisfaction survey
+
+```tsx
+const ratings = [
+  { rating: "Very Satisfied", count: 245 },
+  { rating: "Satisfied", count: 180 },
+  { rating: "Neutral", count: 90 },
+  { rating: "Dissatisfied", count: 35 },
+  { rating: "Very Dissatisfied", count: 12 },
+]
+
+<PictorialBarChart
+  data={ratings}
+  value="count"
+  label="rating"
+  symbol="circle"
+  symbolRepeat
+  horizontal
+  showValues
+  colors={["#10b981", "#6ee7b7", "#fbbf24", "#f87171", "#ef4444"]}
+  className="h-80 w-full"
+/>
+```
+
+### Feature adoption
+
+```tsx
+<PictorialBarChart
+  data={features}
+  value="adoptionPercent"
+  label="feature"
+  symbol="rect"
+  symbolRepeat
+  symbolSize={18}
+  horizontal
+  showValues
+  colors={["#06b6d4"]}
+  className="h-96 w-full"
+  symbolClassName="rounded-sm"
+/>
+```

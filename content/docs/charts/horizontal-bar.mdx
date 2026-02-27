@@ -1,0 +1,231 @@
+---
+title: "Horizontal Bar Chart"
+description: "Display categorical comparisons with horizontal bars, ideal for long labels and ranked data."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { HorizontalBarChart } from "@chartts/react"
+
+const data = [
+  { language: "TypeScript", users: 34200 },
+  { language: "Python", users: 28900 },
+  { language: "Rust", users: 18500 },
+  { language: "Go", users: 15800 },
+  { language: "Java", users: 12400 },
+]
+
+export function LanguagePopularity() {
+  return (
+    <HorizontalBarChart
+      data={data}
+      x="users"
+      y="language"
+      sorted="desc"
+      showValues
+      className="h-72 w-full"
+    />
+  )
+}
+```
+
+## When to Use Horizontal Bar Charts
+
+Horizontal bars flip the axis so categories sit on the left and values extend to the right. This feels natural for ranked lists and accommodates long labels.
+
+**Use a horizontal bar chart when:**
+- Category labels are long (department names, product titles, URLs)
+- You have many categories (more than 8-10)
+- Ranking from top to bottom feels natural (leaderboards, top-N lists)
+- Comparing a single metric across many items
+
+**Don't use a horizontal bar chart when:**
+- You have very few categories (under 3) and a vertical bar looks cleaner
+- You need to show time series data (use a line chart instead)
+- You need to show composition (use a stacked bar chart)
+- Labels are short and a vertical layout uses space better
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `x` | `keyof T` | required | Key for numeric values (bar length) |
+| `y` | `keyof T` | required | Key for category labels |
+| `color` | `string` | `"#3b82f6"` | Bar fill color |
+| `barHeight` | `number` | `24` | Height of each bar in pixels |
+| `gap` | `number` | `8` | Vertical gap between bars in pixels |
+| `showValues` | `boolean` | `false` | Display value labels at bar ends |
+| `valueFormat` | `(value: number) => string` | - | Custom value label formatter |
+| `sorted` | `boolean \| 'asc' \| 'desc'` | `false` | Sort bars by value |
+| `animate` | `boolean` | `true` | Enable bar grow animation |
+| `className` | `string` | - | Tailwind classes on root SVG |
+
+---
+
+## Auto-Sorting
+
+Sort bars by value to create instant leaderboards. Descending puts the largest value at the top:
+
+```tsx
+// Largest first
+<HorizontalBarChart
+  data={data}
+  x="revenue"
+  y="region"
+  sorted="desc"
+/>
+
+// Smallest first
+<HorizontalBarChart
+  data={data}
+  x="revenue"
+  y="region"
+  sorted="asc"
+/>
+
+// Original data order
+<HorizontalBarChart
+  data={data}
+  x="revenue"
+  y="region"
+  sorted={false}
+/>
+```
+
+Sorting is applied visually only and does not modify your data array.
+
+---
+
+## Value Labels
+
+Show exact values at the end of each bar for precision:
+
+```tsx
+<HorizontalBarChart
+  data={data}
+  x="revenue"
+  y="team"
+  showValues
+  valueFormat={(v) => `$${(v / 1000).toFixed(0)}k`}
+/>
+```
+
+Labels position just past the bar end. For very long bars, labels render inside the bar in a contrasting color.
+
+---
+
+## Color by Category
+
+Apply a single color to all bars or use a function to color bars conditionally:
+
+```tsx
+// Single color
+<HorizontalBarChart
+  data={data}
+  x="score"
+  y="student"
+  color="#10b981"
+/>
+```
+
+You can also style bars using className for Tailwind-based conditional coloring:
+
+```tsx
+<HorizontalBarChart
+  data={data}
+  x="score"
+  y="student"
+  color="#10b981"
+  className="h-80"
+/>
+```
+
+---
+
+## Custom Bar Height
+
+Control how thick each bar is with `barHeight`. Thinner bars fit more categories; thicker bars add visual weight:
+
+```tsx
+// Compact bars
+<HorizontalBarChart
+  data={data}
+  x="count"
+  y="category"
+  barHeight={16}
+  gap={4}
+/>
+
+// Chunky bars
+<HorizontalBarChart
+  data={data}
+  x="count"
+  y="category"
+  barHeight={36}
+  gap={12}
+/>
+```
+
+The chart height adjusts automatically based on the number of categories, bar height, and gap.
+
+---
+
+## Accessibility
+
+- Each bar has an `aria-label` with the category name and formatted value
+- Keyboard navigation: Tab into the chart, then use arrow keys to move between bars
+- Screen readers announce the category label and value for each bar
+- High contrast mode support through Tailwind dark mode classes
+
+---
+
+## Real-World Examples
+
+### Top pages by traffic
+```tsx
+<HorizontalBarChart
+  data={topPages}
+  x="pageviews"
+  y="path"
+  sorted="desc"
+  showValues
+  valueFormat={(v) => v.toLocaleString()}
+  color="#6366f1"
+  barHeight={28}
+  className="h-96"
+/>
+```
+
+### Employee skill assessment
+```tsx
+<HorizontalBarChart
+  data={skills}
+  x="proficiency"
+  y="skill"
+  sorted="desc"
+  showValues
+  valueFormat={(v) => `${v}/10`}
+  color="#06b6d4"
+  barHeight={20}
+  gap={6}
+/>
+```
+
+### Feature request votes
+```tsx
+<HorizontalBarChart
+  data={featureRequests}
+  x="votes"
+  y="feature"
+  sorted="desc"
+  showValues
+  color="#f59e0b"
+  barHeight={32}
+  className="h-auto"
+/>
+```

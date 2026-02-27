@@ -1,0 +1,245 @@
+---
+title: "Bullet Chart"
+description: "Compare a primary measure against a target within qualitative ranges. The compact alternative to dashboard gauges."
+badge: "KPI"
+---
+
+## Quick Start
+
+```tsx
+import { BulletChart } from "@chartts/react"
+
+const data = [
+  {
+    label: "Revenue",
+    value: 275,
+    target: 250,
+    ranges: [150, 225, 300],
+  },
+]
+
+export function RevenueBullet() {
+  return (
+    <BulletChart
+      data={data}
+      value="value"
+      target="target"
+      ranges="ranges"
+      label="label"
+      showValue
+      className="h-24 w-full"
+    />
+  )
+}
+```
+
+## When to Use Bullet Charts
+
+Bullet charts pack a lot of information into a small horizontal bar: the actual value, a target marker, and qualitative ranges (poor, acceptable, good).
+
+**Use a bullet chart when:**
+- Comparing actual performance against a target or goal
+- Showing KPIs with qualitative context (is this value good, ok, or bad?)
+- You need a compact alternative to gauges on dense dashboards
+- Displaying multiple KPIs stacked vertically for comparison
+
+**Don't use a bullet chart when:**
+- There is no meaningful target to compare against (use a bar chart)
+- You need to show trends over time (use a line chart)
+- The audience is unfamiliar with bullet charts (they require explanation)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects |
+| `value` | `keyof T` | required | Key for the primary measure |
+| `target` | `keyof T` | required | Key for the target/goal value |
+| `ranges` | `keyof T` | required | Key for array of range thresholds (e.g. poor/ok/good boundaries) |
+| `label` | `keyof T` | - | Key for the row label |
+| `orientation` | `'horizontal' \| 'vertical'` | `'horizontal'` | Chart orientation |
+| `showTarget` | `boolean` | `true` | Show the target marker line |
+| `showValue` | `boolean` | `false` | Display the numeric value |
+| `colors` | `string[]` | `["#d1d5db", "#9ca3af", "#6b7280"]` | Colors for qualitative ranges (lightest to darkest) |
+| `animate` | `boolean` | `true` | Animate the value bar on mount |
+| `className` | `string` | - | Tailwind classes on root |
+
+---
+
+## Target Marker
+
+The target is shown as a thin vertical line crossing the bar. It answers "where should we be?" at a glance:
+
+```tsx
+<BulletChart
+  data={data}
+  value="value"
+  target="target"
+  ranges="ranges"
+  label="label"
+  showTarget
+/>
+```
+
+When the value bar extends past the target line, performance exceeded the goal. When it falls short, you can immediately see the gap.
+
+Hide the target when it is not relevant:
+
+```tsx
+<BulletChart
+  data={data}
+  value="value"
+  target="target"
+  ranges="ranges"
+  showTarget={false}
+/>
+```
+
+---
+
+## Qualitative Ranges
+
+Ranges provide qualitative context using background shading. The `ranges` array defines thresholds that divide the track into zones:
+
+```tsx
+// Three ranges: Poor (0-150), Satisfactory (150-225), Good (225-300)
+const data = [
+  {
+    label: "Revenue ($K)",
+    value: 275,
+    target: 250,
+    ranges: [150, 225, 300],
+  },
+]
+
+<BulletChart
+  data={data}
+  value="value"
+  target="target"
+  ranges="ranges"
+  label="label"
+  colors={["#fecaca", "#fde68a", "#bbf7d0"]}
+/>
+```
+
+The first range (lightest shade) represents poor performance, the middle is satisfactory, and the last (darkest or most saturated) is good.
+
+---
+
+## Horizontal and Vertical
+
+Horizontal is the default and most common orientation:
+
+```tsx
+// Horizontal (default) - best for multiple stacked KPIs
+<BulletChart
+  data={kpis}
+  value="value"
+  target="target"
+  ranges="ranges"
+  label="label"
+  orientation="horizontal"
+/>
+```
+
+Vertical bullets work when space is constrained horizontally:
+
+```tsx
+// Vertical - useful in narrow dashboard widgets
+<BulletChart
+  data={kpis}
+  value="value"
+  target="target"
+  ranges="ranges"
+  label="label"
+  orientation="vertical"
+  className="h-64 w-24"
+/>
+```
+
+---
+
+## Value Display
+
+Show the exact numeric value alongside the bar:
+
+```tsx
+<BulletChart
+  data={data}
+  value="value"
+  target="target"
+  ranges="ranges"
+  label="label"
+  showValue
+/>
+```
+
+The value appears at the end of the bar, making it easy to read the precise number while the bar shows the qualitative context.
+
+---
+
+## Accessibility
+
+- Each bullet announces its label, current value, target, and which qualitative range the value falls in
+- The target marker is described as a reference point for screen readers
+- Qualitative ranges are labeled (e.g. "poor range", "satisfactory range", "good range")
+- Color coding is supplemented with positional information
+
+---
+
+## Real-World Examples
+
+### Sales team KPI dashboard
+```tsx
+<BulletChart
+  data={[
+    { label: "Revenue ($K)", value: 275, target: 250, ranges: [150, 225, 300] },
+    { label: "New Clients", value: 22, target: 25, ranges: [10, 18, 30] },
+    { label: "Satisfaction", value: 4.5, target: 4.2, ranges: [3.0, 3.8, 5.0] },
+  ]}
+  value="value"
+  target="target"
+  ranges="ranges"
+  label="label"
+  showTarget
+  showValue
+  className="h-48"
+/>
+```
+
+### Sprint progress
+```tsx
+<BulletChart
+  data={[
+    { label: "Story Points", value: 34, target: 40, ranges: [20, 30, 45] },
+    { label: "Bugs Fixed", value: 12, target: 10, ranges: [5, 8, 15] },
+    { label: "Code Coverage %", value: 78, target: 80, ranges: [60, 75, 100] },
+  ]}
+  value="value"
+  target="target"
+  ranges="ranges"
+  label="label"
+  showValue
+  colors={["#dbeafe", "#93c5fd", "#3b82f6"]}
+/>
+```
+
+### Server health metrics
+```tsx
+<BulletChart
+  data={[
+    { label: "CPU %", value: 62, target: 70, ranges: [50, 75, 100] },
+    { label: "Memory %", value: 81, target: 85, ranges: [60, 80, 100] },
+    { label: "Disk %", value: 45, target: 90, ranges: [50, 75, 100] },
+  ]}
+  value="value"
+  target="target"
+  ranges="ranges"
+  label="label"
+  showTarget
+  showValue
+  colors={["#d1fae5", "#fde68a", "#fecaca"]}
+/>
+```

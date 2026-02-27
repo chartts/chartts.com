@@ -1,0 +1,289 @@
+---
+title: "Theme River"
+description: "Visualize how themes or categories evolve over time as a flowing, stacked stream. Perfect for topic trends, genre popularity, and temporal category shifts."
+badge: "Time"
+---
+
+## Quick Start
+
+```tsx
+import { ThemeRiverChart } from "@chartts/react"
+
+const data = [
+  { date: "2024-01", topic: "AI", mentions: 1200 },
+  { date: "2024-01", topic: "Crypto", mentions: 800 },
+  { date: "2024-01", topic: "Climate", mentions: 600 },
+  { date: "2024-02", topic: "AI", mentions: 1500 },
+  { date: "2024-02", topic: "Crypto", mentions: 650 },
+  { date: "2024-02", topic: "Climate", mentions: 700 },
+  { date: "2024-03", topic: "AI", mentions: 1800 },
+  { date: "2024-03", topic: "Crypto", mentions: 500 },
+  { date: "2024-03", topic: "Climate", mentions: 900 },
+  { date: "2024-04", topic: "AI", mentions: 2200 },
+  { date: "2024-04", topic: "Crypto", mentions: 400 },
+  { date: "2024-04", topic: "Climate", mentions: 1100 },
+  { date: "2024-05", topic: "AI", mentions: 2800 },
+  { date: "2024-05", topic: "Crypto", mentions: 350 },
+  { date: "2024-05", topic: "Climate", mentions: 1000 },
+  { date: "2024-06", topic: "AI", mentions: 3200 },
+  { date: "2024-06", topic: "Crypto", mentions: 300 },
+  { date: "2024-06", topic: "Climate", mentions: 1200 },
+]
+
+export function TopicTrends() {
+  return (
+    <ThemeRiverChart
+      data={data}
+      time="date"
+      value="mentions"
+      category="topic"
+      smooth
+      className="h-80 w-full"
+    />
+  )
+}
+```
+
+That renders a flowing, stacked stream chart centered on the horizontal axis. Each colored band represents a category, and its thickness at any point encodes the value at that time. Hover to see exact values.
+
+## When to Use Theme Rivers
+
+Theme rivers (also called streamgraphs) show how the composition of a total changes over time. Unlike stacked area charts that anchor to a baseline, theme rivers center the streams around a midline, creating an organic, flowing shape.
+
+**Use a theme river when:**
+- Showing how topic popularity or category share evolves over time
+- Visualizing genre trends, music listening patterns, or content categories
+- The aesthetic, flowing appearance suits the context (editorial, storytelling)
+- You want to emphasize the overall shape and rhythm of change
+- Comparing the relative size of 3 to 10 categories over time
+
+**Don't use a theme river when:**
+- Precise value reading matters (the wavy baseline makes exact values hard to judge)
+- You have more than 10 categories (the streams become too thin to distinguish)
+- The data has large gaps or missing time periods
+- A stacked area chart would convey the information more clearly
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects with time, value, and category |
+| `time` | `keyof T` | required | Key for the time/x-axis dimension |
+| `value` | `keyof T` | required | Key for the numeric stream thickness |
+| `category` | `keyof T` | required | Key for the category that defines each stream |
+| `colors` | `string[]` | palette | Array of colors, one per category |
+| `smooth` | `boolean` | `true` | Use smooth curve interpolation |
+| `showLabels` | `boolean` | `true` | Display category labels on streams |
+| `showLegend` | `boolean` | `true` | Show a legend mapping colors to categories |
+| `animate` | `boolean` | `true` | Enable flow animation on mount |
+| `className` | `string` | - | Tailwind classes on root SVG |
+| `streamClassName` | `string` | - | Tailwind classes on stream paths |
+| `labelClassName` | `string` | - | Tailwind classes on label text |
+
+---
+
+## Smooth Interpolation
+
+The `smooth` prop controls whether streams use curved or linear interpolation between time points.
+
+```tsx
+// Smooth curves (default) - flowing, organic appearance
+<ThemeRiverChart
+  data={data}
+  time="date"
+  value="mentions"
+  category="topic"
+  smooth
+/>
+
+// Linear interpolation - angular, precise transitions
+<ThemeRiverChart
+  data={data}
+  time="date"
+  value="mentions"
+  category="topic"
+  smooth={false}
+/>
+```
+
+Smooth interpolation produces the signature flowing look of theme rivers. Linear interpolation is more accurate at each data point but loses the organic aesthetic.
+
+---
+
+## Category Colors
+
+Assign specific colors to match your brand or convey meaning. Colors are assigned to categories in the order they first appear in the data.
+
+```tsx
+<ThemeRiverChart
+  data={data}
+  time="date"
+  value="mentions"
+  category="topic"
+  colors={["#06b6d4", "#f59e0b", "#10b981", "#8b5cf6", "#ef4444"]}
+/>
+```
+
+When no colors are provided, the chart uses the default palette which provides good contrast between adjacent streams.
+
+### Semantic colors
+
+```tsx
+// Match colors to meaning
+<ThemeRiverChart
+  data={sentimentData}
+  time="week"
+  value="count"
+  category="sentiment"
+  colors={["#ef4444", "#f59e0b", "#10b981"]}
+  // Red for negative, amber for neutral, green for positive
+/>
+```
+
+---
+
+## Labels and Legend
+
+Labels appear directly on the streams when they are thick enough to fit text. The legend provides a persistent reference for all categories.
+
+```tsx
+// Labels on streams + legend
+<ThemeRiverChart
+  data={data}
+  time="date"
+  value="mentions"
+  category="topic"
+  showLabels
+  showLegend
+/>
+
+// Legend only (cleaner look for many categories)
+<ThemeRiverChart
+  data={data}
+  time="date"
+  value="mentions"
+  category="topic"
+  showLabels={false}
+  showLegend
+/>
+
+// No labels or legend (rely on tooltips)
+<ThemeRiverChart
+  data={data}
+  time="date"
+  value="mentions"
+  category="topic"
+  showLabels={false}
+  showLegend={false}
+/>
+```
+
+Stream labels automatically reposition as the stream thickness changes, staying centered within each band.
+
+---
+
+## Animation
+
+Streams animate in by growing from zero thickness to their final shape. The animation flows from left to right, following the time axis.
+
+```tsx
+// Animated (default)
+<ThemeRiverChart
+  data={data}
+  time="date"
+  value="mentions"
+  category="topic"
+  animate
+/>
+
+// Instant render
+<ThemeRiverChart
+  data={data}
+  time="date"
+  value="mentions"
+  category="topic"
+  animate={false}
+/>
+```
+
+The animation respects `prefers-reduced-motion`. When the user has motion reduction enabled, streams render immediately.
+
+---
+
+## Accessibility
+
+- Each stream announces its category name, time range, and value range
+- Keyboard navigation: Tab to enter the chart, arrow keys to move between time points
+- Screen readers describe each category's trend direction (rising, falling, stable)
+- Tooltips show exact values at each time point for all visible categories
+- High-contrast mode adds distinct borders between adjacent streams
+
+---
+
+## Real-World Examples
+
+### Music genre trends
+
+```tsx
+const genreData = [
+  { year: "2018", genre: "Pop", streams: 45000 },
+  { year: "2018", genre: "Hip-Hop", streams: 38000 },
+  { year: "2018", genre: "Rock", streams: 22000 },
+  { year: "2018", genre: "Electronic", streams: 18000 },
+  { year: "2019", genre: "Pop", streams: 42000 },
+  { year: "2019", genre: "Hip-Hop", streams: 44000 },
+  { year: "2019", genre: "Rock", streams: 19000 },
+  { year: "2019", genre: "Electronic", streams: 21000 },
+  { year: "2020", genre: "Pop", streams: 48000 },
+  { year: "2020", genre: "Hip-Hop", streams: 50000 },
+  { year: "2020", genre: "Rock", streams: 17000 },
+  { year: "2020", genre: "Electronic", streams: 25000 },
+]
+
+<ThemeRiverChart
+  data={genreData}
+  time="year"
+  value="streams"
+  category="genre"
+  colors={["#ec4899", "#8b5cf6", "#ef4444", "#06b6d4"]}
+  smooth
+  showLabels
+  showLegend
+  className="h-80 w-full"
+/>
+```
+
+### Support ticket categories
+
+```tsx
+<ThemeRiverChart
+  data={ticketData}
+  time="month"
+  value="count"
+  category="type"
+  colors={["#ef4444", "#f59e0b", "#3b82f6", "#10b981"]}
+  smooth
+  showLegend
+  className="h-72 w-full"
+  streamClassName="hover:opacity-90 transition-opacity"
+/>
+```
+
+### Content publishing trends
+
+```tsx
+<ThemeRiverChart
+  data={publishingData}
+  time="quarter"
+  value="articles"
+  category="topic"
+  smooth
+  showLabels
+  showLegend
+  animate
+  className="h-96 w-full"
+  labelClassName="text-sm font-semibold"
+/>
+```

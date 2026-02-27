@@ -1,0 +1,213 @@
+---
+title: "Gauge Chart"
+description: "Display a single metric as a dial or arc. Perfect for KPIs, progress indicators, and performance metrics."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { GaugeChart } from "@chartts/react"
+
+export function PerformanceGauge() {
+  return (
+    <GaugeChart
+      value={76}
+      max={100}
+      label="Performance"
+      ranges={[
+        { min: 0, max: 50, color: "#ef4444" },
+        { min: 50, max: 75, color: "#f59e0b" },
+        { min: 75, max: 100, color: "#10b981" },
+      ]}
+      className="h-64 w-64 mx-auto"
+    />
+  )
+}
+```
+
+## When to Use Gauge Charts
+
+Gauges show a single value relative to a scale, like a speedometer.
+
+**Use a gauge chart when:**
+- Displaying a single KPI (CPU usage, satisfaction score, budget utilization)
+- The value has clear min/max bounds
+- Color ranges add meaning (red/yellow/green thresholds)
+- You need a dashboard-style "at a glance" indicator
+
+**Don't use a gauge when:**
+- Comparing multiple metrics (use bullet charts or bar charts)
+- Showing change over time (use a line chart)
+- You need to show precise values (the dial position is hard to read precisely)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `value` | `number` | required | Current value |
+| `min` | `number` | `0` | Minimum value on the scale |
+| `max` | `number` | `100` | Maximum value on the scale |
+| `label` | `string` | - | Label text below the value |
+| `arc` | `number` | `240` | Arc angle in degrees (180 = semicircle, 360 = full circle) |
+| `thickness` | `number` | `20` | Track thickness in pixels |
+| `ranges` | `{ min: number; max: number; color: string }[]` | - | Color ranges for the track |
+| `showValue` | `boolean` | `true` | Display the numeric value |
+| `valueFormat` | `(v: number) => string` | - | Custom value formatter |
+| `animate` | `boolean` | `true` | Animate needle/arc on mount and value changes |
+| `className` | `string` | - | Tailwind classes on root |
+| `trackClassName` | `string` | - | Tailwind classes on the background track |
+
+---
+
+## Arc Angle
+
+Controls how much of a circle the gauge spans:
+
+```tsx
+// Semi-circle (180 degrees) - classic dashboard gauge
+<GaugeChart value={76} max={100} arc={180} />
+
+// Three-quarter arc (270 degrees) - most common
+<GaugeChart value={76} max={100} arc={270} />
+
+// Default (240 degrees)
+<GaugeChart value={76} max={100} arc={240} />
+
+// Full circle (360 degrees) - progress ring style
+<GaugeChart value={76} max={100} arc={360} />
+```
+
+---
+
+## Color Ranges
+
+Define ranges to color different sections of the track:
+
+```tsx
+<GaugeChart
+  value={42}
+  max={100}
+  ranges={[
+    { min: 0, max: 30, color: "#ef4444" },   // Red: danger
+    { min: 30, max: 70, color: "#f59e0b" },   // Yellow: warning
+    { min: 70, max: 100, color: "#10b981" },   // Green: good
+  ]}
+/>
+```
+
+Without ranges, the track uses a single color with intensity based on the value.
+
+---
+
+## Thickness
+
+```tsx
+// Thin gauge (progress ring style)
+<GaugeChart value={76} max={100} thickness={8} />
+
+// Medium (default)
+<GaugeChart value={76} max={100} thickness={20} />
+
+// Thick gauge
+<GaugeChart value={76} max={100} thickness={40} />
+```
+
+---
+
+## Value Display
+
+```tsx
+// Custom format
+<GaugeChart
+  value={0.76}
+  max={1}
+  valueFormat={(v) => `${(v * 100).toFixed(0)}%`}
+/>
+
+// Currency
+<GaugeChart
+  value={42000}
+  max={100000}
+  valueFormat={(v) => `$${(v / 1000).toFixed(0)}k`}
+/>
+
+// Hide value
+<GaugeChart value={76} max={100} showValue={false} />
+```
+
+---
+
+## Animation
+
+The gauge needle (or arc fill) animates from the minimum to the current value on mount. When the value updates, it smoothly transitions to the new position.
+
+```tsx
+// Disable animation
+<GaugeChart value={76} max={100} animate={false} />
+```
+
+---
+
+## Accessibility
+
+- The gauge announces its current value, min, max, and label
+- Color ranges are supplemented with value annotations for screen readers
+- `role="meter"` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax`
+
+---
+
+## Real-World Examples
+
+### Server CPU gauge
+```tsx
+<GaugeChart
+  value={cpuUsage}
+  max={100}
+  label="CPU"
+  arc={180}
+  thickness={16}
+  ranges={[
+    { min: 0, max: 60, color: "#10b981" },
+    { min: 60, max: 85, color: "#f59e0b" },
+    { min: 85, max: 100, color: "#ef4444" },
+  ]}
+  valueFormat={(v) => `${v}%`}
+  className="h-40 w-40"
+/>
+```
+
+### NPS score
+```tsx
+<GaugeChart
+  value={72}
+  min={-100}
+  max={100}
+  label="NPS Score"
+  arc={240}
+  ranges={[
+    { min: -100, max: 0, color: "#ef4444" },
+    { min: 0, max: 50, color: "#f59e0b" },
+    { min: 50, max: 100, color: "#10b981" },
+  ]}
+/>
+```
+
+### Budget utilization
+```tsx
+<GaugeChart
+  value={budget.spent}
+  max={budget.total}
+  label="Budget Used"
+  arc={270}
+  thickness={24}
+  valueFormat={(v) => `$${(v / 1000).toFixed(0)}k`}
+  ranges={[
+    { min: 0, max: budget.total * 0.7, color: "#10b981" },
+    { min: budget.total * 0.7, max: budget.total * 0.9, color: "#f59e0b" },
+    { min: budget.total * 0.9, max: budget.total, color: "#ef4444" },
+  ]}
+/>
+```

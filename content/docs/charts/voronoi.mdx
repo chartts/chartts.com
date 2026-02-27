@@ -1,0 +1,351 @@
+---
+title: "Voronoi Chart"
+description: "Partition space into regions based on proximity to data points. Creates organic, cell-like patterns useful for spatial analysis."
+badge: "Advanced"
+---
+
+## Quick Start
+
+```tsx
+import { VoronoiChart } from "@chartts/react"
+
+const data = [
+  { x: 120, y: 200, label: "Station A" },
+  { x: 340, y: 150, label: "Station B" },
+  { x: 200, y: 380, label: "Station C" },
+  { x: 450, y: 300, label: "Station D" },
+  { x: 80, y: 420, label: "Station E" },
+  { x: 380, y: 450, label: "Station F" },
+  { x: 500, y: 100, label: "Station G" },
+  { x: 260, y: 260, label: "Station H" },
+]
+
+export function CoverageMap() {
+  return (
+    <VoronoiChart
+      data={data}
+      x="x"
+      y="y"
+      showPoints
+      showCells
+      className="h-96 w-full"
+    />
+  )
+}
+```
+
+That renders a Voronoi diagram where space is partitioned so that every point in a cell is closer to that cell's data point than to any other. The result is an organic, cell-like tessellation that reveals spatial relationships.
+
+## When to Use Voronoi Charts
+
+Voronoi diagrams partition a plane into regions based on proximity to a set of points. Each cell contains all the area closest to its corresponding point.
+
+**Use a Voronoi chart when:**
+- Visualizing service areas, coverage zones, or territories
+- Showing nearest-neighbor relationships in spatial data
+- Creating organic, cell-based layouts for aesthetic or analytical purposes
+- Analyzing spatial distribution patterns (clustering, uniformity, gaps)
+
+**Don't use a Voronoi chart when:**
+- Your data is not spatial (no meaningful x/y coordinates)
+- You need to show exact quantities or comparisons (use a bar or scatter chart)
+- Your audience needs a conventional, quickly understood chart type
+- You have fewer than 4 data points (the tessellation is trivial)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects with coordinate fields |
+| `x` | `keyof T` | required | Key for the x-coordinate of each point |
+| `y` | `keyof T` | required | Key for the y-coordinate of each point |
+| `color` | `keyof T \| string` | palette | Color cells by a data key or use a fixed color |
+| `showPoints` | `boolean` | `true` | Show the data points as dots |
+| `showCells` | `boolean` | `true` | Show the Voronoi cell boundaries |
+| `cellStroke` | `string` | `'#71717a'` | Color of cell boundary lines |
+| `cellFill` | `string \| 'auto'` | `'auto'` | Fill color for cells. "auto" uses the color prop |
+| `relaxIterations` | `number` | `0` | Number of Lloyd relaxation passes for more uniform cells |
+| `clipToExtent` | `boolean` | `true` | Clip cells to the chart boundaries |
+| `animate` | `boolean` | `true` | Enable cell drawing animation on mount |
+| `className` | `string` | - | Tailwind classes on the root SVG |
+
+---
+
+## Voronoi Tessellation
+
+The core of the chart is Delaunay triangulation followed by its dual, the Voronoi diagram. Each data point becomes the "seed" of a cell, and the cell boundary is equidistant from neighboring seeds.
+
+```tsx
+// Basic tessellation with cells and points
+<VoronoiChart
+  data={data}
+  x="x"
+  y="y"
+  showCells
+  showPoints
+/>
+
+// Cells only, no points
+<VoronoiChart
+  data={data}
+  x="x"
+  y="y"
+  showCells
+  showPoints={false}
+/>
+
+// Points only, no cells (becomes a scatter plot)
+<VoronoiChart
+  data={data}
+  x="x"
+  y="y"
+  showCells={false}
+  showPoints
+/>
+```
+
+The tessellation is computed in real-time as data changes, so it responds to dynamic datasets and animations.
+
+---
+
+## Lloyd Relaxation
+
+Lloyd relaxation iteratively moves each point toward the centroid of its Voronoi cell, producing more uniform, evenly-spaced cells. Each iteration makes the distribution more regular.
+
+```tsx
+// No relaxation: cells reflect raw data positions
+<VoronoiChart
+  data={data}
+  x="x"
+  y="y"
+  relaxIterations={0}
+/>
+
+// Light relaxation: slightly more uniform
+<VoronoiChart
+  data={data}
+  x="x"
+  y="y"
+  relaxIterations={3}
+/>
+
+// Heavy relaxation: very uniform, almost hexagonal
+<VoronoiChart
+  data={data}
+  x="x"
+  y="y"
+  relaxIterations={20}
+/>
+```
+
+Relaxation is useful when you want a visually balanced layout. With enough iterations, the cells approach a centroidal Voronoi tessellation, where each point sits exactly at its cell's center of mass.
+
+Note that relaxation moves the points from their original positions. If the exact original positions matter for your analysis, keep `relaxIterations` at 0.
+
+---
+
+## Cell Coloring
+
+Color cells by a data field to encode additional information in the tessellation.
+
+### Categorical color
+
+When the mapped field contains strings, each unique value gets a distinct color:
+
+```tsx
+const sensors = [
+  { x: 100, y: 200, type: "temperature", id: "T1" },
+  { x: 300, y: 150, type: "humidity", id: "H1" },
+  { x: 200, y: 350, type: "temperature", id: "T2" },
+  { x: 400, y: 280, type: "pressure", id: "P1" },
+  { x: 150, y: 420, type: "humidity", id: "H2" },
+]
+
+<VoronoiChart
+  data={sensors}
+  x="x"
+  y="y"
+  color="type"
+  showPoints
+  showCells
+/>
+```
+
+### Fixed color
+
+Apply a single color to all cells:
+
+```tsx
+<VoronoiChart
+  data={data}
+  x="x"
+  y="y"
+  cellFill="#3b82f6"
+  cellStroke="#1e40af"
+/>
+```
+
+### Custom stroke
+
+```tsx
+// Subtle boundaries
+<VoronoiChart
+  data={data}
+  x="x"
+  y="y"
+  cellStroke="#e4e4e7"
+/>
+
+// Bold boundaries on dark background
+<VoronoiChart
+  data={data}
+  x="x"
+  y="y"
+  cellStroke="#f4f4f5"
+  cellFill="#18181b"
+  className="bg-zinc-950"
+/>
+```
+
+---
+
+## Point Overlay
+
+When `showPoints` is enabled, a dot appears at each data point's position on top of the cell boundaries. This anchors the abstract tessellation to the underlying data.
+
+```tsx
+<VoronoiChart
+  data={data}
+  x="x"
+  y="y"
+  showPoints
+  showCells
+  cellFill="#f0f9ff"
+  cellStroke="#3b82f6"
+/>
+```
+
+Points include hover tooltips that show the data values. Combined with cell boundaries, this creates a visualization where hovering any part of a cell highlights its associated data point.
+
+---
+
+## Clip to Bounds
+
+By default, Voronoi cells are clipped to the chart's extent. Without clipping, edge cells would extend infinitely. The `clipToExtent` prop controls this behavior.
+
+```tsx
+// Clipped (default): cells stay within chart bounds
+<VoronoiChart
+  data={data}
+  x="x"
+  y="y"
+  clipToExtent
+/>
+
+// Unclipped: edge cells may extend beyond visible area
+<VoronoiChart
+  data={data}
+  x="x"
+  y="y"
+  clipToExtent={false}
+/>
+```
+
+In most cases, you want clipping enabled. Disabling it can be useful if you are compositing the Voronoi layer with other visual elements and want the cells to extend fully.
+
+---
+
+## Accessibility
+
+- **Screen readers**: Each cell announces its data point's coordinates and any associated label or category. The overall chart describes the number of points and the spatial extent.
+- **Keyboard navigation**: Tab to focus the chart, then use arrow keys to move between cells in spatial order. The tooltip follows the focused cell.
+- **ARIA roles**: The chart has `role="img"` with a descriptive `aria-label`. Each cell has `role="listitem"` with point coordinates and label.
+- **Reduced motion**: When `prefers-reduced-motion` is enabled, cells render immediately without drawing animation.
+- **Color independence**: Cells are distinguishable by their boundary lines and position in addition to color, ensuring the chart remains readable for color-blind users.
+
+---
+
+## Real-World Examples
+
+### Cell tower coverage zones
+
+```tsx
+const towers = [
+  { x: 80, y: 150, name: "Tower A", coverage: "4G" },
+  { x: 320, y: 100, name: "Tower B", coverage: "5G" },
+  { x: 200, y: 350, name: "Tower C", coverage: "4G" },
+  { x: 450, y: 250, name: "Tower D", coverage: "5G" },
+  { x: 120, y: 420, name: "Tower E", coverage: "3G" },
+  { x: 380, y: 400, name: "Tower F", coverage: "5G" },
+  { x: 500, y: 80, name: "Tower G", coverage: "4G" },
+]
+
+<VoronoiChart
+  data={towers}
+  x="x"
+  y="y"
+  color="coverage"
+  showPoints
+  showCells
+  cellStroke="#ffffff"
+  className="h-[500px] rounded-xl bg-zinc-900 p-4"
+/>
+```
+
+### Warehouse service areas
+
+```tsx
+const warehouses = [
+  { lon: -73.9, lat: 40.7, name: "NYC", capacity: 5000 },
+  { lon: -87.6, lat: 41.9, name: "Chicago", capacity: 3500 },
+  { lon: -118.2, lat: 34.1, name: "LA", capacity: 4200 },
+  { lon: -95.4, lat: 29.8, name: "Houston", capacity: 2800 },
+  { lon: -122.4, lat: 37.8, name: "SF", capacity: 3100 },
+  { lon: -84.4, lat: 33.7, name: "Atlanta", capacity: 2600 },
+]
+
+<VoronoiChart
+  data={warehouses}
+  x="lon"
+  y="lat"
+  showPoints
+  showCells
+  relaxIterations={0}
+  cellStroke="#94a3b8"
+  cellFill="#f8fafc"
+  className="h-96"
+/>
+```
+
+### Artistic generative pattern
+
+```tsx
+import { useMemo } from "react"
+
+function GenerativeArt() {
+  const points = useMemo(() => {
+    return Array.from({ length: 40 }, (_, i) => ({
+      x: Math.random() * 600,
+      y: Math.random() * 400,
+      hue: Math.floor(Math.random() * 360),
+    }))
+  }, [])
+
+  return (
+    <VoronoiChart
+      data={points}
+      x="x"
+      y="y"
+      showPoints={false}
+      showCells
+      relaxIterations={10}
+      cellStroke="#ffffff"
+      cellFill="auto"
+      color="hue"
+      className="h-[400px] rounded-2xl"
+    />
+  )
+}
+```

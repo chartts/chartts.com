@@ -1,0 +1,509 @@
+---
+title: "Heatmap"
+description: "Show density or intensity across two dimensions using color. Great for time patterns, correlation matrices, and activity tracking."
+badge: "Core"
+---
+
+## Quick Start
+
+```tsx
+import { HeatmapChart } from "@chartts/react"
+
+const data = [
+  { day: "Mon", hour: "9am", count: 12 },
+  { day: "Mon", hour: "10am", count: 25 },
+  { day: "Mon", hour: "11am", count: 34 },
+  { day: "Mon", hour: "12pm", count: 18 },
+  { day: "Mon", hour: "1pm", count: 14 },
+  { day: "Tue", hour: "9am", count: 8 },
+  { day: "Tue", hour: "10am", count: 30 },
+  { day: "Tue", hour: "11am", count: 42 },
+  { day: "Tue", hour: "12pm", count: 22 },
+  { day: "Tue", hour: "1pm", count: 16 },
+  { day: "Wed", hour: "9am", count: 15 },
+  { day: "Wed", hour: "10am", count: 28 },
+  { day: "Wed", hour: "11am", count: 38 },
+  { day: "Wed", hour: "12pm", count: 20 },
+  { day: "Wed", hour: "1pm", count: 10 },
+  { day: "Thu", hour: "9am", count: 11 },
+  { day: "Thu", hour: "10am", count: 32 },
+  { day: "Thu", hour: "11am", count: 45 },
+  { day: "Thu", hour: "12pm", count: 24 },
+  { day: "Thu", hour: "1pm", count: 13 },
+  { day: "Fri", hour: "9am", count: 6 },
+  { day: "Fri", hour: "10am", count: 20 },
+  { day: "Fri", hour: "11am", count: 29 },
+  { day: "Fri", hour: "12pm", count: 15 },
+  { day: "Fri", hour: "1pm", count: 8 },
+]
+
+export function ActivityHeatmap() {
+  return (
+    <HeatmapChart
+      data={data}
+      x="hour"
+      y="day"
+      value="count"
+      className="h-64 w-full"
+    />
+  )
+}
+```
+
+That renders a grid of colored cells where intensity maps to the `count` value. Axes, tooltips, responsive sizing, and color scaling are all automatic.
+
+## When to Use Heatmaps
+
+Heatmaps reveal patterns across two categorical or ordinal dimensions. The color of each cell encodes a third numeric value.
+
+**Use a heatmap when:**
+- Showing activity patterns across two dimensions (day vs. hour, month vs. year)
+- Visualizing correlation matrices between variables
+- Displaying GitHub-style contribution grids
+- Spotting clusters, gaps, or outliers in a dense matrix
+- Your audience needs to see "where is the intensity" at a glance
+
+**Don't use a heatmap when:**
+- You only have one dimension (use a bar chart)
+- Precise value comparison matters more than pattern recognition (use a table)
+- You have fewer than 3 values on either axis (too sparse to be meaningful)
+- Your data is continuous on both axes (use a scatter plot)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` | required | Array of data objects, one per cell |
+| `x` | `keyof T` | required | Key for x-axis category |
+| `y` | `keyof T` | required | Key for y-axis category |
+| `value` | `keyof T` | required | Key for the numeric intensity value |
+| `colorScale` | `string[]` | `["#f0fdf4", "#16a34a"]` | Array of colors for the intensity gradient |
+| `cellRadius` | `number` | `2` | Border radius for cells in pixels |
+| `cellGap` | `number` | `2` | Gap between cells in pixels |
+| `showLabels` | `boolean` | `false` | Display the value inside each cell |
+| `className` | `string` | - | Tailwind classes on root SVG |
+| `cellClassName` | `string` | - | Tailwind classes on cell elements |
+| `animate` | `boolean` | `true` | Enable cell fade-in animation |
+| `responsive` | `boolean` | `true` | Auto-resize to container width |
+
+---
+
+## Color Scales
+
+The `colorScale` prop accepts an array of colors. The heatmap interpolates between them based on each cell's value relative to the data range.
+
+### Sequential (low to high)
+
+Two colors: the first for the minimum value, the second for the maximum. Best when all values are positive and you want to show intensity.
+
+```tsx
+// Green scale (default)
+<HeatmapChart
+  data={data}
+  x="hour"
+  y="day"
+  value="count"
+  colorScale={["#f0fdf4", "#16a34a"]}
+/>
+
+// Blue scale
+<HeatmapChart
+  data={data}
+  x="hour"
+  y="day"
+  value="count"
+  colorScale={["#eff6ff", "#2563eb"]}
+/>
+
+// Heat (yellow to red)
+<HeatmapChart
+  data={data}
+  x="hour"
+  y="day"
+  value="count"
+  colorScale={["#fefce8", "#dc2626"]}
+/>
+```
+
+### Diverging (negative to zero to positive)
+
+Three colors: low, midpoint, high. Use when your data has a meaningful center (zero, average) and values diverge in both directions.
+
+```tsx
+// Red-white-blue for correlation
+<HeatmapChart
+  data={correlationData}
+  x="varX"
+  y="varY"
+  value="correlation"
+  colorScale={["#dc2626", "#ffffff", "#2563eb"]}
+/>
+
+// Orange-white-teal
+<HeatmapChart
+  data={data}
+  x="metric"
+  y="category"
+  value="change"
+  colorScale={["#ea580c", "#f5f5f5", "#0d9488"]}
+/>
+```
+
+### Custom multi-stop
+
+Pass more than two or three colors for fine-grained control. Colors are evenly distributed across the value range.
+
+```tsx
+// Four-stop thermal scale
+<HeatmapChart
+  data={data}
+  x="hour"
+  y="day"
+  value="temp"
+  colorScale={["#1e3a5f", "#3b82f6", "#fbbf24", "#ef4444"]}
+/>
+```
+
+---
+
+## Cell Labels
+
+Set `showLabels` to display the numeric value inside each cell. Works best when cells are large enough to fit text.
+
+```tsx
+<HeatmapChart
+  data={data}
+  x="hour"
+  y="day"
+  value="count"
+  showLabels
+  className="h-96 w-full"
+/>
+```
+
+Label color adjusts automatically: dark text on light cells, light text on dark cells. This ensures readability across the entire color range.
+
+For custom label formatting, use `valueFormat`:
+
+```tsx
+<HeatmapChart
+  data={data}
+  x="varX"
+  y="varY"
+  value="correlation"
+  showLabels
+  valueFormat={(v) => v.toFixed(2)}
+/>
+```
+
+---
+
+## GitHub-Style Contribution Grid
+
+Build a GitHub-style contribution graph by using weeks on the x-axis and days on the y-axis.
+
+```tsx
+const contributions = [
+  { week: "W1", day: "Mon", commits: 3 },
+  { week: "W1", day: "Tue", commits: 0 },
+  { week: "W1", day: "Wed", commits: 7 },
+  { week: "W1", day: "Thu", commits: 2 },
+  { week: "W1", day: "Fri", commits: 5 },
+  { week: "W1", day: "Sat", commits: 1 },
+  { week: "W1", day: "Sun", commits: 0 },
+  { week: "W2", day: "Mon", commits: 4 },
+  { week: "W2", day: "Tue", commits: 6 },
+  // ... more weeks
+]
+
+<HeatmapChart
+  data={contributions}
+  x="week"
+  y="day"
+  value="commits"
+  colorScale={["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"]}
+  cellRadius={2}
+  cellGap={3}
+  className="h-40 w-full"
+  cellClassName="rounded-sm"
+/>
+```
+
+The five-stop green scale matches the familiar GitHub look. Use `cellGap` to space cells apart and `cellRadius` for rounded squares.
+
+---
+
+## Correlation Matrix
+
+Heatmaps are the standard way to visualize correlation matrices. Use a diverging color scale centered on zero.
+
+```tsx
+const correlations = [
+  { varX: "Revenue", varY: "Revenue", correlation: 1.0 },
+  { varX: "Revenue", varY: "Users", correlation: 0.85 },
+  { varX: "Revenue", varY: "Churn", correlation: -0.62 },
+  { varX: "Users", varY: "Revenue", correlation: 0.85 },
+  { varX: "Users", varY: "Users", correlation: 1.0 },
+  { varX: "Users", varY: "Churn", correlation: -0.45 },
+  { varX: "Churn", varY: "Revenue", correlation: -0.62 },
+  { varX: "Churn", varY: "Users", correlation: -0.45 },
+  { varX: "Churn", varY: "Churn", correlation: 1.0 },
+]
+
+<HeatmapChart
+  data={correlations}
+  x="varX"
+  y="varY"
+  value="correlation"
+  colorScale={["#dc2626", "#ffffff", "#2563eb"]}
+  showLabels
+  valueFormat={(v) => v.toFixed(2)}
+  cellRadius={4}
+  cellGap={2}
+  className="h-80 w-80 mx-auto"
+/>
+```
+
+The diagonal (self-correlation) always shows 1.0 in deep blue, while negative correlations appear red and near-zero values stay white.
+
+---
+
+## Row and Column Sorting
+
+Control the order of rows and columns with `sortX` and `sortY`:
+
+```tsx
+// Sort both axes by total value (descending)
+<HeatmapChart
+  data={data}
+  x="product"
+  y="region"
+  value="sales"
+  sortX="desc"
+  sortY="desc"
+/>
+
+// Sort by ascending value
+<HeatmapChart
+  data={data}
+  x="product"
+  y="region"
+  value="sales"
+  sortX="asc"
+  sortY="asc"
+/>
+
+// No sorting (use data order)
+<HeatmapChart
+  data={data}
+  x="product"
+  y="region"
+  value="sales"
+  sortX={false}
+  sortY={false}
+/>
+```
+
+Sorting by value places the highest-intensity rows and columns toward the top-left corner, making patterns easier to spot.
+
+---
+
+## Responsive Cell Sizing
+
+By default, cells resize automatically to fill the container. The chart calculates cell width and height based on the number of unique x and y values and the available space.
+
+```tsx
+<div className="w-full aspect-video">
+  <HeatmapChart
+    data={data}
+    x="hour"
+    y="day"
+    value="count"
+    responsive
+  />
+</div>
+```
+
+For fixed dimensions:
+
+```tsx
+<HeatmapChart
+  data={data}
+  x="hour"
+  y="day"
+  value="count"
+  width={600}
+  height={300}
+  responsive={false}
+/>
+```
+
+The `cellGap` prop stays constant regardless of cell size, so cells grow or shrink while gaps remain uniform.
+
+---
+
+## Styling with Tailwind
+
+Every element of the heatmap exposes a `className` prop. Style the chart the same way you style the rest of your app.
+
+```tsx
+<HeatmapChart
+  data={data}
+  x="hour"
+  y="day"
+  value="count"
+  className="rounded-xl bg-zinc-950 p-4"
+  cellClassName="hover:opacity-80 transition-opacity cursor-pointer rounded-sm"
+/>
+```
+
+Dark mode with Tailwind variants:
+
+```tsx
+<HeatmapChart
+  data={data}
+  x="hour"
+  y="day"
+  value="count"
+  className="bg-white dark:bg-zinc-900 rounded-lg"
+  cellClassName="stroke-white dark:stroke-zinc-900"
+/>
+```
+
+Conditional cell styling with a function:
+
+```tsx
+<HeatmapChart
+  data={data}
+  x="hour"
+  y="day"
+  value="count"
+  cellClassName={(value) =>
+    value === 0 ? "opacity-20" : "hover:opacity-80 cursor-pointer"
+  }
+/>
+```
+
+---
+
+## Tooltips
+
+Tooltips appear on hover by default. They show the x-value, y-value, and the cell's numeric value.
+
+```tsx
+// Custom tooltip format
+<HeatmapChart
+  data={data}
+  x="hour"
+  y="day"
+  value="count"
+  tooltipFormat={(cell) =>
+    `${cell.day} at ${cell.hour}: ${cell.count} events`
+  }
+/>
+
+// Disable tooltips
+<HeatmapChart
+  data={data}
+  x="hour"
+  y="day"
+  value="count"
+  tooltip={false}
+/>
+```
+
+---
+
+## Animation
+
+Cells fade in with a stagger effect on mount. Cells closer to the top-left appear first, creating a wave that moves across the grid.
+
+```tsx
+// Disable animation
+<HeatmapChart
+  data={data}
+  x="hour"
+  y="day"
+  value="count"
+  animate={false}
+/>
+```
+
+The animation respects `prefers-reduced-motion`. When the user has motion reduction enabled, cells render immediately.
+
+---
+
+## Accessibility
+
+- Each cell has an `aria-label` with the x-value, y-value, and numeric value
+- The chart has `role="img"` with a summary of the data range
+- Keyboard navigation: Tab to the chart, arrow keys to move between cells
+- Screen readers announce each cell's position and value
+- High-contrast borders available via `cellClassName` for users who cannot distinguish color intensity alone
+
+---
+
+## Real-World Examples
+
+### GitHub contribution grid
+
+```tsx
+<HeatmapChart
+  data={yearOfContributions}
+  x="week"
+  y="day"
+  value="commits"
+  colorScale={["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"]}
+  cellRadius={2}
+  cellGap={3}
+  className="h-36 w-full"
+  cellClassName="rounded-sm"
+  animate={false}
+/>
+```
+
+### Time-of-day activity
+
+```tsx
+const hourlyActivity = [
+  { day: "Mon", hour: "6am", sessions: 5 },
+  { day: "Mon", hour: "9am", sessions: 42 },
+  { day: "Mon", hour: "12pm", sessions: 38 },
+  { day: "Mon", hour: "3pm", sessions: 35 },
+  { day: "Mon", hour: "6pm", sessions: 20 },
+  { day: "Mon", hour: "9pm", sessions: 12 },
+  // ... all days and hours
+]
+
+<HeatmapChart
+  data={hourlyActivity}
+  x="hour"
+  y="day"
+  value="sessions"
+  colorScale={["#eff6ff", "#1d4ed8"]}
+  showLabels
+  cellRadius={4}
+  cellGap={2}
+  className="h-72 w-full"
+/>
+```
+
+### Correlation matrix
+
+```tsx
+<HeatmapChart
+  data={featureCorrelations}
+  x="featureA"
+  y="featureB"
+  value="r"
+  colorScale={["#b91c1c", "#fafafa", "#1d4ed8"]}
+  showLabels
+  valueFormat={(v) => v.toFixed(2)}
+  cellRadius={4}
+  cellGap={1}
+  cellClassName="hover:ring-2 hover:ring-cyan-400 transition-shadow"
+  className="h-96 w-96 mx-auto"
+/>
+```
