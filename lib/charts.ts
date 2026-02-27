@@ -240,8 +240,13 @@ export const sampleData: Record<string, ChartData> = {
     ],
   },
   calendar: {
-    labels: ["2025-01-01", "2025-01-15", "2025-02-01", "2025-02-15", "2025-03-01"],
-    series: [{ name: "Commits", values: [5, 12, 3, 8, 15] }],
+    labels: [
+      "2025-01-06", "2025-01-07", "2025-01-08", "2025-01-09", "2025-01-10",
+      "2025-01-13", "2025-01-14", "2025-01-15", "2025-01-16", "2025-01-17",
+      "2025-01-20", "2025-01-21", "2025-01-22", "2025-01-23", "2025-01-24",
+      "2025-01-27", "2025-01-28", "2025-01-29", "2025-01-30", "2025-01-31",
+    ],
+    series: [{ name: "Commits", values: [5, 12, 3, 8, 15, 2, 9, 14, 6, 11, 7, 1, 10, 13, 4, 8, 3, 16, 5, 9] }],
   },
   combo: {
     labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
@@ -266,7 +271,15 @@ export const sampleData: Record<string, ChartData> = {
   },
   graph: {
     labels: ["Node A", "Node B", "Node C", "Node D", "Node E"],
-    series: [{ name: "Network", values: [10, 20, 15, 25, 18] }],
+    series: [
+      { name: "Sizes", values: [10, 20, 15, 25, 18] },
+      { name: "Node A \u2192 Node B", values: [5] },
+      { name: "Node A \u2192 Node C", values: [3] },
+      { name: "Node B \u2192 Node D", values: [8] },
+      { name: "Node C \u2192 Node D", values: [4] },
+      { name: "Node D \u2192 Node E", values: [6] },
+      { name: "Node B \u2192 Node E", values: [2] },
+    ],
   },
   parallel: {
     labels: ["Speed", "Cost", "Quality", "Reliability", "Scale"],
