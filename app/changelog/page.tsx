@@ -13,12 +13,12 @@ const releases = [
     date: "2026-02-26",
     tag: "Latest",
     changes: [
-      "5 new chart types: Violin, Pack (circle packing), Voronoi, WordCloud, Torus",
+      "5 new chart types: Violin, Pack (circle packing), Voronoi, WordCloud, Pillar",
       "New GL chart: Torus3D with WebGL rendering",
       "Graph chart rewrite with simplified data convention, arrow-notation edges, and adjacency matrix support",
       "Improved graph layouts: force, hierarchical, and circular",
       "Globe3D rendering improvements",
-      "New convenience APIs: Violin(), Pack(), Voronoi(), WordCloud(), Torus()",
+      "New convenience APIs: Violin(), Pack(), Voronoi(), WordCloud(), Pillar()",
     ],
   },
   {
