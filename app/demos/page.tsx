@@ -4,7 +4,7 @@ import { renderChart, chartDisplayNames, sampleData } from "@/lib/charts";
 
 export const metadata: Metadata = {
   title: "Demos | Chart.ts",
-  description: "Live demos of all 27 chart types in Chart.ts. Rendered as SVG, server-side, with zero JavaScript.",
+  description: "Live demos of all 40+ chart types in Chart.ts. Rendered as SVG, server-side, with zero JavaScript.",
 };
 
 const chartOrder = [
@@ -16,6 +16,12 @@ const chartOrder = [
   "treemap", "polar", "radial-bar",
   "lollipop", "bullet", "dumbbell",
   "calendar", "combo", "sankey",
+  "sunburst", "tree", "graph",
+  "parallel", "themeriver", "pictorialbar",
+  "chord", "geo", "lines",
+  "matrix", "ohlc", "step",
+  "volume", "range", "baseline",
+  "kagi", "renko",
 ];
 
 export default function DemosPage() {

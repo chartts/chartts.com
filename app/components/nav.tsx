@@ -67,6 +67,12 @@ export function Nav() {
             Demos
           </Link>
           <Link
+            href="/examples"
+            className="text-sm nav-link cursor-pointer"
+          >
+            Examples
+          </Link>
+          <Link
             href="/blog"
             className="text-sm nav-link cursor-pointer"
           >

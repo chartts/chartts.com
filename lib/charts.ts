@@ -27,6 +27,23 @@ import {
   calendarChartType,
   comboChartType,
   sankeyChartType,
+  sunburstChartType,
+  treeChartType,
+  graphChartType,
+  parallelChartType,
+  themeRiverChartType,
+  pictorialBarChartType,
+  chordChartType,
+  geoChartType,
+  linesChartType,
+  matrixChartType,
+  ohlcChartType,
+  stepChartType,
+  volumeChartType,
+  rangeChartType,
+  baselineChartType,
+  kagiChartType,
+  renkoChartType,
 } from "@chartts/core";
 import type { ChartTypePlugin, ChartData } from "@chartts/core";
 
@@ -58,6 +75,23 @@ export const chartTypes: Record<string, ChartTypePlugin> = {
   calendar: calendarChartType,
   combo: comboChartType,
   sankey: sankeyChartType,
+  sunburst: sunburstChartType,
+  tree: treeChartType,
+  graph: graphChartType,
+  parallel: parallelChartType,
+  themeriver: themeRiverChartType,
+  pictorialbar: pictorialBarChartType,
+  chord: chordChartType,
+  geo: geoChartType,
+  lines: linesChartType,
+  matrix: matrixChartType,
+  ohlc: ohlcChartType,
+  step: stepChartType,
+  volume: volumeChartType,
+  range: rangeChartType,
+  baseline: baselineChartType,
+  kagi: kagiChartType,
+  renko: renkoChartType,
 };
 
 // Sample data for each chart type
@@ -214,6 +248,99 @@ export const sampleData: Record<string, ChartData> = {
       { name: "Flow", values: [40, 30, 70, 45, 25] },
     ],
   },
+  sunburst: {
+    labels: ["Root", "A", "B", "A1", "A2", "B1", "B2"],
+    series: [{ name: "Size", values: [100, 40, 60, 20, 20, 35, 25] }],
+  },
+  tree: {
+    labels: ["CEO", "CTO", "CFO", "VP Eng", "VP Sales", "Dev Lead"],
+    series: [{ name: "Org", values: [1, 2, 2, 3, 3, 4] }],
+  },
+  graph: {
+    labels: ["Node A", "Node B", "Node C", "Node D", "Node E"],
+    series: [{ name: "Network", values: [10, 20, 15, 25, 18] }],
+  },
+  parallel: {
+    labels: ["Speed", "Cost", "Quality", "Reliability", "Scale"],
+    series: [
+      { name: "Option A", values: [80, 40, 90, 70, 60] },
+      { name: "Option B", values: [60, 80, 70, 85, 90] },
+    ],
+  },
+  themeriver: {
+    labels: ["2020", "2021", "2022", "2023", "2024", "2025"],
+    series: [
+      { name: "React", values: [40, 45, 50, 48, 52, 55] },
+      { name: "Vue", values: [20, 25, 28, 30, 32, 30] },
+      { name: "Svelte", values: [5, 8, 12, 18, 22, 28] },
+    ],
+  },
+  pictorialbar: {
+    labels: ["Energy", "Water", "Food", "Transport"],
+    series: [{ name: "Consumption", values: [85, 62, 78, 45] }],
+  },
+  chord: {
+    labels: ["A", "B", "C", "D"],
+    series: [
+      { name: "Flows", values: [20, 30, 15, 25] },
+    ],
+  },
+  geo: {
+    labels: ["US", "UK", "DE", "JP", "BR"],
+    series: [{ name: "Users", values: [45000, 12000, 8000, 15000, 6000] }],
+  },
+  lines: {
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    series: [
+      { name: "Series A", values: [10, 25, 18, 32, 28, 40] },
+      { name: "Series B", values: [5, 15, 22, 18, 35, 30] },
+      { name: "Series C", values: [20, 12, 30, 25, 15, 35] },
+    ],
+  },
+  matrix: {
+    labels: ["A", "B", "C", "D", "E"],
+    series: [
+      { name: "Row 1", values: [1, 0.8, 0.3, 0.5, 0.2] },
+      { name: "Row 2", values: [0.8, 1, 0.6, 0.4, 0.7] },
+      { name: "Row 3", values: [0.3, 0.6, 1, 0.9, 0.5] },
+    ],
+  },
+  ohlc: {
+    labels: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    series: [
+      { name: "Open", values: [100, 105, 102, 108, 106] },
+      { name: "High", values: [108, 110, 109, 112, 115] },
+      { name: "Low", values: [98, 102, 100, 105, 104] },
+      { name: "Close", values: [105, 102, 108, 106, 112] },
+    ],
+  },
+  step: {
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    series: [{ name: "Price", values: [10, 10, 15, 15, 20, 25] }],
+  },
+  volume: {
+    labels: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    series: [{ name: "Volume", values: [1200000, 1800000, 950000, 2400000, 1600000] }],
+  },
+  range: {
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    series: [
+      { name: "Low", values: [5, 8, 12, 15, 18, 20] },
+      { name: "High", values: [15, 20, 25, 28, 30, 35] },
+    ],
+  },
+  baseline: {
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    series: [{ name: "Returns", values: [5, -3, 8, -2, 12, -5] }],
+  },
+  kagi: {
+    labels: ["1", "2", "3", "4", "5", "6", "7", "8"],
+    series: [{ name: "Price", values: [100, 105, 98, 110, 103, 115, 108, 120] }],
+  },
+  renko: {
+    labels: ["1", "2", "3", "4", "5", "6", "7", "8"],
+    series: [{ name: "Price", values: [100, 104, 108, 105, 110, 114, 118, 115] }],
+  },
 };
 
 // Display names for chart types
@@ -245,6 +372,23 @@ export const chartDisplayNames: Record<string, string> = {
   calendar: "Calendar",
   combo: "Combo",
   sankey: "Sankey",
+  sunburst: "Sunburst",
+  tree: "Tree",
+  graph: "Graph / Network",
+  parallel: "Parallel Coordinates",
+  themeriver: "Theme River",
+  pictorialbar: "Pictorial Bar",
+  chord: "Chord",
+  geo: "Geo Map",
+  lines: "Multi-Line",
+  matrix: "Matrix",
+  ohlc: "OHLC",
+  step: "Step Line",
+  volume: "Volume",
+  range: "Range Area",
+  baseline: "Baseline",
+  kagi: "Kagi",
+  renko: "Renko",
 };
 
 export function renderChart(
