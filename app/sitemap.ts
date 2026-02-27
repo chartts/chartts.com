@@ -21,7 +21,9 @@ const hardcodedDocSlugs = [
   "vue",
   "svelte",
   "solid",
+  "angular",
   "vanilla",
+  "cdn",
 ];
 
 const chartSlugs = [

@@ -153,7 +153,7 @@ For teams using AI chart generation heavily, prompt structure matters. Vague pro
 
 A weak prompt: "Make me a bar chart of sales data."
 
-A strong prompt: "Generate a Chart.ts grouped bar chart showing monthly sales for three product categories. Use the @chartts/core createChart API. Style with Tailwind classes. Include tooltips and a legend. The data has this shape: { month: string, electronics: number, clothing: number, food: number }[]."
+A strong prompt: "Generate a Chart.ts grouped bar chart showing monthly sales for three product categories. Use the @chartts/core createChart API. Style with Tailwind classes. Include tooltips and a legend. The data has this shape: `{ month: string, electronics: number, clothing: number, food: number }[]`."
 
 The difference in output quality is enormous. The strong prompt constrains the AI to a specific library, a specific chart type, and a specific data shape. The AI fills in the details. The weak prompt forces the AI to make dozens of assumptions, any of which might be wrong.
 

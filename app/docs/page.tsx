@@ -42,6 +42,7 @@ export default function DocsPage() {
             { label: "Vue", cmd: "npm install @chartts/vue" },
             { label: "Svelte", cmd: "npm install @chartts/svelte" },
             { label: "Solid", cmd: "npm install @chartts/solid" },
+            { label: "Angular", cmd: "npm install @chartts/angular" },
             { label: "Vanilla", cmd: "npm install @chartts/core" },
           ].map((fw) => (
             <div
@@ -61,6 +62,29 @@ export default function DocsPage() {
           <Code>yarn add</Code>. Pnpm? <Code>pnpm add</Code>. Bun?{" "}
           <Code>bun add</Code>.
         </p>
+
+        <div className="mt-6 p-4 rounded-lg card">
+          <p className="text-sm heading font-semibold mb-2">No build step? Use the CDN</p>
+          <CodeBlock
+            lang="html"
+            code={`<script type="module">
+import { LineChart } from 'https://cdn.chartts.com/core'
+</script>`}
+          />
+          <p className="text-xs muted-text mt-2">
+            Also available on{" "}
+            <a href="https://cdn.jsdelivr.net/npm/@chartts/core/+esm" className="text-cyan-400 hover:text-cyan-300 cursor-pointer" target="_blank" rel="noopener noreferrer">
+              jsdelivr
+            </a>{" "}
+            and{" "}
+            <a href="https://unpkg.com/@chartts/core" className="text-cyan-400 hover:text-cyan-300 cursor-pointer" target="_blank" rel="noopener noreferrer">
+              unpkg
+            </a>.{" "}
+            <Link href="/docs/cdn" className="text-cyan-400 hover:text-cyan-300 cursor-pointer">
+              Learn more
+            </Link>.
+          </p>
+        </div>
       </section>
 
       {/* Quick Start */}
@@ -165,7 +189,7 @@ export default function App() {
           {[
             {
               title: "Chart Types",
-              desc: "Explore all 27 chart types with examples and API docs.",
+              desc: "Explore all 40+ chart types with examples and API docs.",
               href: "/docs/charts",
             },
             {

@@ -61,6 +61,7 @@ const sidebar = [
       { label: "Solid", href: "/docs/solid" },
       { label: "Angular", href: "/docs/angular" },
       { label: "Vanilla JS", href: "/docs/vanilla" },
+      { label: "CDN Usage", href: "/docs/cdn" },
     ],
   },
   {

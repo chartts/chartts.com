@@ -457,6 +457,43 @@ const docs: Record<
       { label: "API Reference", href: "/docs/api" },
     ],
   },
+  cdn: {
+    title: "CDN Usage",
+    description:
+      "Use Chart.ts directly from a CDN. No build step required. Perfect for prototyping, CodePen, or lightweight pages.",
+    badge: "cdn.chartts.com",
+    content: [
+      {
+        heading: "Quick start",
+        body: "Add Chart.ts to any HTML page with a single script tag:\n\n<script type=\"module\">\nimport { LineChart } from 'https://cdn.chartts.com/core'\n\nconst chart = new LineChart(document.getElementById('chart'), {\n  data: [\n    { month: 'Jan', revenue: 4000 },\n    { month: 'Feb', revenue: 5200 },\n    { month: 'Mar', revenue: 4800 },\n  ],\n  x: 'month',\n  y: 'revenue'\n})\n</script>",
+      },
+      {
+        heading: "Available packages",
+        body: "Every @chartts package is available on the CDN. Replace the package name in the URL:\n\nhttps://cdn.chartts.com/core\nhttps://cdn.chartts.com/react\nhttps://cdn.chartts.com/vue\nhttps://cdn.chartts.com/svelte\nhttps://cdn.chartts.com/solid\nhttps://cdn.chartts.com/angular\nhttps://cdn.chartts.com/gl",
+      },
+      {
+        heading: "Pinned versions",
+        body: "Pin to a specific version by appending @version:\n\nhttps://cdn.chartts.com/core@0.1.3\n\nWithout a version, the CDN serves the latest release. For production use, always pin your version.",
+      },
+      {
+        heading: "Alternative CDNs",
+        body: "Chart.ts is also available on all major public CDNs:\n\njsDelivr: https://cdn.jsdelivr.net/npm/@chartts/core/+esm\nunpkg: https://unpkg.com/@chartts/core\nesm.run: https://esm.run/@chartts/core\n\nThese CDNs automatically pull from npm when a new version is published.",
+      },
+      {
+        heading: "Subpath imports",
+        body: "Access specific files within a package:\n\nhttps://cdn.chartts.com/core/dist/index.js\nhttps://cdn.chartts.com/core/dist/index.cjs\n\nThe default URL (without subpath) serves the optimized ESM bundle.",
+      },
+      {
+        heading: "Import maps",
+        body: "Use import maps for cleaner imports in your HTML:\n\n<script type=\"importmap\">\n{\n  \"imports\": {\n    \"@chartts/core\": \"https://cdn.chartts.com/core\"\n  }\n}\n</script>\n<script type=\"module\">\nimport { BarChart } from '@chartts/core'\n</script>",
+      },
+    ],
+    relatedLinks: [
+      { label: "Vanilla JS", href: "/docs/vanilla" },
+      { label: "Getting Started", href: "/docs" },
+      { label: "API Reference", href: "/docs/api" },
+    ],
+  },
 };
 
 type PageProps = {
