@@ -11,6 +11,7 @@ export interface BlogPost {
   date: string;
   readTime: string;
   tag: string;
+  image?: string;
   content: string;
 }
 
@@ -31,6 +32,7 @@ export function getAllPosts(): BlogPost[] {
       date: data.date ?? "",
       readTime: data.readTime ?? "",
       tag: data.tag ?? "",
+      image: data.image,
       content,
     };
   });
@@ -54,6 +56,7 @@ export function getPostBySlug(slug: string): BlogPost | null {
     date: data.date ?? "",
     readTime: data.readTime ?? "",
     tag: data.tag ?? "",
+    image: data.image,
     content,
   };
 }

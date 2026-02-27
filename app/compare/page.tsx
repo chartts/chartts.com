@@ -50,6 +50,12 @@ const libraries = [
     tagline: "React-only, low-level primitives",
     color: "text-pink-400",
   },
+  {
+    slug: "highcharts",
+    name: "Highcharts",
+    tagline: "Commercial, $590/dev/yr, legacy API",
+    color: "text-indigo-400",
+  },
 ];
 
 export default function ComparePage() {

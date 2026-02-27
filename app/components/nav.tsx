@@ -73,6 +73,12 @@ export function Nav() {
             Examples
           </Link>
           <Link
+            href="/chart-maker"
+            className="text-sm nav-link cursor-pointer"
+          >
+            Chart Maker
+          </Link>
+          <Link
             href="/blog"
             className="text-sm nav-link cursor-pointer"
           >

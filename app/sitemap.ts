@@ -77,6 +77,7 @@ const compareSlugs = [
   "apexcharts",
   "nivo",
   "visx",
+  "highcharts",
 ];
 
 const seoLandingSlugs = [
@@ -91,6 +92,19 @@ const seoLandingSlugs = [
   "nextjs-charts",
   "typescript-chart-library",
   "candlestick-chart",
+  "pie-chart",
+  "bar-chart",
+  "line-chart",
+  "waterfall-chart",
+  "gantt-chart",
+  "org-chart",
+  "flow-chart",
+  "pareto-chart",
+  "graph-maker",
+  "gold-price-chart",
+  "bitcoin-chart",
+  "ai-chart",
+  "data-visualization",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -107,6 +121,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/pricing`, changeFrequency: "monthly", priority: 0.7, lastModified: now },
     { url: `${BASE}/changelog`, changeFrequency: "weekly", priority: 0.7, lastModified: now },
     { url: `${BASE}/compare`, changeFrequency: "monthly", priority: 0.8, lastModified: now },
+    { url: `${BASE}/chart-maker`, changeFrequency: "weekly", priority: 0.9, lastModified: now },
   ];
 
   // Doc pages (hardcoded + MDX)

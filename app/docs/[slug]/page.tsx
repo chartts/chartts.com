@@ -449,7 +449,7 @@ const docs: Record<
       },
       {
         heading: "CDN",
-        body: "Use Chart.ts from a CDN without a build step. <script src=\"https://cdn.chartts.com/core.min.js\"> gives you a global Chartts object.",
+        body: "Use Chart.ts from a CDN without a build step:\n\n<script type=\"module\">\nimport { LineChart } from 'https://cdn.chartts.com/core'\n</script>\n\nAlso available on jsdelivr and unpkg:\nhttps://cdn.jsdelivr.net/npm/@chartts/core/+esm\nhttps://unpkg.com/@chartts/core",
       },
     ],
     relatedLinks: [

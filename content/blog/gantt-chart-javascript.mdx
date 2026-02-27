@@ -1,0 +1,418 @@
+---
+title: "How to Build Gantt Charts with JavaScript in 2026"
+description: "Build interactive Gantt charts for project management with JavaScript. Task dependencies, milestones, progress tracking. Free, open source, no license fees."
+date: "2026-02-26"
+readTime: "9 min read"
+tag: "Tutorial"
+---
+
+Every project manager eventually needs a **Gantt chart**. It might start with a spreadsheet. Then a shared Google Sheet with conditional formatting. Then someone suggests "we should build a real one." And that is when the trouble begins.
+
+The Gantt chart landscape in 2026 is split between two extremes: enterprise tools that cost thousands of dollars per year and low-level JavaScript libraries that require weeks of custom development. Microsoft Project starts at $30 per user per month. Commercial Gantt chart libraries like DHTMLX and Bryntum run $500 to $2,000 for a single developer license. On the free side, you get raw SVG manipulation with D3.js or barebones timeline components that lack essential features like task dependencies.
+
+There is a middle ground. Chart.ts ships a **Gantt chart** component that is free, open source, and feature-complete enough for production project management interfaces. This guide walks through building one from scratch.
+
+## What a Gantt chart actually needs
+
+Before writing code, it is worth understanding what separates a usable Gantt chart from a colored rectangle on a timeline.
+
+**Tasks with start and end dates.** This is the minimum. Each task is a horizontal bar positioned along a time axis. The bar's left edge is the start date and the right edge is the end date.
+
+**Task dependencies.** This is where most simple implementations fail. In real projects, Task B cannot start until Task A finishes. Task C cannot start until both Task A and Task B are done. These relationships need to be visible as connecting lines or arrows between task bars.
+
+**Milestones.** Not every item on a project timeline has a duration. Product launches, review deadlines, and go/no-go decisions are single points in time. A Gantt chart needs to represent these as diamond markers or similar point indicators.
+
+**Progress tracking.** A task that is 60% complete should look different from a task that has not started. Partially filled bars give an instant visual read on project status without checking a separate spreadsheet.
+
+**Hierarchy and grouping.** Real projects have phases, each containing multiple tasks. "Design Phase" contains "Wireframes," "Mockups," and "Design Review." The parent group should show the aggregate timeline of its children.
+
+**Zoom and scroll.** A project with 100 tasks spanning 6 months cannot fit on a single screen at a readable scale. The user needs to zoom between day, week, and month views, and scroll both horizontally (time) and vertically (tasks).
+
+Let us build all of this.
+
+## Setting up the basic Gantt chart
+
+Start with Chart.ts core and define your task data:
+
+```typescript
+import { createChart } from "@chartts/core";
+
+interface Task {
+  id: string;
+  name: string;
+  start: string;  // ISO date
+  end: string;     // ISO date
+  progress?: number; // 0-100
+  dependencies?: string[];
+  milestone?: boolean;
+  group?: string;
+}
+
+const tasks: Task[] = [
+  {
+    id: "design-1",
+    name: "User Research",
+    start: "2026-03-01",
+    end: "2026-03-14",
+    progress: 100,
+    group: "Design Phase",
+  },
+  {
+    id: "design-2",
+    name: "Wireframes",
+    start: "2026-03-10",
+    end: "2026-03-21",
+    progress: 75,
+    dependencies: ["design-1"],
+    group: "Design Phase",
+  },
+  {
+    id: "design-3",
+    name: "Visual Design",
+    start: "2026-03-17",
+    end: "2026-04-04",
+    progress: 30,
+    dependencies: ["design-2"],
+    group: "Design Phase",
+  },
+  {
+    id: "milestone-1",
+    name: "Design Sign-off",
+    start: "2026-04-04",
+    end: "2026-04-04",
+    milestone: true,
+    dependencies: ["design-3"],
+  },
+  {
+    id: "dev-1",
+    name: "Frontend Development",
+    start: "2026-04-07",
+    end: "2026-05-02",
+    progress: 0,
+    dependencies: ["milestone-1"],
+    group: "Development Phase",
+  },
+  {
+    id: "dev-2",
+    name: "Backend API",
+    start: "2026-04-07",
+    end: "2026-04-25",
+    progress: 0,
+    dependencies: ["milestone-1"],
+    group: "Development Phase",
+  },
+  {
+    id: "dev-3",
+    name: "Integration Testing",
+    start: "2026-04-28",
+    end: "2026-05-09",
+    progress: 0,
+    dependencies: ["dev-1", "dev-2"],
+    group: "Development Phase",
+  },
+  {
+    id: "milestone-2",
+    name: "Release",
+    start: "2026-05-09",
+    end: "2026-05-09",
+    milestone: true,
+    dependencies: ["dev-3"],
+  },
+];
+```
+
+Now create the Gantt chart:
+
+```typescript
+const gantt = createChart({
+  type: "gantt",
+  data: {
+    tasks: tasks,
+  },
+  options: {
+    title: "Product Launch Timeline",
+    timeAxis: {
+      start: "2026-03-01",
+      end: "2026-05-15",
+      unit: "week",
+    },
+    taskBar: {
+      className: "fill-blue-500 dark:fill-blue-400",
+      progressClassName: "fill-blue-700 dark:fill-blue-300",
+      height: 28,
+      borderRadius: 4,
+    },
+    milestone: {
+      className: "fill-amber-500",
+      size: 12,
+    },
+    dependencies: {
+      visible: true,
+      className: "stroke-gray-400 dark:stroke-gray-500",
+      arrow: true,
+    },
+    grid: {
+      showWeekends: true,
+      weekendClassName: "fill-gray-50 dark:fill-gray-800/50",
+      todayLine: true,
+      todayClassName: "stroke-red-500 stroke-2",
+    },
+    responsive: true,
+    className: "bg-white dark:bg-gray-900 rounded-xl shadow-sm",
+  },
+});
+```
+
+This produces a complete, styled Gantt chart with task bars, progress indicators, dependency arrows, weekend shading, and a "today" marker line. All styled with Tailwind classes that respect dark mode.
+
+## Adding task dependencies
+
+**Task dependencies** are the most technically challenging feature of a Gantt chart. Chart.ts handles the rendering automatically based on the `dependencies` array in your task data, but understanding the types of dependencies helps you model projects correctly.
+
+The four standard dependency types in project management:
+
+- **Finish-to-Start (FS):** Task B starts when Task A finishes. This is the default and most common type. "Wireframes" starts after "User Research" finishes.
+- **Start-to-Start (SS):** Task B starts when Task A starts. Both tasks run in parallel from the same start point.
+- **Finish-to-Finish (FF):** Task B finishes when Task A finishes. Both tasks must end together.
+- **Start-to-Finish (SF):** Task B finishes when Task A starts. Rare, but used in just-in-time scheduling.
+
+Chart.ts supports all four types:
+
+```typescript
+const tasks = [
+  {
+    id: "task-a",
+    name: "Backend API",
+    start: "2026-04-01",
+    end: "2026-04-15",
+  },
+  {
+    id: "task-b",
+    name: "Frontend Integration",
+    start: "2026-04-08",
+    end: "2026-04-20",
+    dependencies: [
+      { task: "task-a", type: "start-to-start", lag: 7 },
+    ],
+  },
+];
+```
+
+The `lag` property adds a delay (in days) to the dependency. In this example, the frontend integration starts 7 days after the backend API starts, giving the API team a head start to establish the contract.
+
+Dependency arrows are drawn automatically using a routing algorithm that avoids overlapping with other task bars. The arrows bend around obstacles, producing a clean, readable chart even with complex dependency networks.
+
+## Progress tracking
+
+Each task's `progress` property (0 to 100) controls how much of the bar is filled. This creates a two-tone effect: the completed portion in a darker shade and the remaining portion in a lighter shade.
+
+```typescript
+const chart = createChart({
+  type: "gantt",
+  data: {
+    tasks: [
+      {
+        id: "task-1",
+        name: "Database Migration",
+        start: "2026-03-01",
+        end: "2026-03-15",
+        progress: 80,
+      },
+    ],
+  },
+  options: {
+    taskBar: {
+      className: "fill-blue-200 dark:fill-blue-900",
+      progressClassName: "fill-blue-600 dark:fill-blue-400",
+    },
+    tooltip: {
+      enabled: true,
+      format: (task) =>
+        `${task.name}\n${task.progress}% complete\n${task.start} - ${task.end}`,
+    },
+  },
+});
+```
+
+For dynamic progress updates, update the task data and the chart re-renders:
+
+```typescript
+function updateTaskProgress(taskId: string, progress: number) {
+  const task = tasks.find(t => t.id === taskId);
+  if (task) {
+    task.progress = progress;
+    gantt.update({ tasks });
+  }
+}
+```
+
+## Milestones
+
+**Milestones** are zero-duration events represented as diamond markers on the timeline. They mark key decision points, deliverable deadlines, or phase transitions.
+
+Set `milestone: true` and make the start and end dates identical:
+
+```typescript
+{
+  id: "launch",
+  name: "Product Launch",
+  start: "2026-05-01",
+  end: "2026-05-01",
+  milestone: true,
+  dependencies: ["final-testing", "documentation"],
+}
+```
+
+Milestones can have dependencies just like tasks. In the example above, the "Product Launch" milestone depends on both "Final Testing" and "Documentation" completing. Dependency arrows will point from both predecessor tasks to the milestone diamond.
+
+## Hierarchical grouping
+
+Real projects have phases. Chart.ts groups tasks by their `group` property and renders collapsible group headers:
+
+```typescript
+const chart = createChart({
+  type: "gantt",
+  data: {
+    tasks: tasks, // tasks with group: "Design Phase", etc.
+  },
+  options: {
+    groups: {
+      collapsible: true,
+      defaultCollapsed: false,
+      headerClassName: "font-semibold text-gray-700 dark:text-gray-300",
+      summaryBar: true,
+      summaryClassName: "fill-gray-300 dark:fill-gray-600",
+    },
+  },
+});
+```
+
+The `summaryBar` option renders a thin bar spanning the full duration of all tasks in the group, giving a visual overview of each phase's timeline even when the group is collapsed.
+
+## Zoom and time navigation
+
+A six-month project viewed at the daily level is unusable. Chart.ts provides built-in zoom controls:
+
+```typescript
+const chart = createChart({
+  type: "gantt",
+  data: { tasks },
+  options: {
+    timeAxis: {
+      unit: "week",
+      allowedUnits: ["day", "week", "month"],
+    },
+    zoom: {
+      enabled: true,
+      controls: true,
+      scrollWheel: true,
+      pinch: true,
+    },
+    scroll: {
+      horizontal: true,
+      vertical: true,
+      snap: "week",
+    },
+  },
+});
+```
+
+The `zoom.scrollWheel` option enables zoom with Ctrl+scroll (or pinch on touch devices). The `scroll.snap` option ensures that horizontal scrolling aligns to week boundaries rather than stopping at arbitrary positions.
+
+## The React component
+
+For React applications, the `@chartts/react` package provides a declarative Gantt component:
+
+```tsx
+import { GanttChart } from "@chartts/react";
+
+export function ProjectTimeline({ tasks, onTaskClick }) {
+  return (
+    <GanttChart
+      data={{ tasks }}
+      options={{
+        timeAxis: { unit: "week" },
+        dependencies: { visible: true, arrow: true },
+        taskBar: {
+          className: "fill-blue-500",
+          progressClassName: "fill-blue-700",
+        },
+        grid: { todayLine: true },
+        zoom: { enabled: true, controls: true },
+        onClick: onTaskClick,
+      }}
+      className="w-full h-[600px] rounded-xl border
+                 border-gray-200 dark:border-gray-700"
+    />
+  );
+}
+```
+
+This component re-renders when `tasks` changes. If a task's progress updates, the chart smoothly transitions to the new state. No imperative update calls needed.
+
+## Handling real-world data
+
+Project data rarely comes in the exact shape a chart library expects. Here is a pattern for transforming typical project management API responses into Chart.ts task format:
+
+```typescript
+interface ApiTask {
+  id: number;
+  title: string;
+  start_date: string;
+  due_date: string;
+  percent_complete: number;
+  blocked_by: number[];
+  phase: string;
+  is_milestone: boolean;
+}
+
+function toGanttTasks(apiTasks: ApiTask[]): Task[] {
+  return apiTasks.map(t => ({
+    id: String(t.id),
+    name: t.title,
+    start: t.start_date,
+    end: t.due_date,
+    progress: t.percent_complete,
+    dependencies: t.blocked_by.map(String),
+    group: t.phase,
+    milestone: t.is_milestone,
+  }));
+}
+```
+
+This transformation pattern works regardless of whether your data comes from Jira, Linear, Asana, or a custom backend. The mapping layer keeps your chart code decoupled from your data source.
+
+## Comparing with commercial alternatives
+
+Here is where Chart.ts stands relative to the paid Gantt chart market:
+
+| Feature | MS Project | DHTMLX Gantt | Bryntum Gantt | Chart.ts |
+|---|---|---|---|---|
+| Price | $30/user/mo | $599+ | $1,995+ | Free (MIT) |
+| Web-based | No | Yes | Yes | Yes |
+| Dependencies | Yes | Yes | Yes | Yes |
+| Milestones | Yes | Yes | Yes | Yes |
+| Progress bars | Yes | Yes | Yes | Yes |
+| Grouping | Yes | Yes | Yes | Yes |
+| Zoom | Yes | Yes | Yes | Yes |
+| Drag-to-edit | Yes | Yes | Yes | Coming soon |
+| Resource management | Yes | Yes | Yes | No |
+| Critical path | Yes | Yes | Yes | No |
+| Tailwind integration | No | No | No | Native |
+| Bundle size | N/A | ~250kb | ~400kb | <20kb |
+
+Chart.ts covers the core Gantt chart features that 90% of project management interfaces need. Advanced features like critical path analysis and resource leveling are on the roadmap.
+
+For teams building internal tools or product features that include project timelines, Chart.ts eliminates the licensing cost while delivering the essential functionality. For teams that need the full Microsoft Project feature set in the browser, commercial libraries remain the appropriate choice.
+
+## What you can build
+
+With the features covered in this guide, you can build:
+
+- Sprint planning boards with task bars, dependencies, and progress tracking
+- Product roadmap timelines showing features grouped by quarter
+- Construction or manufacturing schedules with milestone sign-offs
+- Marketing campaign timelines with launch date milestones
+- Client project dashboards showing deliverable status
+
+The Gantt chart remains one of the most requested chart types in business applications. With Chart.ts, you can ship one without a $2,000 library license, a 400kb bundle addition, or a week of custom SVG development. Define your tasks. Set your options. Render.

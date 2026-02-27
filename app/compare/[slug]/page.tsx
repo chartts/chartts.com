@@ -173,6 +173,28 @@ const comparisons: Record<string, Comparison> = {
       "Learning curve for configuration",
     ],
   },
+  highcharts: {
+    name: "Highcharts",
+    fullName: "Highcharts",
+    description:
+      "Highcharts is a commercial charting library with a long history. It is powerful and feature-rich, but costs $590 per developer per year and uses a legacy API design.",
+    bundleSize: "~80kb min+gzip",
+    treeshaking: "Limited (monolithic core)",
+    typescript: "Built-in types",
+    ssr: "Server-side rendering available",
+    accessibility: "Accessibility module (enterprise only)",
+    tailwind: "Not supported (imperative config)",
+    license: "Commercial ($590/dev/yr)",
+    chartTypes: "~25 built-in",
+    frameworks: "Wrappers for React, Angular, Vue",
+    weaknesses: [
+      "$590 per developer per year licensing cost",
+      "jQuery-era imperative API design",
+      "Accessibility locked behind enterprise tier",
+      "Not Tailwind-native, uses imperative config objects",
+      "Large monolithic bundle, limited tree-shaking",
+    ],
+  },
 };
 
 const charttsStats = {

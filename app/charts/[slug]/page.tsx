@@ -416,6 +416,457 @@ const svg = line({
     chartType: "candlestick",
     docsLink: "/docs/charts/candlestick",
   },
+  "pie-chart": {
+    title: "Pie Chart Maker | Free Online Pie Chart Generator",
+    h1: "Pie Chart Maker",
+    description:
+      "Create beautiful pie charts with JavaScript. Free, open source, SVG-based. Tailwind CSS styling, accessibility, under 15kb. React, Vue, Svelte, Solid, Angular.",
+    intro:
+      "Build stunning pie charts with Chart.ts. SVG rendering means every slice is a real DOM element you can style with Tailwind CSS. Add labels, percentages, legends, donut variants, and pattern fills for accessibility. Under 15kb for the entire library.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `import { pie } from "@chartts/core"
+
+const svg = pie({
+  data: [
+    { label: "Chrome", value: 65 },
+    { label: "Safari", value: 19 },
+    { label: "Firefox", value: 8 },
+    { label: "Edge", value: 5 },
+    { label: "Other", value: 3 },
+  ],
+  label: "label",
+  value: "value",
+  showPercentages: true,
+  showLegend: true,
+})`,
+    features: [
+      "SVG rendering with gradient fills",
+      "Labels, percentages, and legends",
+      "Donut variant with configurable inner radius",
+      "Pattern fills for color-blind accessibility",
+      "Tailwind className on every slice",
+      "Dark mode with dark: variants",
+      "Under 3kb tree-shaken",
+    ],
+    chartType: "pie",
+    docsLink: "/docs/charts/pie",
+  },
+  "bar-chart": {
+    title: "Bar Chart | JavaScript Bar Chart Library",
+    h1: "Bar Chart",
+    description:
+      "Create bar charts with JavaScript. Vertical, horizontal, stacked, grouped. SVG rendering, Tailwind CSS, accessible. React, Vue, Svelte, Solid.",
+    intro:
+      "Chart.ts bar charts render as real SVG DOM elements. Vertical, horizontal, stacked, and grouped layouts. Style every bar, axis, and label with Tailwind CSS classes. WCAG AA accessible with keyboard navigation and screen reader support.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `import { bar } from "@chartts/core"
+
+const svg = bar({
+  data: [
+    { category: "Q1", revenue: 42000 },
+    { category: "Q2", revenue: 58000 },
+    { category: "Q3", revenue: 71000 },
+    { category: "Q4", revenue: 93000 },
+  ],
+  x: "category",
+  y: "revenue",
+  layout: "vertical",
+})`,
+    features: [
+      "Vertical, horizontal, stacked, and grouped layouts",
+      "SVG rendering for CSS styling",
+      "Tailwind className on bars, axes, labels, grid",
+      "Animated transitions between data states",
+      "Responsive with automatic label rotation",
+      "WCAG AA compliant with keyboard navigation",
+      "Under 3kb tree-shaken",
+    ],
+    chartType: "bar",
+    docsLink: "/docs/charts/bar",
+  },
+  "line-chart": {
+    title: "Line Chart | JavaScript Line Chart Library",
+    h1: "Line Chart",
+    description:
+      "Create line charts with JavaScript. SVG rendering, area fills, multi-series, tooltips. Tailwind CSS native. React, Vue, Svelte, Solid, Angular.",
+    intro:
+      "Beautiful line charts powered by SVG. Chart.ts gives you smooth curves, area fills, multi-series support, and interactive tooltips. Style everything with Tailwind CSS. Works with any JavaScript framework or vanilla JS.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `import { line } from "@chartts/core"
+
+const svg = line({
+  data: [
+    { month: "Jan", users: 1200, revenue: 4200 },
+    { month: "Feb", users: 1800, revenue: 5800 },
+    { month: "Mar", users: 2400, revenue: 7100 },
+    { month: "Apr", users: 3200, revenue: 9200 },
+  ],
+  x: "month",
+  y: ["users", "revenue"],
+  smooth: true,
+  area: true,
+})`,
+    features: [
+      "Smooth curves with configurable tension",
+      "Area fills with gradient support",
+      "Multi-series with automatic legends",
+      "Interactive tooltips",
+      "Tailwind className on lines, dots, areas, axes",
+      "Real-time data streaming",
+      "Under 3kb tree-shaken",
+    ],
+    chartType: "line",
+    docsLink: "/docs/charts/line",
+  },
+  "waterfall-chart": {
+    title: "Waterfall Chart | JavaScript Waterfall Chart",
+    h1: "Waterfall Chart",
+    description:
+      "Create waterfall charts with JavaScript. Show running totals, positive/negative flows. SVG rendering, Tailwind CSS, accessible. Under 15kb.",
+    intro:
+      "Waterfall charts show how an initial value is increased or decreased by intermediate values. Chart.ts renders them as SVG with automatic running totals, positive/negative coloring, and connector lines. Style everything with Tailwind CSS.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `import { waterfall } from "@chartts/core"
+
+const svg = waterfall({
+  data: [
+    { label: "Revenue", value: 420000 },
+    { label: "COGS", value: -180000 },
+    { label: "Gross Profit", type: "subtotal" },
+    { label: "OpEx", value: -95000 },
+    { label: "Tax", value: -43000 },
+    { label: "Net Income", type: "total" },
+  ],
+  label: "label",
+  value: "value",
+})`,
+    features: [
+      "Automatic running totals",
+      "Positive/negative color coding",
+      "Subtotal and total markers",
+      "Connector lines between bars",
+      "Tailwind className on every element",
+      "Financial reporting ready",
+      "SVG rendering with accessibility",
+    ],
+    chartType: "waterfall",
+    docsLink: "/docs/charts/waterfall",
+  },
+  "gantt-chart": {
+    title: "Gantt Chart | JavaScript Gantt Chart Library",
+    h1: "Gantt Chart",
+    description:
+      "Create Gantt charts with JavaScript. Project timelines, task dependencies, milestones. SVG rendering, Tailwind CSS styling. Free and open source.",
+    intro:
+      "Build professional Gantt charts for project management. Chart.ts renders timelines as SVG with task bars, dependencies, milestones, and progress indicators. Style everything with Tailwind CSS. Free and open source, unlike commercial alternatives.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `import { gantt } from "@chartts/core"
+
+const svg = gantt({
+  data: [
+    { task: "Design", start: "2026-01-01", end: "2026-01-15", progress: 100 },
+    { task: "Frontend", start: "2026-01-10", end: "2026-02-15", progress: 75 },
+    { task: "Backend", start: "2026-01-15", end: "2026-02-20", progress: 60 },
+    { task: "Testing", start: "2026-02-10", end: "2026-03-01", progress: 20 },
+    { task: "Launch", start: "2026-03-01", end: "2026-03-01", milestone: true },
+  ],
+  task: "task",
+  start: "start",
+  end: "end",
+})`,
+    features: [
+      "Task bars with start/end dates",
+      "Progress indicators on each task",
+      "Milestone markers",
+      "Task dependencies and links",
+      "Zoom levels (day, week, month, quarter)",
+      "Tailwind CSS on all elements",
+      "SVG rendering for print and export",
+    ],
+    chartType: "gantt",
+    docsLink: "/docs/charts/gantt",
+  },
+  "org-chart": {
+    title: "Org Chart | JavaScript Organization Chart",
+    h1: "Organization Chart",
+    description:
+      "Create org charts with JavaScript. Hierarchical layouts, expandable nodes, team visualization. SVG rendering, Tailwind CSS. Free and open source.",
+    intro:
+      "Build organizational charts that render as SVG. Hierarchical tree layouts with expandable nodes, photos, titles, and department grouping. Style every node and connector with Tailwind CSS. Works with any framework.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `import { org } from "@chartts/core"
+
+const svg = org({
+  data: {
+    name: "Sarah Chen",
+    title: "CEO",
+    children: [
+      {
+        name: "James Lee",
+        title: "CTO",
+        children: [
+          { name: "Ana Garcia", title: "Lead Engineer" },
+          { name: "Mark Wilson", title: "Lead Designer" },
+        ],
+      },
+      {
+        name: "Maria Santos",
+        title: "CFO",
+      },
+    ],
+  },
+})`,
+    features: [
+      "Hierarchical tree layout",
+      "Expandable/collapsible nodes",
+      "Photos and role badges",
+      "Department grouping",
+      "Horizontal and vertical orientations",
+      "Tailwind CSS on nodes and connectors",
+      "SVG rendering for export and print",
+    ],
+    chartType: "org",
+    docsLink: "/docs/charts/org",
+  },
+  "flow-chart": {
+    title: "Flow Chart | JavaScript Flow Chart Library",
+    h1: "Flow Chart",
+    description:
+      "Create flow charts with JavaScript. Process diagrams, decision trees, workflow visualization. SVG rendering, Tailwind CSS. Free and open source.",
+    intro:
+      "Build flow charts and process diagrams that render as SVG. Decision nodes, process steps, connectors with labels, and automatic layout. Style every element with Tailwind CSS. Export to SVG or PNG.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `import { flow } from "@chartts/core"
+
+const svg = flow({
+  nodes: [
+    { id: "start", label: "Start", type: "terminal" },
+    { id: "input", label: "Get Data", type: "process" },
+    { id: "valid", label: "Valid?", type: "decision" },
+    { id: "process", label: "Process", type: "process" },
+    { id: "error", label: "Show Error", type: "process" },
+    { id: "end", label: "Done", type: "terminal" },
+  ],
+  edges: [
+    { from: "start", to: "input" },
+    { from: "input", to: "valid" },
+    { from: "valid", to: "process", label: "Yes" },
+    { from: "valid", to: "error", label: "No" },
+    { from: "process", to: "end" },
+  ],
+})`,
+    features: [
+      "Decision, process, and terminal nodes",
+      "Connectors with labels",
+      "Automatic layout algorithms",
+      "Horizontal and vertical flow",
+      "Nested sub-processes",
+      "Tailwind CSS on all elements",
+      "SVG export for documentation",
+    ],
+    chartType: "flow",
+    docsLink: "/docs/charts/flow",
+  },
+  "pareto-chart": {
+    title: "Pareto Chart | JavaScript Pareto Chart",
+    h1: "Pareto Chart",
+    description:
+      "Create Pareto charts with JavaScript. Combined bar and line chart showing the 80/20 rule. SVG rendering, Tailwind CSS. Free and open source.",
+    intro:
+      "Pareto charts combine bar charts with a cumulative line to identify the vital few causes. Chart.ts renders them as SVG with automatic percentage calculations, dual axes, and the 80% threshold line. Perfect for quality analysis and prioritization.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `import { pareto } from "@chartts/core"
+
+const svg = pareto({
+  data: [
+    { cause: "UI Bugs", count: 45 },
+    { cause: "API Errors", count: 32 },
+    { cause: "Performance", count: 18 },
+    { cause: "Auth Issues", count: 12 },
+    { cause: "Data Loss", count: 8 },
+    { cause: "Other", count: 5 },
+  ],
+  label: "cause",
+  value: "count",
+  showThreshold: true,
+})`,
+    features: [
+      "Combined bar and cumulative line",
+      "Automatic percentage calculation",
+      "80% threshold line",
+      "Dual y-axes (count and percentage)",
+      "Sorted by frequency automatically",
+      "Tailwind CSS on all elements",
+      "SVG rendering with accessibility",
+    ],
+    chartType: "pareto",
+    docsLink: "/docs/charts/pareto",
+  },
+  "graph-maker": {
+    title: "Free Online Graph Maker | Chart Generator",
+    h1: "Free Graph Maker",
+    description:
+      "Create charts and graphs online for free. Bar charts, line charts, pie charts, and 40+ types. SVG export, no watermark. Powered by Chart.ts.",
+    intro:
+      "Make beautiful charts and graphs in seconds. Choose from 40+ chart types, paste your data, and get a publication-ready SVG. No sign-up, no watermark, no limits. Powered by Chart.ts, the open source charting library.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `// Chart.ts powers this graph maker
+// Use it in your own projects:
+import { line, bar, pie, scatter } from "@chartts/core"
+
+// Every chart type renders as SVG
+// Copy the SVG, embed it anywhere
+const svg = bar({
+  data: yourData,
+  x: "category",
+  y: "value",
+})`,
+    features: [
+      "40+ chart types",
+      "Paste CSV or JSON data",
+      "SVG export with no watermark",
+      "PNG download",
+      "Tailwind CSS styled",
+      "Accessible output",
+      "Free forever, open source",
+    ],
+    chartType: "bar",
+    docsLink: "/chart-maker",
+  },
+  "gold-price-chart": {
+    title: "Gold Price Chart | JavaScript Financial Charts",
+    h1: "Gold Price Chart",
+    description:
+      "Create gold price charts and financial visualizations with JavaScript. Candlestick, line, and area charts. Real-time updates, SVG rendering, under 15kb.",
+    intro:
+      "Build gold price charts and commodity visualizations with Chart.ts. Candlestick, line, and area charts with real-time streaming, moving averages, and volume overlays. SVG rendering for crisp display at any resolution.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `import { candlestick } from "@chartts/core"
+
+const svg = candlestick({
+  data: goldPrices,
+  x: "date",
+  open: "open",
+  high: "high",
+  low: "low",
+  close: "close",
+  overlays: [
+    { type: "sma", period: 20 },
+    { type: "sma", period: 50 },
+  ],
+})`,
+    features: [
+      "Candlestick and OHLC charts",
+      "Moving average overlays (SMA, EMA)",
+      "Volume bars",
+      "Real-time price streaming",
+      "Zoom and pan on time axis",
+      "Responsive for mobile trading apps",
+      "SVG rendering for print quality",
+    ],
+    chartType: "candlestick",
+    docsLink: "/docs/charts/candlestick",
+  },
+  "bitcoin-chart": {
+    title: "Bitcoin Chart | Crypto Price Chart Library",
+    h1: "Bitcoin Chart",
+    description:
+      "Create Bitcoin and cryptocurrency price charts with JavaScript. Candlestick, line charts with real-time updates. SVG rendering, under 15kb. Open source.",
+    intro:
+      "Build Bitcoin and crypto price charts with Chart.ts. Real-time candlestick charts, volume indicators, and technical overlays. SVG rendering at under 15kb, perfect for trading dashboards and portfolio trackers.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `import { candlestick } from "@chartts/core"
+
+const svg = candlestick({
+  data: btcPrices,
+  x: "timestamp",
+  open: "open",
+  high: "high",
+  low: "low",
+  close: "close",
+  volume: "volume",
+  overlays: [
+    { type: "bollinger", period: 20 },
+  ],
+})`,
+    features: [
+      "Real-time price streaming",
+      "Candlestick with volume overlay",
+      "Technical indicators (SMA, EMA, Bollinger)",
+      "Multiple timeframes (1m to 1Y)",
+      "Responsive for mobile",
+      "Dark mode optimized",
+      "Under 5kb for candlestick chart",
+    ],
+    chartType: "candlestick",
+    docsLink: "/docs/charts/candlestick",
+  },
+  "ai-chart": {
+    title: "AI Chart Generator | Create Charts with AI",
+    h1: "AI Chart Generator",
+    description:
+      "Generate charts from natural language prompts. Describe your data, get a chart. Powered by Chart.ts SVG rendering. Free, open source, under 15kb.",
+    intro:
+      "Describe the chart you want in plain English and Chart.ts generates it. Works with GPT, Claude, and any LLM. The structured API makes it easy for AI to generate chart code that renders as clean SVG.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `// AI-friendly API: structured, typed, predictable
+// LLMs can generate this code reliably:
+import { bar } from "@chartts/core"
+
+const svg = bar({
+  data: [
+    { product: "Widget A", q1: 120, q2: 180 },
+    { product: "Widget B", q1: 90, q2: 240 },
+    { product: "Widget C", q1: 200, q2: 160 },
+  ],
+  x: "product",
+  y: ["q1", "q2"],
+  layout: "grouped",
+})
+
+// Output: clean SVG string, ready to embed`,
+    features: [
+      "AI-friendly structured API",
+      "Works with GPT, Claude, Gemini, and any LLM",
+      "Typed inputs prevent AI hallucination",
+      "Clean SVG output for embedding",
+      "40+ chart types AI can generate",
+      "No API key needed for rendering",
+      "Open source, runs anywhere",
+    ],
+    chartType: "bar",
+    docsLink: "/docs",
+  },
+  "data-visualization": {
+    title: "Data Visualization Library | JavaScript",
+    h1: "Data Visualization Library",
+    description:
+      "Modern data visualization library for JavaScript and TypeScript. 40+ chart types, SVG rendering, Tailwind CSS, accessibility. Under 15kb gzipped.",
+    intro:
+      "Chart.ts is a modern data visualization library built for the way developers work today. 40+ chart types, SVG rendering, Tailwind CSS integration, full accessibility, and TypeScript-first design. Under 15kb for the entire library.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `import { line, bar, pie, scatter, heatmap } from "@chartts/core"
+
+// 40+ chart types, all SVG
+// All styled with Tailwind CSS
+// All accessible by default
+// All under 15kb total
+
+const lineChart = line({ data, x: "date", y: "value" })
+const barChart = bar({ data, x: "category", y: "count" })
+const pieChart = pie({ data, label: "name", value: "share" })`,
+    features: [
+      "40+ chart types (line, bar, pie, scatter, heatmap, and more)",
+      "SVG, Canvas, and WebGL renderers",
+      "Tailwind CSS native with className on every element",
+      "WCAG AA accessible by default",
+      "TypeScript with full type inference",
+      "React, Vue, Svelte, Solid, Angular, Vanilla JS",
+      "Under 15kb gzipped for everything",
+    ],
+    chartType: "line",
+    docsLink: "/docs",
+  },
 };
 
 const slugs = Object.keys(landings);

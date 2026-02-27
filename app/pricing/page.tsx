@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Chart.ts is free and open source. MIT license, forever. No premium tier, no hidden costs.",
+    "Chart.ts is free and open source. Pro Themes for $49, Enterprise support for $199/mo. MIT license core, forever free.",
 };
 
 function Check() {
@@ -21,7 +21,7 @@ function Check() {
   );
 }
 
-const features = [
+const openSourceFeatures = [
   "40+ chart types",
   "SVG, Canvas, and WebGL renderers",
   "Full Tailwind CSS integration",
@@ -36,40 +36,60 @@ const features = [
   "No attribution required",
 ];
 
+const proThemesList = [
+  "8 hand-crafted themes",
+  "Neon, Pastel, Monochrome, Luxury",
+  "Retro, Minimal, Midnight, Earth",
+  "Drop-in theme presets",
+  "Dark + light variants",
+  "Priority feature requests",
+  "All future themes included",
+  "Lifetime access",
+];
+
+const enterpriseFeatures = [
+  "Everything in Pro Themes",
+  "SLA with guaranteed response times",
+  "VPAT / compliance documentation",
+  "Dedicated support channel",
+  "Custom chart type development",
+  "Architecture review",
+  "Priority bug fixes",
+  "Invoice billing",
+];
+
 export default function PricingPage() {
   return (
     <>
-<section className="pt-32 pb-16 px-6">
-        <div className="max-w-3xl mx-auto text-center">
+      <section className="pt-32 pb-16 px-6">
+        <div className="max-w-5xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight heading">
-            Free. Forever.
+            Simple, transparent pricing
           </h1>
-          <p className="mt-4 text-lg body-text max-w-xl mx-auto">
-            Chart.ts is open source under the MIT license. No premium tier, no
-            feature gates, no usage limits. The full library, free for
-            everyone.
+          <p className="mt-4 text-lg body-text max-w-2xl mx-auto">
+            The core library is free and open source forever. Premium themes and
+            enterprise support for teams that need more.
           </p>
         </div>
       </section>
 
       <section className="pb-16 px-6">
-        <div className="max-w-md mx-auto">
-          <div className="rounded-2xl card p-8 glow-cyan relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-emerald-500" />
-
+        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
+          {/* Open Source */}
+          <div className="rounded-2xl card p-8 relative overflow-hidden">
             <div className="text-center mb-8">
-              <p className="text-xs font-mono text-cyan-400 uppercase tracking-wider mb-2">
-                One plan
+              <p className="text-xs font-mono muted-text uppercase tracking-wider mb-2">
+                Open Source
               </p>
               <div className="flex items-baseline justify-center gap-1">
-                <span className="text-6xl font-extrabold heading">$0</span>
+                <span className="text-5xl font-extrabold heading">$0</span>
                 <span className="text-lg muted-text">/forever</span>
               </div>
               <p className="mt-2 text-sm body-text">MIT License</p>
             </div>
 
             <ul className="space-y-3 mb-8">
-              {features.map((f) => (
+              {openSourceFeatures.map((f) => (
                 <li key={f} className="flex items-center gap-3 text-sm body-text">
                   <Check />
                   {f}
@@ -79,10 +99,104 @@ export default function PricingPage() {
 
             <Link
               href="/docs"
-              className="block w-full text-center px-6 py-3 text-sm font-semibold rounded-lg bg-cyan-500 text-white hover:bg-cyan-400 transition-colors cursor-pointer"
+              className="block w-full text-center px-6 py-3 text-sm font-semibold rounded-lg card body-text hover:text-cyan-400 transition-colors cursor-pointer"
             >
               Get Started
             </Link>
+          </div>
+
+          {/* Pro Themes */}
+          <div className="rounded-2xl card p-8 glow-cyan relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-emerald-500" />
+            <div className="absolute top-4 right-4">
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                POPULAR
+              </span>
+            </div>
+
+            <div className="text-center mb-8">
+              <p className="text-xs font-mono text-cyan-400 uppercase tracking-wider mb-2">
+                Pro Themes
+              </p>
+              <div className="flex items-baseline justify-center gap-1">
+                <span className="text-5xl font-extrabold heading">$49</span>
+                <span className="text-lg muted-text">/once</span>
+              </div>
+              <p className="mt-2 text-sm body-text">One-time payment, lifetime access</p>
+            </div>
+
+            <ul className="space-y-3 mb-8">
+              {proThemesList.map((f) => (
+                <li key={f} className="flex items-center gap-3 text-sm body-text">
+                  <Check />
+                  {f}
+                </li>
+              ))}
+            </ul>
+
+            <a
+              href="#"
+              className="block w-full text-center px-6 py-3 text-sm font-semibold rounded-lg bg-cyan-500 text-white hover:bg-cyan-400 transition-colors cursor-pointer"
+            >
+              Buy Themes
+            </a>
+          </div>
+
+          {/* Enterprise */}
+          <div className="rounded-2xl card p-8 relative overflow-hidden">
+            <div className="text-center mb-8">
+              <p className="text-xs font-mono muted-text uppercase tracking-wider mb-2">
+                Enterprise
+              </p>
+              <div className="flex items-baseline justify-center gap-1">
+                <span className="text-5xl font-extrabold heading">$199</span>
+                <span className="text-lg muted-text">/mo</span>
+              </div>
+              <p className="mt-2 text-sm body-text">Per team, billed annually</p>
+            </div>
+
+            <ul className="space-y-3 mb-8">
+              {enterpriseFeatures.map((f) => (
+                <li key={f} className="flex items-center gap-3 text-sm body-text">
+                  <Check />
+                  {f}
+                </li>
+              ))}
+            </ul>
+
+            <Link
+              href="/contact"
+              className="block w-full text-center px-6 py-3 text-sm font-semibold rounded-lg card body-text hover:text-cyan-400 transition-colors cursor-pointer"
+            >
+              Contact Us
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Cloud API Teaser */}
+      <section className="pb-16 px-6">
+        <div className="max-w-3xl mx-auto">
+          <div className="rounded-2xl card p-8 text-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-cyan-500" />
+            <p className="text-xs font-mono text-purple-400 uppercase tracking-wider mb-3">
+              Coming Soon
+            </p>
+            <h2 className="text-2xl font-bold heading">
+              i.chartts.com
+            </h2>
+            <p className="mt-3 body-text max-w-lg mx-auto">
+              Chart images from URLs. Embed charts in emails, Slack, Notion, GitHub READMEs.
+              No JavaScript required.
+            </p>
+            <div className="mt-4 inline-flex items-center gap-3 px-5 py-3 rounded-xl bg-gray-800/50 border border-gray-700/50">
+              <code className="text-sm font-mono text-purple-300">
+                https://i.chartts.com/bar?data=10,20,30&color=cyan
+              </code>
+            </div>
+            <p className="mt-4 text-sm muted-text">
+              Join the waitlist to get early access.
+            </p>
           </div>
         </div>
       </section>
@@ -96,12 +210,23 @@ export default function PricingPage() {
           <div className="space-y-6">
             <div className="card rounded-xl p-6">
               <h3 className="font-semibold heading">
-                Is there really no paid plan?
+                Is the core library really free?
               </h3>
               <p className="mt-2 text-sm body-text">
-                No. Chart.ts is MIT licensed. Every feature, every chart type,
-                every framework package is free. Use it in personal projects,
-                startups, or enterprise apps.
+                Yes. Chart.ts is MIT licensed. Every chart type, every framework
+                package, every renderer is free. Use it in personal projects,
+                startups, or enterprise apps. No feature gates, no usage limits.
+              </p>
+            </div>
+            <div className="card rounded-xl p-6">
+              <h3 className="font-semibold heading">
+                What do I get with Pro Themes?
+              </h3>
+              <p className="mt-2 text-sm body-text">
+                8 professionally designed theme presets (Neon, Pastel, Monochrome,
+                Luxury, Retro, Minimal, Midnight, Earth) with dark and light
+                variants. Drop them into any chart with a single import. Lifetime
+                access includes all future themes.
               </p>
             </div>
             <div className="card rounded-xl p-6">
@@ -116,35 +241,34 @@ export default function PricingPage() {
             </div>
             <div className="card rounded-xl p-6">
               <h3 className="font-semibold heading">
-                How do you sustain development?
+                How does this compare to Highcharts pricing?
               </h3>
               <p className="mt-2 text-sm body-text">
-                Chart.ts is built and maintained by developers who believe
-                charting libraries should be free and open. We accept{" "}
-                <a
-                  href="https://github.com/sponsors/chartts"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                Highcharts costs $590 per developer per year. Chart.ts is free
+                and open source with the same chart types, better Tailwind
+                integration, and smaller bundles.{" "}
+                <Link
+                  href="/compare/highcharts"
                   className="text-cyan-400 hover:text-cyan-300 transition-colors"
                 >
-                  GitHub Sponsors
-                </a>{" "}
-                for those who want to support the project.
+                  See the full comparison
+                </Link>
+                .
               </p>
             </div>
             <div className="card rounded-xl p-6">
               <h3 className="font-semibold heading">
-                Will there be a paid tier in the future?
+                Will there be a paid tier for the library?
               </h3>
               <p className="mt-2 text-sm body-text">
-                The core library will always be free and MIT licensed. If we
-                ever offer paid services, they would be for hosting, support,
-                or premium tooling, never for library features.
+                The core library will always be free and MIT licensed. Paid
+                offerings are for themes, enterprise support, and hosted
+                services. Library features will never be paywalled.
               </p>
             </div>
           </div>
         </div>
       </section>
-</>
+    </>
   );
 }

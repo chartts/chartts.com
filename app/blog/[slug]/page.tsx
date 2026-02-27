@@ -27,6 +27,27 @@ export async function generateMetadata({
   return {
     title: `${post.title} | Chart.ts Blog`,
     description: post.description,
+    openGraph: {
+      title: post.title,
+      description: post.description,
+      type: "article",
+      publishedTime: post.date,
+      authors: ["Chart.ts"],
+      url: `https://chartts.com/blog/${post.slug}`,
+      images: [
+        {
+          url: post.image || "https://chartts.com/og.png",
+          width: 1200,
+          height: 630,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.description,
+      images: [post.image || "https://chartts.com/og.png"],
+    },
   };
 }
 
@@ -38,9 +59,41 @@ export default async function BlogPostPage({ params }: PageProps) {
     notFound();
   }
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.description,
+    datePublished: post.date,
+    dateModified: post.date,
+    author: {
+      "@type": "Organization",
+      name: "Chart.ts",
+      url: "https://chartts.com",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Chart.ts",
+      url: "https://chartts.com",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://chartts.com/og.png",
+      },
+    },
+    image: post.image || "https://chartts.com/og.png",
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `https://chartts.com/blog/${post.slug}`,
+    },
+  };
+
   return (
     <>
-<div className="pt-32 pb-24 px-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <div className="pt-32 pb-24 px-6">
         <article className="max-w-3xl mx-auto">
           {/* Header */}
           <div className="mb-12">

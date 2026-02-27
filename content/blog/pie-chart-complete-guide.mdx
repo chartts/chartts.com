@@ -1,0 +1,312 @@
+---
+title: "Pie Charts in 2026: When to Use Them, How to Make Them, and Better Alternatives"
+description: "The complete guide to pie charts. When they work, when they don't, how to create them with JavaScript, and alternatives like donut charts and treemaps."
+date: "2026-02-26"
+readTime: "10 min read"
+tag: "Guide"
+---
+
+The **pie chart** is the most controversial chart type in data visualization. Statisticians have argued against it for decades. Design purists dismiss it as amateur. Data scientists call it misleading.
+
+And yet, it remains one of the most widely used charts in business dashboards, presentations, and reports across every industry on earth.
+
+This is not a coincidence. Pie charts survive because they solve a specific communication problem better than any alternative: showing a small number of parts that make up a whole. The trouble starts when people use them for everything else.
+
+This guide covers when pie charts work, when they fail, how to build them properly with JavaScript, and what to use instead when a pie chart is the wrong choice.
+
+## A brief history of the pie chart
+
+The **pie chart** was invented by William Playfair in 1801, making it one of the oldest statistical graphics still in active use. Playfair included it in his "Statistical Breviary," using it to show the proportions of the Turkish Empire located in Asia, Europe, and Africa.
+
+For two centuries, it was uncontroversial. Then the data visualization field professionalized, and researchers started testing how accurately humans could read different chart types. The results were not kind to pie charts.
+
+Cleveland and McGill's landmark 1984 study found that humans are significantly worse at judging angles and areas than at judging positions along a common scale. In plain terms: people can compare bar heights more accurately than pie slice sizes. A 2010 study by Heer and Bostock confirmed these findings with web-based experiments.
+
+This research led to a backlash. "Friends don't let friends make pie charts" became a data visualization mantra. Blog posts declaring the death of the pie chart accumulated thousands of shares.
+
+But the pie chart refused to die. Here is why.
+
+## When pie charts work
+
+The research against pie charts is valid but incomplete. It measures precision of value extraction. It does not measure what pie charts are actually used for in the real world.
+
+Nobody looks at a pie chart and says "that slice is exactly 23.7%." They look at a pie chart and say "that category is roughly a quarter of the total." For this type of communication, pie charts are not just acceptable. They are excellent.
+
+**Pie charts work when:**
+
+- You have 2 to 5 categories. No more. Six is pushing it. Seven or more is a mistake.
+- You are showing parts of a whole. The slices must add up to 100%. If they do not, a pie chart is structurally wrong.
+- The values are meaningfully different. If four slices are all close to 25%, the chart communicates nothing. If one slice is 60% and the rest are small, the dominance is immediately visible.
+- The audience is general, not technical. Pie charts are intuitive. Everyone understands them. Bar charts require understanding an axis scale. Pie charts require understanding "bigger slice means more."
+- The goal is a general impression, not precise comparison. "Our biggest market is North America" reads instantly from a pie chart. "North America is 3.2% larger than Europe" does not.
+
+**Pie charts fail when:**
+
+- You have more than 6 categories. The slices become too thin to distinguish. Labels overlap. The chart becomes visual noise.
+- The values are similar. Five slices of roughly 20% each look like a pinwheel. No insight is communicated.
+- You need precise comparisons. "Is Category A bigger than Category B?" is hard to answer when both are pie slices of similar size. A bar chart answers this instantly.
+- The data does not represent parts of a whole. Revenue by month is not a pie chart use case. Each month is not a "part" of a "whole." It is a point in a time series.
+- You are showing change over time. Two pie charts side by side ("Q1 vs Q2") are almost impossible to compare accurately. Use a grouped bar chart or line chart.
+
+## Design principles for effective pie charts
+
+If you have determined that a pie chart is the right choice, design decisions still matter enormously.
+
+**Start at 12 o'clock.** The largest slice should begin at the top of the circle (12 o'clock position) and proceed clockwise. This matches how humans naturally read circular displays.
+
+**Order slices by size.** Largest first, then descending. The one exception is if the categories have a natural order (like age ranges), in which case maintain that order.
+
+**Use direct labels, not legends.** A legend forces the reader to look back and forth between the chart and a separate color key. Labels placed directly on or near each slice eliminate this friction.
+
+**Limit your palette.** Use distinct, high-contrast colors. Avoid gradients, 3D effects, and explosion (pulling slices out from the center). These decorations reduce readability without adding information.
+
+**Show percentages and values.** A label that says "North America: 42% ($3.2M)" is more useful than one that says just "North America" or just "42%."
+
+**Never use 3D pie charts.** This is the one absolute rule in data visualization. Three-dimensional rendering distorts the apparent size of slices based on their position. Slices at the "front" of a 3D pie appear larger than identically-sized slices at the "back." It is visually dishonest.
+
+## Building pie charts with JavaScript
+
+With the design principles established, let us build. Chart.ts makes **pie chart** creation straightforward with its declarative API.
+
+A basic pie chart:
+
+```typescript
+import { createChart } from "@chartts/core";
+
+const chart = createChart({
+  type: "pie",
+  data: {
+    labels: ["North America", "Europe", "Asia Pacific", "Rest of World"],
+    datasets: [{
+      values: [42, 28, 22, 8],
+      classNames: [
+        "fill-blue-500",
+        "fill-emerald-500",
+        "fill-amber-500",
+        "fill-rose-500",
+      ],
+    }],
+  },
+  options: {
+    title: "Revenue by Region",
+    legend: { position: "bottom" },
+    labels: {
+      format: "percent",
+      position: "outside",
+    },
+  },
+});
+```
+
+A few things to note. The `classNames` array uses Tailwind color classes, so the chart matches your application's design system. The `labels.format` option set to `"percent"` automatically calculates and displays percentages. The `legend.position` option places the legend below the chart, which works well on mobile screens.
+
+For a more polished version with custom formatting:
+
+```typescript
+const chart = createChart({
+  type: "pie",
+  data: {
+    labels: ["Enterprise", "Mid-Market", "SMB", "Self-Serve"],
+    datasets: [{
+      values: [2400000, 1800000, 950000, 350000],
+      classNames: [
+        "fill-indigo-600 dark:fill-indigo-400",
+        "fill-sky-500 dark:fill-sky-400",
+        "fill-violet-500 dark:fill-violet-400",
+        "fill-pink-500 dark:fill-pink-400",
+      ],
+    }],
+  },
+  options: {
+    title: "Revenue by Segment",
+    labels: {
+      format: (value, percent) =>
+        `${percent.toFixed(0)}% ($${(value / 1e6).toFixed(1)}M)`,
+      position: "outside",
+      connector: true,
+    },
+    tooltip: {
+      enabled: true,
+      format: (label, value) =>
+        `${label}: $${value.toLocaleString()}`,
+    },
+    className: "max-w-md mx-auto",
+  },
+});
+```
+
+This version shows both percentage and dollar value in each label, adds connector lines from slices to external labels, enables tooltips on hover, and constrains the chart width with Tailwind utility classes.
+
+### Interactive pie charts
+
+Static pie charts are fine for presentations. For dashboards, you want interactivity:
+
+```typescript
+const chart = createChart({
+  type: "pie",
+  data: {
+    labels: segments,
+    datasets: [{
+      values: segmentValues,
+      classNames: segmentColors,
+    }],
+  },
+  options: {
+    tooltip: { enabled: true },
+    hover: {
+      scale: 1.05,
+      className: "drop-shadow-lg transition-transform",
+    },
+    onClick: (segment, index) => {
+      router.push(`/dashboard/segment/${segment.label}`);
+    },
+    animation: {
+      type: "spin",
+      duration: 600,
+      easing: "ease-out",
+    },
+  },
+});
+```
+
+The `hover.scale` property enlarges the slice slightly on mouseover. Combined with the CSS transition class, this creates a smooth interactive effect. The `onClick` handler turns each slice into a navigation element, useful for drill-down dashboards.
+
+### Using the pie chart maker with React
+
+If you are using React, the `@chartts/react` package provides a component-based API that serves as a **pie chart maker** integrated directly into your component tree:
+
+```tsx
+import { PieChart } from "@chartts/react";
+
+export function RevenueBreakdown({ data }) {
+  return (
+    <PieChart
+      data={{
+        labels: data.map(d => d.region),
+        datasets: [{
+          values: data.map(d => d.revenue),
+          classNames: regionColors,
+        }],
+      }}
+      options={{
+        title: "Revenue by Region",
+        labels: { format: "percent" },
+        responsive: true,
+      }}
+      className="w-full max-w-lg"
+    />
+  );
+}
+```
+
+This is a standard React component. It accepts props. It re-renders when data changes. It composes with the rest of your application. No refs, no imperative initialization, no useEffect hacks.
+
+## Donut charts: the refined alternative
+
+A **donut chart** is a pie chart with the center removed. This sounds like a minor cosmetic change, but it has meaningful advantages:
+
+- The empty center provides space for a summary metric (total value, key percentage)
+- Without the center point, readers focus more on arc length than angle, which humans judge more accurately
+- The visual weight is lighter, making donut charts feel less heavy in modern dashboard designs
+
+```typescript
+const chart = createChart({
+  type: "donut",
+  data: {
+    labels: categories,
+    datasets: [{ values: categoryValues, classNames: colors }],
+  },
+  options: {
+    innerRadius: 0.6,
+    centerLabel: {
+      value: "$5.5M",
+      subtitle: "Total Revenue",
+      className: "text-2xl font-bold text-gray-900 dark:text-white",
+    },
+    labels: { format: "percent", position: "outside" },
+  },
+});
+```
+
+The `innerRadius` option controls how much of the center is removed. A value of 0.6 means the hole is 60% of the total radius, leaving a ring that is 40% of the radius wide. The `centerLabel` option places a metric in the empty center.
+
+Donut charts are almost always a better choice than pie charts in dashboard contexts. They communicate the same part-to-whole relationship while providing additional space for context.
+
+## When to use something else entirely
+
+Sometimes the data just does not belong in a circular chart. Here are the alternatives and when to reach for them.
+
+### Bar charts for comparison
+
+When the goal is comparing values across categories, a horizontal bar chart is almost always superior to a pie chart. The shared baseline makes differences immediately apparent.
+
+Use bar charts when you have more than 5 categories, when values are similar and precision matters, or when you want to show both the category values and a total.
+
+### Treemaps for hierarchical parts-of-whole
+
+When you have nested categories (Region > Country > City), a **treemap** shows the hierarchy and the proportions simultaneously. Pie charts cannot represent hierarchy at all.
+
+```typescript
+const chart = createChart({
+  type: "treemap",
+  data: {
+    nodes: [
+      {
+        label: "North America",
+        value: 42,
+        children: [
+          { label: "United States", value: 35 },
+          { label: "Canada", value: 7 },
+        ],
+      },
+      {
+        label: "Europe",
+        value: 28,
+        children: [
+          { label: "UK", value: 12 },
+          { label: "Germany", value: 9 },
+          { label: "France", value: 7 },
+        ],
+      },
+    ],
+  },
+  options: {
+    labels: { format: "percent" },
+    className: "rounded-lg overflow-hidden",
+  },
+});
+```
+
+### Waffle charts for precise percentages
+
+A waffle chart uses a 10x10 grid of squares, each representing 1%. This makes it trivially easy to read exact percentages. "32 squares are blue, so that category is 32%." No angle estimation required.
+
+Waffle charts are particularly effective for communicating survey results, completion rates, and any metric where the precise percentage is the point.
+
+## Common pie chart mistakes
+
+Even when a pie chart is the right choice, execution errors can undermine it:
+
+**Too many slices.** The single most common mistake. If your pie chart has an "Other" slice that is larger than several named slices, you have too many categories. Consolidate.
+
+**Inconsistent ordering.** Slices should be ordered by size (largest first, clockwise from 12 o'clock) unless there is a natural category order. Random ordering makes the chart harder to read.
+
+**Legend-only labels.** Forcing readers to match colors between a legend and the chart is slow and error-prone. Label slices directly whenever space allows.
+
+**Comparing multiple pies.** Two pie charts side by side with the caption "Q1 vs Q2" are nearly impossible to read comparatively. Use a grouped bar chart or a slope chart instead.
+
+**Using pie charts for time series.** Months of the year are not parts of a whole. Quarterly revenue is a time series, not a composition. Use a line chart or bar chart.
+
+## Making the right choice
+
+The decision tree is simple:
+
+1. Are you showing parts of a whole that sum to 100%? If no, do not use a pie chart.
+2. Do you have 5 or fewer categories? If no, do not use a pie chart.
+3. Are the values meaningfully different from each other? If no, do not use a pie chart.
+4. Is a general impression more important than precise comparison? If no, use a bar chart.
+5. If you answered yes to all four: a pie chart (or better, a donut chart) is a good choice.
+
+The pie chart is not dead. It is not even dying. It is just misused constantly. When applied to the right data with the right design principles, it communicates part-to-whole relationships with an immediacy that no other chart type matches. When applied to the wrong data, it obscures rather than reveals.
+
+Know when to use it. Know when not to. Build it well when you do.
