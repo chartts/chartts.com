@@ -42,10 +42,11 @@ export const mdxComponents: MDXComponents = {
     />
   ),
   code: (props) => {
-    // Inline code (not inside a pre)
+    // Block code from rehype-pretty-code uses data-language or language- class
     const isBlock =
-      typeof props.className === "string" &&
-      props.className.includes("language-");
+      (typeof props.className === "string" && props.className.includes("language-")) ||
+      "data-language" in (props as Record<string, unknown>) ||
+      "data-theme" in (props as Record<string, unknown>);
     if (isBlock) return <code {...props} />;
     return (
       <code
@@ -55,12 +56,19 @@ export const mdxComponents: MDXComponents = {
       />
     );
   },
-  pre: (props) => (
-    <pre
-      className="window-frame p-6 overflow-x-auto text-sm font-mono leading-relaxed mb-6"
-      {...props}
-    />
-  ),
+  pre: (props) => {
+    // rehype-pretty-code adds data-language/data-theme to pre — don't override its styling
+    const isHighlighted =
+      "data-language" in (props as Record<string, unknown>) ||
+      "data-theme" in (props as Record<string, unknown>);
+    if (isHighlighted) return <pre {...props} />;
+    return (
+      <pre
+        className="window-frame p-6 overflow-x-auto text-sm font-mono leading-relaxed mb-6"
+        {...props}
+      />
+    );
+  },
   hr: () => (
     <hr className="my-8" style={{ borderColor: "var(--c-border)" }} />
   ),
