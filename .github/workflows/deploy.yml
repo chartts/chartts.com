@@ -33,12 +33,12 @@ jobs:
           npx tsup
 
       - name: Build GL library
-        working-directory: lib/packages/gl
         run: |
+          npm install -g tsup typescript
+          cd lib/packages/gl
           mkdir -p node_modules/@chartts
           ln -s ../../../core node_modules/@chartts/core
-          npm install tsup typescript --no-save
-          npx tsup
+          tsup
 
       - name: Install web dependencies
         working-directory: web
