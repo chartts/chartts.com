@@ -49,7 +49,6 @@ const columns: {
         external: true,
       },
       { label: "Discord", href: "/discord" },
-      { label: "Twitter", href: "https://x.com/chartts", external: true },
       { label: "Contact", href: "/contact" },
     ],
   },
