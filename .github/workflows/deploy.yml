@@ -26,8 +26,14 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install lib dependencies and build
+      - name: Build core library
         working-directory: lib/packages/core
+        run: |
+          npm install
+          npx tsup
+
+      - name: Build GL library
+        working-directory: lib/packages/gl
         run: |
           npm install
           npx tsup
