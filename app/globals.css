@@ -255,8 +255,17 @@ html.light .tok-cmt { color: #94a3b8; font-style: italic; }
 }
 
 /* Nav background */
-html.dark .nav-bg { background: rgba(5, 5, 8, 0.8); }
-html.light .nav-bg { background: rgba(248, 250, 252, 0.8); }
+html.dark .nav-bg { background: rgba(5, 5, 8, 0.92); }
+html.light .nav-bg { background: rgba(248, 250, 252, 0.92); }
+
+/* Mobile menu panel animation */
+.mobile-menu-panel {
+  animation: slide-in-right 0.2s ease-out;
+}
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
 
 /* Light mode card overrides */
 html.light .card-surface {
