@@ -48,6 +48,11 @@ import {
   packChartType,
   voronoiChartType,
   wordcloudChartType,
+  pillarChartType,
+  ganttChartType,
+  orgChartType,
+  flowChartType,
+  paretoChartType,
 } from "@chartts/core";
 import type { ChartTypePlugin, ChartData } from "@chartts/core";
 
@@ -100,6 +105,11 @@ export const chartTypes: Record<string, ChartTypePlugin> = {
   pack: packChartType,
   voronoi: voronoiChartType,
   wordcloud: wordcloudChartType,
+  pillar: pillarChartType,
+  gantt: ganttChartType,
+  org: orgChartType,
+  flow: flowChartType,
+  pareto: paretoChartType,
 };
 
 // Sample data for each chart type
@@ -384,6 +394,36 @@ export const sampleData: Record<string, ChartData> = {
     labels: ["JavaScript", "TypeScript", "React", "Node", "CSS", "HTML", "Python", "Rust", "Go", "SQL", "GraphQL", "Docker"],
     series: [{ name: "Mentions", values: [100, 85, 80, 65, 60, 55, 50, 40, 35, 45, 30, 25] }],
   },
+  pillar: {
+    labels: ["Storage", "Compute", "Network", "Security", "Database"],
+    series: [{ name: "Usage", values: [85, 62, 45, 78, 55] }],
+  },
+  gantt: {
+    labels: ["Design", "Frontend", "Backend", "Testing", "Launch"],
+    series: [
+      { name: "Start", values: [0, 10, 15, 40, 55] },
+      { name: "End", values: [15, 40, 45, 55, 58] },
+      { name: "Progress", values: [100, 75, 60, 20, 0] },
+    ],
+  },
+  org: {
+    labels: ["CEO", "CEO/CTO", "CEO/CFO", "CEO/CTO/VP Eng", "CEO/CTO/VP Design", "CEO/CFO/Controller"],
+    series: [{ name: "Org", values: [1, 1, 1, 1, 1, 1] }],
+  },
+  flow: {
+    labels: ["Start", "Get Data", "[Valid?]", "Process", "Show Error", "Done"],
+    series: [
+      { name: "Start -> Get Data", values: [1] },
+      { name: "Get Data -> [Valid?]", values: [1] },
+      { name: "[Valid?] -> Process", values: [1] },
+      { name: "[Valid?] -> Show Error", values: [1] },
+      { name: "Process -> Done", values: [1] },
+    ],
+  },
+  pareto: {
+    labels: ["UI Bugs", "API Errors", "Performance", "Auth Issues", "Data Loss", "Other"],
+    series: [{ name: "Defects", values: [45, 32, 18, 12, 8, 5] }],
+  },
 };
 
 // Display names for chart types
@@ -436,6 +476,11 @@ export const chartDisplayNames: Record<string, string> = {
   pack: "Circle Packing",
   voronoi: "Voronoi",
   wordcloud: "Word Cloud",
+  pillar: "Pillar",
+  gantt: "Gantt",
+  org: "Org Chart",
+  flow: "Flow Chart",
+  pareto: "Pareto",
 };
 
 export function renderChart(
