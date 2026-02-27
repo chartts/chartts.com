@@ -58,9 +58,60 @@ const enterpriseFeatures = [
   "Invoice billing",
 ];
 
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Is the core library really free?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Chart.ts is MIT licensed. Every chart type, every framework package, every renderer is free. Use it in personal projects, startups, or enterprise apps. No feature gates, no usage limits.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What do I get with Pro Themes?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "8 professionally designed theme presets (Neon, Pastel, Monochrome, Luxury, Retro, Minimal, Midnight, Earth) with dark and light variants. Drop them into any chart with a single import. Lifetime access includes all future themes.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Can I use it commercially?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. The MIT license allows commercial use, modification, and distribution. No attribution is required, though it is appreciated.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How does this compare to Highcharts pricing?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Highcharts costs $590 per developer per year. Chart.ts is free and open source with the same chart types, better Tailwind integration, and smaller bundles.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Will there be a paid tier for the library?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "The core library will always be free and MIT licensed. Paid offerings are for themes, enterprise support, and hosted services. Library features will never be paywalled.",
+      },
+    },
+  ],
+};
+
 export default function PricingPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <section className="pt-32 pb-16 px-6">
         <div className="max-w-5xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight heading">
@@ -174,29 +225,36 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Cloud API Teaser */}
+      {/* Cloud API */}
       <section className="pb-16 px-6">
         <div className="max-w-3xl mx-auto">
           <div className="rounded-2xl card p-8 text-center relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-cyan-500" />
-            <p className="text-xs font-mono text-purple-400 uppercase tracking-wider mb-3">
-              Coming Soon
+            <p className="text-xs font-mono text-emerald-400 uppercase tracking-wider mb-3">
+              Free and Live
             </p>
             <h2 className="text-2xl font-bold heading">
               i.chartts.com
             </h2>
             <p className="mt-3 body-text max-w-lg mx-auto">
               Chart images from URLs. Embed charts in emails, Slack, Notion, GitHub READMEs.
-              No JavaScript required.
+              No JavaScript required. Free to use.
             </p>
             <div className="mt-4 inline-flex items-center gap-3 px-5 py-3 rounded-xl bg-gray-800/50 border border-gray-700/50">
               <code className="text-sm font-mono text-purple-300">
                 https://i.chartts.com/bar?data=10,20,30&color=cyan
               </code>
             </div>
-            <p className="mt-4 text-sm muted-text">
-              Join the waitlist to get early access.
-            </p>
+            <div className="mt-4">
+              <a
+                href="https://i.chartts.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors font-mono"
+              >
+                Try it now
+              </a>
+            </div>
           </div>
         </div>
       </section>

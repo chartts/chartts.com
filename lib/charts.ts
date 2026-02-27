@@ -44,6 +44,10 @@ import {
   baselineChartType,
   kagiChartType,
   renkoChartType,
+  violinChartType,
+  packChartType,
+  voronoiChartType,
+  wordcloudChartType,
 } from "@chartts/core";
 import type { ChartTypePlugin, ChartData } from "@chartts/core";
 
@@ -92,6 +96,10 @@ export const chartTypes: Record<string, ChartTypePlugin> = {
   baseline: baselineChartType,
   kagi: kagiChartType,
   renko: renkoChartType,
+  violin: violinChartType,
+  pack: packChartType,
+  voronoi: voronoiChartType,
+  wordcloud: wordcloudChartType,
 };
 
 // Sample data for each chart type
@@ -341,6 +349,28 @@ export const sampleData: Record<string, ChartData> = {
     labels: ["1", "2", "3", "4", "5", "6", "7", "8"],
     series: [{ name: "Price", values: [100, 104, 108, 105, 110, 114, 118, 115] }],
   },
+  violin: {
+    labels: ["Group A", "Group B", "Group C", "Group D"],
+    series: [
+      { name: "Min", values: [10, 15, 8, 12] },
+      { name: "Q1", values: [25, 30, 20, 28] },
+      { name: "Median", values: [40, 42, 35, 45] },
+      { name: "Q3", values: [55, 58, 50, 60] },
+      { name: "Max", values: [70, 72, 65, 75] },
+    ],
+  },
+  pack: {
+    labels: ["React", "Vue", "Angular", "Svelte", "Solid", "Preact", "Lit", "Alpine"],
+    series: [{ name: "Stars", values: [220, 210, 95, 78, 32, 36, 18, 28] }],
+  },
+  voronoi: {
+    labels: ["Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta", "Eta", "Theta"],
+    series: [{ name: "Value", values: [42, 78, 35, 90, 55, 68, 25, 82] }],
+  },
+  wordcloud: {
+    labels: ["JavaScript", "TypeScript", "React", "Node", "CSS", "HTML", "Python", "Rust", "Go", "SQL", "GraphQL", "Docker"],
+    series: [{ name: "Mentions", values: [100, 85, 80, 65, 60, 55, 50, 40, 35, 45, 30, 25] }],
+  },
 };
 
 // Display names for chart types
@@ -389,6 +419,10 @@ export const chartDisplayNames: Record<string, string> = {
   baseline: "Baseline",
   kagi: "Kagi",
   renko: "Renko",
+  violin: "Violin Plot",
+  pack: "Circle Packing",
+  voronoi: "Voronoi",
+  wordcloud: "Word Cloud",
 };
 
 export function renderChart(

@@ -22,6 +22,7 @@ const chartOrder = [
   "matrix", "ohlc", "step",
   "volume", "range", "baseline",
   "kagi", "renko",
+  "violin", "pack", "voronoi", "wordcloud",
 ];
 
 export default function DemosPage() {
