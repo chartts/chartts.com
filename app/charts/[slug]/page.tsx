@@ -552,6 +552,156 @@ const svg = waterfall({
     chartType: "waterfall",
     docsLink: "/docs/charts/waterfall",
   },
+  "gantt-chart": {
+    title: "Gantt Chart | JavaScript Gantt Chart Library",
+    h1: "Gantt Chart",
+    description:
+      "Create Gantt charts with JavaScript. Project timelines, task dependencies, milestones. SVG rendering, Tailwind CSS styling. Free and open source.",
+    intro:
+      "Build professional Gantt charts for project management. Chart.ts renders timelines as SVG with task bars, dependencies, milestones, and progress indicators. Style everything with Tailwind CSS. Free and open source, unlike commercial alternatives.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `import { gantt } from "@chartts/core"
+
+const svg = gantt({
+  data: [
+    { task: "Design", start: "2026-01-01", end: "2026-01-15", progress: 100 },
+    { task: "Frontend", start: "2026-01-10", end: "2026-02-15", progress: 75 },
+    { task: "Backend", start: "2026-01-15", end: "2026-02-20", progress: 60 },
+    { task: "Testing", start: "2026-02-10", end: "2026-03-01", progress: 20 },
+    { task: "Launch", start: "2026-03-01", end: "2026-03-01", milestone: true },
+  ],
+  task: "task",
+  start: "start",
+  end: "end",
+})`,
+    features: [
+      "Task bars with start/end dates",
+      "Progress indicators on each task",
+      "Milestone markers",
+      "Task dependencies and links",
+      "Zoom levels (day, week, month, quarter)",
+      "Tailwind CSS on all elements",
+      "SVG rendering for print and export",
+    ],
+    chartType: "gantt",
+    docsLink: "/docs/charts/gantt",
+  },
+  "org-chart": {
+    title: "Org Chart | JavaScript Organization Chart",
+    h1: "Organization Chart",
+    description:
+      "Create org charts with JavaScript. Hierarchical layouts, expandable nodes, team visualization. SVG rendering, Tailwind CSS. Free and open source.",
+    intro:
+      "Build organizational charts that render as SVG. Hierarchical tree layouts with expandable nodes, photos, titles, and department grouping. Style every node and connector with Tailwind CSS. Works with any framework.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `import { org } from "@chartts/core"
+
+const svg = org({
+  data: {
+    name: "Sarah Chen",
+    title: "CEO",
+    children: [
+      {
+        name: "James Lee",
+        title: "CTO",
+        children: [
+          { name: "Ana Garcia", title: "Lead Engineer" },
+          { name: "Mark Wilson", title: "Lead Designer" },
+        ],
+      },
+      {
+        name: "Maria Santos",
+        title: "CFO",
+      },
+    ],
+  },
+})`,
+    features: [
+      "Hierarchical tree layout",
+      "Expandable/collapsible nodes",
+      "Photos and role badges",
+      "Department grouping",
+      "Horizontal and vertical orientations",
+      "Tailwind CSS on nodes and connectors",
+      "SVG rendering for export and print",
+    ],
+    chartType: "org",
+    docsLink: "/docs/charts/org",
+  },
+  "flow-chart": {
+    title: "Flow Chart | JavaScript Flow Chart Library",
+    h1: "Flow Chart",
+    description:
+      "Create flow charts with JavaScript. Process diagrams, decision trees, workflow visualization. SVG rendering, Tailwind CSS. Free and open source.",
+    intro:
+      "Build flow charts and process diagrams that render as SVG. Decision nodes, process steps, connectors with labels, and automatic layout. Style every element with Tailwind CSS. Export to SVG or PNG.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `import { flow } from "@chartts/core"
+
+const svg = flow({
+  nodes: [
+    { id: "start", label: "Start", type: "terminal" },
+    { id: "input", label: "Get Data", type: "process" },
+    { id: "valid", label: "Valid?", type: "decision" },
+    { id: "process", label: "Process", type: "process" },
+    { id: "error", label: "Show Error", type: "process" },
+    { id: "end", label: "Done", type: "terminal" },
+  ],
+  edges: [
+    { from: "start", to: "input" },
+    { from: "input", to: "valid" },
+    { from: "valid", to: "process", label: "Yes" },
+    { from: "valid", to: "error", label: "No" },
+    { from: "process", to: "end" },
+  ],
+})`,
+    features: [
+      "Decision, process, and terminal nodes",
+      "Connectors with labels",
+      "Automatic layout algorithms",
+      "Horizontal and vertical flow",
+      "Nested sub-processes",
+      "Tailwind CSS on all elements",
+      "SVG export for documentation",
+    ],
+    chartType: "flow",
+    docsLink: "/docs/charts/flow",
+  },
+  "pareto-chart": {
+    title: "Pareto Chart | JavaScript Pareto Chart",
+    h1: "Pareto Chart",
+    description:
+      "Create Pareto charts with JavaScript. Combined bar and line chart showing the 80/20 rule. SVG rendering, Tailwind CSS. Free and open source.",
+    intro:
+      "Pareto charts combine bar charts with a cumulative line to identify the vital few causes. Chart.ts renders them as SVG with automatic percentage calculations, dual axes, and the 80% threshold line. Perfect for quality analysis and prioritization.",
+    installCmd: "npm install @chartts/core",
+    codeExample: `import { pareto } from "@chartts/core"
+
+const svg = pareto({
+  data: [
+    { cause: "UI Bugs", count: 45 },
+    { cause: "API Errors", count: 32 },
+    { cause: "Performance", count: 18 },
+    { cause: "Auth Issues", count: 12 },
+    { cause: "Data Loss", count: 8 },
+    { cause: "Other", count: 5 },
+  ],
+  label: "cause",
+  value: "count",
+  showThreshold: true,
+})`,
+    features: [
+      "Combined bar and cumulative line",
+      "Automatic percentage calculation",
+      "80% threshold line",
+      "Dual y-axes (count and percentage)",
+      "Sorted by frequency automatically",
+      "Tailwind CSS on all elements",
+      "SVG rendering with accessibility",
+    ],
+    chartType: "pareto",
+    docsLink: "/docs/charts/pareto",
+  },
   "graph-maker": {
     title: "Free Online Graph Maker | Chart Generator",
     h1: "Free Graph Maker",
@@ -746,7 +896,7 @@ export default async function ChartLandingPage({ params }: PageProps) {
 
   return (
     <>
-      <section className="pt-24 sm:pt-32 pb-16 px-4 sm:px-6">
+      <section className="pt-32 pb-16 px-6">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight heading">
             {page.h1}

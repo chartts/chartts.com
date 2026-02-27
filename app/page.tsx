@@ -21,17 +21,17 @@ export default function Home() {
   return (
     <>
 {/* Hero */}
-      <section className="pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6">
+      <section className="pt-32 pb-24 px-6">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-gradient animate-fade-up">
+          <h1 className="text-6xl sm:text-7xl font-extrabold tracking-tight text-gradient animate-fade-up">
             Beautiful charts.
           </h1>
-          <h2 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight heading mt-2 animate-fade-up delay-1">
+          <h2 className="text-6xl sm:text-7xl font-extrabold tracking-tight heading mt-2 animate-fade-up delay-1">
             Zero config.
           </h2>
 
           {/* Pain-point pills */}
-          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-w-3xl mx-auto animate-fade-up delay-2">
+          <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-3xl mx-auto animate-fade-up delay-2">
             {heroPills.map((pill) => (
               <Link
                 key={pill.mono}
@@ -56,10 +56,10 @@ export default function Home() {
               Get Started
             </Link>
             <button
-              className="group flex items-center gap-3 px-4 sm:px-5 py-3 text-xs sm:text-sm font-mono rounded-lg card hover:border-cyan-500/30 transition-all cursor-copy overflow-hidden max-w-full"
+              className="group flex items-center gap-3 px-5 py-3 text-sm font-mono rounded-lg card hover:border-cyan-500/30 transition-all cursor-copy"
             >
-              <span className="muted-text shrink-0">$</span>
-              <span className="heading truncate">npm install @chartts/react</span>
+              <span className="muted-text">$</span>
+              <span className="heading">npm install @chartts/react</span>
               <svg
                 className="w-4 h-4 muted-text group-hover:text-cyan-400 transition-colors"
                 fill="none"

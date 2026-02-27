@@ -112,7 +112,7 @@ export default function PricingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-      <section className="pt-24 sm:pt-32 pb-16 px-4 sm:px-6">
+      <section className="pt-32 pb-16 px-6">
         <div className="max-w-5xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight heading">
             Simple, transparent pricing
@@ -185,12 +185,12 @@ export default function PricingPage() {
               ))}
             </ul>
 
-            <Link
-              href="/contact"
+            <a
+              href="#"
               className="block w-full text-center px-6 py-3 text-sm font-semibold rounded-lg bg-cyan-500 text-white hover:bg-cyan-400 transition-colors cursor-pointer"
             >
-              Get Pro Themes
-            </Link>
+              Buy Themes
+            </a>
           </div>
 
           {/* Enterprise */}
