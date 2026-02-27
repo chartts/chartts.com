@@ -225,15 +225,15 @@ const docs: Record<
   frameworks: {
     title: "Framework Support",
     description:
-      "Native packages for React, Vue, Svelte, Solid, and Vanilla JS. Same API surface. Learn once, use anywhere.",
+      "Native packages for React, Vue, Svelte, Solid, Angular, and Vanilla JS. Same API surface. Learn once, use anywhere.",
     content: [
       {
         heading: "Native packages",
-        body: "Each framework gets a dedicated package built for its reactivity model. @chartts/react uses hooks and refs. @chartts/vue uses the Composition API. @chartts/svelte uses stores. @chartts/solid uses signals. Not wrappers - native implementations.",
+        body: "Each framework gets a dedicated package built for its reactivity model. @chartts/react uses hooks and refs. @chartts/vue uses the Composition API. @chartts/svelte uses stores. @chartts/solid uses signals. @chartts/angular uses standalone components and signals. Not wrappers - native implementations.",
       },
       {
         heading: "Same API",
-        body: "The prop interface is identical across frameworks. <LineChart data={data} x=\"month\" y=\"revenue\" /> works the same in React, Vue, Svelte, Solid, and Vanilla JS. Documentation applies everywhere.",
+        body: "The prop interface is identical across frameworks. <LineChart data={data} x=\"month\" y=\"revenue\" /> works the same in React, Vue, Svelte, Solid, Angular, and Vanilla JS. Documentation applies everywhere.",
       },
       {
         heading: "Vanilla JS",
@@ -245,6 +245,7 @@ const docs: Record<
       { label: "Vue", href: "/docs/vue" },
       { label: "Svelte", href: "/docs/svelte" },
       { label: "Solid", href: "/docs/solid" },
+      { label: "Angular", href: "/docs/angular" },
       { label: "Vanilla JS", href: "/docs/vanilla" },
     ],
   },
@@ -388,6 +389,38 @@ const docs: Record<
       {
         heading: "SolidStart",
         body: "Works with SolidStart SSR. Charts render as static SVG on the server and hydrate on the client.",
+      },
+    ],
+    relatedLinks: [
+      { label: "Getting Started", href: "/docs" },
+      { label: "API Reference", href: "/docs/api" },
+    ],
+  },
+  angular: {
+    title: "Angular",
+    description:
+      "Native Angular package with standalone components, signals support, and full TypeScript integration. Works with Angular 17+ and SSR.",
+    badge: "@chartts/angular",
+    content: [
+      {
+        heading: "Installation",
+        body: "npm install @chartts/angular",
+      },
+      {
+        heading: "Basic usage",
+        body: "import { LineChartComponent } from '@chartts/angular'\n\n@Component({\n  standalone: true,\n  imports: [LineChartComponent],\n  template: `<chartts-line [data]=\"data\" x=\"month\" y=\"revenue\" />`\n})\nexport class DashboardComponent {\n  data = [...]\n}",
+      },
+      {
+        heading: "Signals",
+        body: "Pass Angular signals as inputs. Charts react to signal changes automatically with fine-grained updates. Works with computed signals for derived data.",
+      },
+      {
+        heading: "Standalone components",
+        body: "All chart components are standalone. Import only what you use. No NgModule registration required. Tree-shaking removes unused chart types.",
+      },
+      {
+        heading: "SSR with Angular Universal",
+        body: "Charts render as static SVG on the server. Works with Angular Universal and the new built-in SSR. No special configuration needed.",
       },
     ],
     relatedLinks: [

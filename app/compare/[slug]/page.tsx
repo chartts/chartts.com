@@ -184,7 +184,7 @@ const charttsStats = {
   tailwind: "Native className on every element, dark: variants",
   license: "MIT",
   chartTypes: "40+ built-in",
-  frameworks: "React, Vue, Svelte, Solid, Vanilla JS",
+  frameworks: "React, Vue, Svelte, Solid, Angular, Vanilla JS",
 };
 
 function Check() {

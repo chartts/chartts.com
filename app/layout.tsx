@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: "%s | Chart.ts",
   },
   description:
-    "The design-native charting library. SVG-first, under 15kb gzipped, Tailwind CSS native. Native packages for React, Vue, Svelte, Solid. 40+ chart types. TypeScript-first. WCAG accessible. MIT license, free forever.",
+    "The design-native charting library. SVG-first, under 15kb gzipped, Tailwind CSS native. Native packages for React, Vue, Svelte, Solid, Angular. 40+ chart types. TypeScript-first. WCAG accessible. MIT license, free forever.",
   keywords: [
     "chart library",
     "SVG charts",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Chart.ts - Beautiful charts. Zero config.",
     description:
-      "SVG-first charting library. Under 15kb. Tailwind native. React, Vue, Svelte, Solid. 40+ chart types. MIT license.",
+      "SVG-first charting library. Under 15kb. Tailwind native. React, Vue, Svelte, Solid, Angular. 40+ chart types. MIT license.",
     url: "https://chartts.com",
     siteName: "Chart.ts",
     type: "website",
@@ -87,7 +87,7 @@ const jsonLd = {
   operatingSystem: "Any",
   url: "https://chartts.com",
   description:
-    "Design-native charting library. SVG-first, under 15kb gzipped, Tailwind CSS native. 40+ chart types. React, Vue, Svelte, Solid.",
+    "Design-native charting library. SVG-first, under 15kb gzipped, Tailwind CSS native. 40+ chart types. React, Vue, Svelte, Solid, Angular.",
   offers: {
     "@type": "Offer",
     price: "0",

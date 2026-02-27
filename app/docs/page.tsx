@@ -5,7 +5,7 @@ import { CodeBlock } from "@/lib/highlight";
 export const metadata: Metadata = {
   title: "Getting Started | Chart.ts Documentation",
   description:
-    "Install Chart.ts and render your first chart in under 30 seconds. SVG-first, <15kb, works with React, Vue, Svelte, Solid, and Vanilla JS.",
+    "Install Chart.ts and render your first chart in under 30 seconds. SVG-first, <15kb, works with React, Vue, Svelte, Solid, Angular, and Vanilla JS.",
 };
 
 function Code({ children }: { children: React.ReactNode }) {

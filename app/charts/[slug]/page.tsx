@@ -387,7 +387,7 @@ const svg = line({
     title: "Candlestick Chart Library",
     h1: "Candlestick Chart",
     description:
-      "SVG candlestick chart for financial data. OHLC support, volume bars, moving averages. Under 15kb. React, Vue, Svelte, Solid.",
+      "SVG candlestick chart for financial data. OHLC support, volume bars, moving averages. Under 15kb. React, Vue, Svelte, Solid, Angular.",
     intro:
       "Professional candlestick charts for financial applications. OHLC data support, volume bars, moving average overlays, and real-time updates. Renders as SVG with full Tailwind CSS styling.",
     installCmd: "npm install @chartts/react",

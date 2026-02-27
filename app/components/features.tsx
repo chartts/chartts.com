@@ -58,7 +58,7 @@ const features = [
   },
   {
     title: "Every framework",
-    description: "Native packages for React, Vue, Svelte, Solid, and Vanilla JS. Same API. Learn once, use anywhere.",
+    description: "Native packages for React, Vue, Svelte, Solid, Angular, and Vanilla JS. Same API. Learn once, use anywhere.",
     href: "/docs/frameworks",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">

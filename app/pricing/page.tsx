@@ -25,7 +25,7 @@ const features = [
   "40+ chart types",
   "SVG, Canvas, and WebGL renderers",
   "Full Tailwind CSS integration",
-  "React, Vue, Svelte, Solid, Vanilla JS",
+  "React, Vue, Svelte, Solid, Angular, Vanilla JS",
   "TypeScript with full type inference",
   "WCAG AA accessibility",
   "Server-side rendering",

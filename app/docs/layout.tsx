@@ -59,6 +59,7 @@ const sidebar = [
       { label: "Vue", href: "/docs/vue" },
       { label: "Svelte", href: "/docs/svelte" },
       { label: "Solid", href: "/docs/solid" },
+      { label: "Angular", href: "/docs/angular" },
       { label: "Vanilla JS", href: "/docs/vanilla" },
     ],
   },
