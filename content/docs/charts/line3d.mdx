@@ -1,0 +1,223 @@
+---
+title: "3D Line Chart"
+description: "Plot a single series path as a smooth tube through three-dimensional space. Frenet-frame tube geometry with Phong lighting for trajectory visualization."
+badge: "3D"
+---
+
+## Quick Start
+
+```tsx
+import { Line3D } from "@chartts/gl"
+
+const chart = Line3D("#chart", {
+  data: {
+    series: [
+      {
+        name: "Trajectory",
+        values: [0, 15, 28, 35, 42, 38, 30, 22, 10],
+        x: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        z: [0, 2, 5, 8, 12, 15, 18, 20, 22],
+      },
+    ],
+  },
+  orbit: { autoRotate: true },
+})
+```
+
+That renders a single smooth tube following the data path through 3D space. The tube geometry is constructed using Frenet frames, which compute proper normals and binormals along the path to create a perfectly circular cross-section at every point. Phong lighting reveals the tube's curvature with realistic highlights and shadows.
+
+## When to Use 3D Line Charts
+
+The Line3D chart focuses on a single path through space. It is the 3D equivalent of a single-series line chart, with the added benefit of the z-dimension.
+
+**Use a 3D line chart when:**
+- Tracking a single trajectory through space (flight path, particle trace, robot arm path)
+- Visualizing a single time series with a meaningful third axis
+- You want a clear, uncluttered view of one path's shape in 3D
+- The tube rendering with lighting helps convey physical curvature
+
+**Don't use a 3D line chart when:**
+- You have multiple series to compare (use Lines3D instead)
+- The z-axis adds no meaningful information (use a 2D line chart)
+- You need to show exact values at each point (use a table or 2D chart)
+- The path has very few points and a tube would look sparse
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `GLChartData` | required | Chart data with a single `GLSeries3D` in the series array |
+| `lineWidth` | `number` | `2` | Controls the tube radius (maps to `tubeRadius` internally) |
+| `camera` | `CameraOptions` | auto-fit | Camera position and target. Auto-calculated from data bounds if omitted |
+| `orbit` | `boolean \| OrbitConfig` | `true` | Enable orbit controls with optional auto-rotation |
+| `light` | `Partial<LightConfig>` | default | Phong lighting for the tube mesh |
+| `theme` | `'dark' \| 'light' \| GLTheme` | `'dark'` | Color theme for background, tube color, text, and grid |
+| `animate` | `boolean` | `true` | Enable fade-in animation on mount |
+| `tooltip` | `boolean` | `true` | Show tooltip on hover with point index and value |
+
+---
+
+## Ribbon Rendering
+
+Unlike Lines3D which uses screen-space ribbon strips, Line3D renders a true 3D tube mesh. The tube is built from Frenet frames that compute the normal and binormal vectors at each point along the path. The cross-section is an 8-sided polygon that approximates a circle.
+
+```tsx
+Line3D("#chart", {
+  data: {
+    series: [
+      {
+        name: "Helix",
+        values: Array.from({ length: 100 }, (_, i) =>
+          Math.sin(i * 0.1) * 3
+        ),
+        x: Array.from({ length: 100 }, (_, i) =>
+          Math.cos(i * 0.1) * 5
+        ),
+        z: Array.from({ length: 100 }, (_, i) => i * 0.2),
+      },
+    ],
+  },
+})
+```
+
+The tube radius defaults to 0.15 world units and can be adjusted with the `tubeRadius` option. Thicker tubes catch more light and are easier to see from a distance.
+
+---
+
+## Trajectory Visualization
+
+Line3D excels at showing how a single entity moves through 3D space over time. The tube's continuous surface makes the path easy to follow even through complex curves.
+
+```tsx
+Line3D("#chart", {
+  data: {
+    series: [
+      {
+        name: "Drone Path",
+        values: [0, 5, 12, 20, 25, 30, 28, 22, 15, 8, 0],
+        x: [0, 2, 5, 8, 12, 15, 18, 20, 22, 24, 25],
+        z: [0, 1, 3, 5, 4, 6, 8, 10, 11, 12, 12],
+      },
+    ],
+  },
+  orbit: { autoRotate: true, autoRotateSpeed: 0.4 },
+  camera: {
+    position: [30, 20, 30],
+    target: [12, 15, 6],
+  },
+})
+```
+
+The Phong lighting model means the tube has specular highlights that shift as the camera orbits, providing strong depth cues about the path's curvature.
+
+---
+
+## Camera and Orbit
+
+The camera auto-fits to the data bounds when no explicit position is set. For long paths, you may want to set a specific viewpoint that shows the most interesting section.
+
+```tsx
+// View from above to see the ground-plane shape
+Line3D("#chart", {
+  data: pathData,
+  camera: {
+    position: [0, 30, 0],
+    target: [5, 0, 5],
+  },
+})
+
+// View from the side to see height changes
+Line3D("#chart", {
+  data: pathData,
+  camera: {
+    position: [30, 5, 0],
+    target: [5, 5, 5],
+  },
+})
+```
+
+---
+
+## Accessibility
+
+- Tooltip displays the point index and exact value on hover along the tube
+- The tube's Phong lighting provides depth cues beyond color alone
+- The ground grid gives spatial reference for the 3D position
+- Single-color tube design avoids color-interpretation issues
+
+---
+
+## Real-World Examples
+
+### Satellite orbit path
+
+```tsx
+const points = 200
+const values = Array.from({ length: points }, (_, i) => {
+  const t = (i / points) * Math.PI * 4
+  return Math.sin(t * 0.3) * 2 + 10
+})
+const x = Array.from({ length: points }, (_, i) => {
+  const t = (i / points) * Math.PI * 4
+  return Math.cos(t) * 8
+})
+const z = Array.from({ length: points }, (_, i) => {
+  const t = (i / points) * Math.PI * 4
+  return Math.sin(t) * 8
+})
+
+Line3D("#orbit", {
+  data: {
+    series: [{ name: "LEO Orbit", values, x, z, color: "#6c9eff" }],
+  },
+  orbit: { autoRotate: true, autoRotateSpeed: 0.6 },
+  theme: "dark",
+})
+```
+
+### Mountain trail elevation
+
+```tsx
+Line3D("#trail", {
+  data: {
+    series: [
+      {
+        name: "Trail Elevation",
+        values: [
+          1200, 1350, 1500, 1680, 1820, 2000,
+          2150, 2300, 2200, 2050, 1900, 1750,
+        ],
+        x: [0, 0.5, 1.2, 2.0, 2.8, 3.5, 4.2, 5.0, 5.8, 6.5, 7.2, 8.0],
+        z: [0, 0.3, 0.8, 1.5, 2.0, 2.8, 3.2, 3.8, 4.5, 5.0, 5.5, 6.0],
+        color: "#34d399",
+      },
+    ],
+  },
+  camera: {
+    position: [12, 8, 12],
+    target: [4, 1500, 3],
+  },
+  theme: "light",
+})
+```
+
+### Assembly line throughput
+
+```tsx
+Line3D("#assembly", {
+  data: {
+    series: [
+      {
+        name: "Units/Hour",
+        values: [45, 52, 48, 60, 55, 62, 58, 65, 70, 68, 72, 75],
+        x: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+        z: [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5],
+        color: "#fbbf24",
+      },
+    ],
+  },
+  orbit: { autoRotate: true, autoRotateSpeed: 0.3 },
+})
+```

@@ -1,0 +1,224 @@
+---
+title: "FlowGL Chart"
+description: "GPU-accelerated flow visualization with animated particles following vector fields. Visualize wind, currents, forces, and data movement with velocity-based coloring."
+badge: "WebGL"
+---
+
+## Quick Start
+
+```tsx
+import { FlowGL } from "@chartts/gl"
+
+const chart = FlowGL("#chart", {
+  data: { series: [] },
+  animate: true,
+})
+```
+
+That renders a mesmerizing flow field with thousands of animated particles following a swirling vector field. Particles are colored by speed (deep blue for slow, cyan for medium, amber for fast), sized by velocity, and fade with age. Direction arrows overlay the field, and a speed legend appears in the bottom-right corner.
+
+## When to Use FlowGL Charts
+
+Flow visualizations show how data moves through a space. They are inherently animated and work best for directional, velocity-based data.
+
+**Use a FlowGL chart when:**
+- Visualizing wind patterns, ocean currents, or atmospheric flow
+- Showing data movement through a system (network traffic, user flows)
+- You want an animated, attention-grabbing hero visualization
+- Displaying vector field data with direction and magnitude
+
+**Don't use a FlowGL chart when:**
+- The data is static with no directional component (use a heatmap)
+- Precise value reading is needed (particles are approximate)
+- The visualization needs to work without animation
+- Server-side rendering is required (animated WebGL needs a browser)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `GLChartData` | required | Chart data. Use `grid` for custom vector fields, or leave empty for built-in fields |
+| `theme` | `'dark' \| 'light' \| GLTheme` | `'dark'` | Color theme for background and overlay text |
+| `animate` | `boolean` | `true` | Enable the particle animation loop |
+| `tooltip` | `boolean` | `true` | Show tooltip on hover |
+
+Additional options passed through the options object:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `particleCount` | `number` | `5000` | Number of animated particles (max 20,000) |
+| `pointSize` | `number` | `4` | Base particle size in pixels |
+| `ageSpeed` | `number` | `0.006` | How fast particles age and reset |
+| `sizeBySpeed` | `number` | `0.7` | How much speed affects particle size (0 = uniform, 1 = full scaling) |
+| `colorSlow` | `string` | `'#1e3a5f'` | Color for zero-speed particles |
+| `colorMid` | `string` | `'#22d3ee'` | Color for medium-speed particles |
+| `colorFast` | `string` | `'#fbbf24'` | Color for maximum-speed particles |
+| `showArrows` | `boolean` | `true` | Show direction arrows overlay |
+| `showLegend` | `boolean` | `true` | Show speed legend in bottom-right |
+| `arrowDensity` | `number` | `12` | Arrow grid density (NxN grid) |
+| `fieldType` | `string` | `'swirl'` | Built-in field type: 'swirl', 'wind', 'vortex', 'source', 'turbulence' |
+
+---
+
+## Built-In Field Types
+
+FlowGL includes five procedural vector fields that demonstrate different flow patterns.
+
+### Swirl (default)
+
+A spiral flow with outward currents and inner vortex structure.
+
+```tsx
+FlowGL("#chart", {
+  data: { series: [] },
+  fieldType: "swirl",
+})
+```
+
+### Wind
+
+A predominantly left-to-right flow with sinusoidal gusts and vertical turbulence. Simulates weather-like wind patterns.
+
+```tsx
+FlowGL("#chart", {
+  data: { series: [] },
+  fieldType: "wind",
+})
+```
+
+### Vortex
+
+A single strong vortex centered in the viewport with particles spiraling inward. Resembles a whirlpool or tornado viewed from above.
+
+```tsx
+FlowGL("#chart", {
+  data: { series: [] },
+  fieldType: "vortex",
+})
+```
+
+### Source
+
+Two sources and one sink creating a push-pull flow pattern. Particles stream outward from sources and converge on the sink.
+
+```tsx
+FlowGL("#chart", {
+  data: { series: [] },
+  fieldType: "source",
+})
+```
+
+### Turbulence
+
+Chaotic multi-frequency flow with no dominant direction. Simulates turbulent fluid dynamics.
+
+```tsx
+FlowGL("#chart", {
+  data: { series: [] },
+  fieldType: "turbulence",
+})
+```
+
+---
+
+## Custom Vector Fields
+
+Supply your own vector field using grid data. The grid is a 2D array where each row contains alternating vx and vy values. The grid is sampled bilinearly across the viewport.
+
+```tsx
+const rows = 20, cols = 20
+const grid: number[][] = []
+for (let r = 0; r < rows; r++) {
+  const row: number[] = []
+  for (let c = 0; c < cols; c++) {
+    const angle = Math.atan2(r - rows / 2, c - cols / 2)
+    const speed = 2
+    row.push(Math.cos(angle) * speed) // vx
+    row.push(Math.sin(angle) * speed) // vy
+  }
+  grid.push(row)
+}
+
+FlowGL("#chart", {
+  data: { series: [], grid },
+})
+```
+
+---
+
+## Velocity-Based Coloring
+
+Particles are colored on a three-stop gradient based on their instantaneous speed. The color ramp maps from `colorSlow` through `colorMid` to `colorFast`. This creates a natural visualization where stagnant areas appear dark and fast-flowing areas glow bright.
+
+```tsx
+FlowGL("#chart", {
+  data: { series: [] },
+  colorSlow: "#1a1a2e",
+  colorMid: "#16a085",
+  colorFast: "#e74c3c",
+  fieldType: "wind",
+})
+```
+
+Particle size also scales with speed when `sizeBySpeed` is above 0. Fast particles appear larger, reinforcing the velocity encoding.
+
+---
+
+## Accessibility
+
+- Direction arrows provide a static reference for the flow pattern without relying on animation
+- Speed legend shows the color-to-speed mapping with "Slow" and "Fast" labels
+- The three-stop color gradient uses distinct hue shifts (blue to cyan to amber) for color-blind friendliness
+- Animation can be paused by setting `animate: false` for a static snapshot
+
+---
+
+## Real-World Examples
+
+### Weather wind visualization
+
+```tsx
+FlowGL("#wind", {
+  data: { series: [] },
+  fieldType: "wind",
+  particleCount: 8000,
+  colorSlow: "#0a1628",
+  colorMid: "#38bdf8",
+  colorFast: "#fbbf24",
+  showArrows: true,
+  arrowDensity: 10,
+  theme: "dark",
+})
+```
+
+### Network traffic flow
+
+```tsx
+FlowGL("#traffic", {
+  data: { series: [] },
+  fieldType: "source",
+  particleCount: 6000,
+  pointSize: 3,
+  colorSlow: "#1e293b",
+  colorMid: "#22d3ee",
+  colorFast: "#f472b6",
+  showLegend: true,
+})
+```
+
+### Fluid dynamics simulation
+
+```tsx
+FlowGL("#fluid", {
+  data: { series: [] },
+  fieldType: "turbulence",
+  particleCount: 15000,
+  pointSize: 2,
+  ageSpeed: 0.004,
+  sizeBySpeed: 0.9,
+  showArrows: false,
+  theme: "dark",
+})
+```

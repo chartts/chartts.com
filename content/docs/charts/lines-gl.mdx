@@ -1,0 +1,244 @@
+---
+title: "LinesGL Chart"
+description: "GPU-accelerated 2D multi-line chart with thick triangle-strip rendering for crisp lines at any zoom level. Handle large datasets with per-series styling."
+badge: "WebGL"
+---
+
+## Quick Start
+
+```tsx
+import { LinesGL } from "@chartts/gl"
+
+const chart = LinesGL("#chart", {
+  data: {
+    series: [
+      {
+        name: "Revenue",
+        x: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+        y: [42, 58, 71, 64, 82, 96, 88, 105, 112, 98],
+        color: "#6c9eff",
+      },
+      {
+        name: "Costs",
+        x: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+        y: [28, 32, 38, 35, 42, 48, 44, 52, 55, 50],
+        color: "#f472b6",
+      },
+    ],
+  },
+  lineWidth: 3,
+})
+```
+
+That renders two GPU-accelerated line series with thick, crisp lines. Each line segment is rendered as a triangle strip rather than a thin GL line, which means the line width stays consistent at any zoom level and on any display. Hover detection snaps to the nearest data point across all series.
+
+## When to Use LinesGL Charts
+
+LinesGL is the high-performance WebGL alternative to SVG-based line charts. It excels at rendering multiple series with many data points where DOM-based approaches would lag.
+
+**Use a LinesGL chart when:**
+- You have multiple series with thousands of points each
+- Smooth 60fps pan and zoom is important
+- You need consistent thick lines that render crisply on all devices
+- The dataset is too large for SVG/Canvas 2D line rendering
+
+**Don't use a LinesGL chart when:**
+- You have fewer than a few hundred points (SVG line charts are simpler)
+- You need CSS styling, Tailwind classes, or DOM event handlers on lines
+- Server-side rendering is required (WebGL needs a browser)
+- You want area fills, dots, or curve interpolation (use the SVG line chart)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `GLChartData` | required | Chart data with `series` array of `GLSeries2D` objects |
+| `lineWidth` | `number` | `2` | Line thickness in pixels |
+| `theme` | `'dark' \| 'light' \| GLTheme` | `'dark'` | Color theme for background and palette |
+| `animate` | `boolean` | `true` | Enable fade-in animation on mount |
+| `tooltip` | `boolean` | `true` | Show tooltip on hover with series name and value |
+
+---
+
+## Thick Line Triangles
+
+Traditional WebGL line rendering with `GL_LINES` produces hairline-thin lines (1px max on many GPUs). LinesGL solves this by building each line segment as a pair of triangles (a quad) with screen-space width. The vertex shader computes perpendicular offsets from the line direction, creating a ribbon that maintains its width regardless of the data scale.
+
+```tsx
+// Thin lines for dense overlapping series
+LinesGL("#chart", {
+  data: denseData,
+  lineWidth: 1,
+})
+
+// Thick lines for emphasis
+LinesGL("#chart", {
+  data: highlightData,
+  lineWidth: 5,
+})
+```
+
+The line width is specified in CSS pixels and does not scale with data coordinates. Lines at 3px width look the same whether you are viewing 100 points or 100,000 points.
+
+---
+
+## Per-Series Styling
+
+Each series can specify its own color. When no color is provided, series are assigned colors from the theme palette in order.
+
+```tsx
+LinesGL("#chart", {
+  data: {
+    series: [
+      {
+        name: "CPU",
+        x: timestamps,
+        y: cpuValues,
+        color: "#6c9eff",
+      },
+      {
+        name: "Memory",
+        x: timestamps,
+        y: memValues,
+        color: "#5eead4",
+      },
+      {
+        name: "Disk I/O",
+        x: timestamps,
+        y: diskValues,
+        color: "#fbbf24",
+      },
+    ],
+  },
+  lineWidth: 2,
+})
+```
+
+The theme provides 8 default colors that cycle for additional series beyond 8.
+
+---
+
+## Large Dataset Handling
+
+LinesGL automatically computes data bounds with a 40px margin, maps all points to screen coordinates, and builds the triangle strip geometry in a single pass. This geometry is uploaded to the GPU as a single vertex buffer, making the draw call count independent of the number of points.
+
+```tsx
+// 10 series with 10,000 points each
+const series = Array.from({ length: 10 }, (_, si) => ({
+  name: `Sensor ${si + 1}`,
+  x: Array.from({ length: 10000 }, (_, i) => i),
+  y: Array.from({ length: 10000 }, (_, i) =>
+    Math.sin(i * 0.01 + si) * 50 + si * 20
+  ),
+}))
+
+LinesGL("#chart", {
+  data: { series },
+  lineWidth: 1.5,
+})
+```
+
+---
+
+## Accessibility
+
+- Tooltip displays series name and exact y-value on hover
+- Each series has a distinct color for visual separation
+- Lines maintain consistent width across all zoom levels for readability
+- Dark and light themes provide appropriate contrast for line visibility
+
+---
+
+## Real-World Examples
+
+### System metrics dashboard
+
+```tsx
+const hours = Array.from({ length: 1440 }, (_, i) => i)
+
+LinesGL("#metrics", {
+  data: {
+    series: [
+      {
+        name: "CPU %",
+        x: hours,
+        y: hours.map((h) =>
+          40 + Math.sin(h * 0.05) * 20 + Math.random() * 10
+        ),
+        color: "#6c9eff",
+      },
+      {
+        name: "Memory %",
+        x: hours,
+        y: hours.map((h) =>
+          55 + Math.sin(h * 0.03) * 15 + Math.random() * 5
+        ),
+        color: "#5eead4",
+      },
+      {
+        name: "Network MB/s",
+        x: hours,
+        y: hours.map((h) =>
+          20 + Math.sin(h * 0.08) * 18 + Math.random() * 8
+        ),
+        color: "#fbbf24",
+      },
+    ],
+  },
+  lineWidth: 2,
+  theme: "dark",
+})
+```
+
+### Stock price comparison
+
+```tsx
+LinesGL("#stocks", {
+  data: {
+    series: [
+      {
+        name: "AAPL",
+        x: tradingDays,
+        y: aaplPrices,
+        color: "#6c9eff",
+      },
+      {
+        name: "GOOGL",
+        x: tradingDays,
+        y: googlPrices,
+        color: "#f472b6",
+      },
+      {
+        name: "MSFT",
+        x: tradingDays,
+        y: msftPrices,
+        color: "#5eead4",
+      },
+    ],
+  },
+  lineWidth: 2,
+  theme: "light",
+})
+```
+
+### IoT sensor array
+
+```tsx
+const points = 5000
+const time = Array.from({ length: points }, (_, i) => i * 0.1)
+
+LinesGL("#iot", {
+  data: {
+    series: Array.from({ length: 8 }, (_, si) => ({
+      name: `Sensor ${si + 1}`,
+      x: time,
+      y: time.map((t) =>
+        Math.sin(t * (0.5 + si * 0.1)) * (20 + si * 5) + 50 + si * 10
+      ),
+    })),
+  },
+  lineWidth: 1.5,
+})
+```

@@ -1,0 +1,268 @@
+---
+title: "3D Scatter Chart"
+description: "Plot data points in three-dimensional space with GPU-accelerated rendering. Explore correlations across three variables with orbit controls and auto-rotation."
+badge: "3D"
+---
+
+## Quick Start
+
+```tsx
+import { Scatter3D } from "@chartts/gl"
+
+const chart = Scatter3D("#chart", {
+  data: {
+    series: [
+      {
+        name: "Measurements",
+        values: [45, 72, 38, 91, 56, 83, 29, 67],
+        x: [1, 2, 3, 4, 5, 6, 7, 8],
+        z: [10, 20, 15, 30, 25, 35, 12, 28],
+      },
+    ],
+  },
+  pointSize: 8,
+  orbit: { autoRotate: true },
+})
+```
+
+That renders an interactive 3D scatter plot with orbit controls, tooltips, and auto-rotation. Each data point appears as a GPU-rendered circle positioned by its x, y, and z values with SDF (signed distance field) rendering for crisp edges at any zoom level.
+
+## When to Use 3D Scatter Charts
+
+3D scatter charts reveal relationships across three numeric dimensions simultaneously. Each point represents one observation placed in 3D space.
+
+**Use a 3D scatter chart when:**
+- Exploring correlations between three numeric variables (temperature vs. pressure vs. altitude)
+- Looking for clusters or outliers in multi-dimensional data
+- Your dataset benefits from spatial reasoning that 2D projections cannot capture
+- You want interactive exploration with orbit, zoom, and rotation controls
+
+**Don't use a 3D scatter chart when:**
+- Two dimensions are sufficient to tell the story (use a 2D scatter chart)
+- One axis is categorical (use a bar chart or grouped scatter)
+- You need precise value reading (3D perspective distorts perceived positions)
+- The audience cannot interact with the chart (print, static reports)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `GLChartData` | required | Chart data with `series` array of `GLSeries3D` objects |
+| `pointSize` | `number` | `8` | Base point radius in pixels |
+| `camera` | `CameraOptions` | auto-fit | Camera position and target. Auto-calculated from data bounds if omitted |
+| `orbit` | `boolean \| OrbitConfig` | `true` | Enable orbit controls. Pass object for auto-rotation config |
+| `light` | `Partial<LightConfig>` | default | Lighting configuration for the scene |
+| `theme` | `'dark' \| 'light' \| GLTheme` | `'dark'` | Color theme for background, palette, text, and grid |
+| `animate` | `boolean` | `true` | Enable fade-in animation on mount |
+| `wireframe` | `boolean` | `false` | Show wireframe ground grid |
+| `tooltip` | `boolean` | `true` | Show tooltip on hover with series name and value |
+
+---
+
+## Orbit Controls
+
+Orbit controls let users rotate, zoom, and pan the 3D scene interactively. They are enabled by default.
+
+```tsx
+Scatter3D("#chart", {
+  data: scatterData,
+  orbit: {
+    autoRotate: true,
+    autoRotateSpeed: 0.5,
+  },
+})
+```
+
+- **Click and drag** to rotate the camera around the data
+- **Scroll** to zoom in and out
+- **Right-click drag** to pan the view
+- **Auto-rotate** slowly spins the scene when the user is not interacting
+
+Disable orbit controls entirely:
+
+```tsx
+Scatter3D("#chart", {
+  data: scatterData,
+  orbit: false,
+})
+```
+
+---
+
+## Point Sizing
+
+The `pointSize` option controls the base radius of all points. Individual series can override this with their own `size` property.
+
+```tsx
+Scatter3D("#chart", {
+  data: {
+    series: [
+      {
+        name: "Small points",
+        values: [10, 20, 30],
+        x: [1, 2, 3],
+        z: [1, 1, 1],
+        size: 4,
+      },
+      {
+        name: "Large points",
+        values: [40, 50, 60],
+        x: [4, 5, 6],
+        z: [2, 2, 2],
+        size: 16,
+      },
+    ],
+  },
+  pointSize: 8,
+})
+```
+
+Points use SDF circle rendering so they remain crisp at all sizes and zoom levels. Size attenuation is applied so distant points appear smaller, matching natural perspective.
+
+---
+
+## Camera Positioning
+
+Control the initial viewpoint with explicit camera settings. If omitted, the camera auto-fits to encompass all data points.
+
+```tsx
+Scatter3D("#chart", {
+  data: scatterData,
+  camera: {
+    position: [15, 10, 15],
+    target: [0, 0, 0],
+  },
+})
+```
+
+The camera uses perspective projection. You can programmatically update the camera after creation:
+
+```tsx
+const chart = Scatter3D("#chart", { data: scatterData })
+
+// Move the camera
+chart.setCameraPosition([20, 15, 20])
+chart.setCameraTarget([5, 5, 5])
+```
+
+---
+
+## Multi-Series
+
+Render multiple groups of points with distinct colors. Each series gets a color from the theme palette automatically.
+
+```tsx
+Scatter3D("#chart", {
+  data: {
+    series: [
+      {
+        name: "Cluster A",
+        values: [45, 52, 48, 55, 42],
+        x: [1, 2, 1.5, 2.5, 1.8],
+        z: [3, 3.5, 2.8, 4, 3.2],
+        color: "#6c9eff",
+      },
+      {
+        name: "Cluster B",
+        values: [78, 82, 75, 88, 80],
+        x: [6, 7, 6.5, 7.5, 6.8],
+        z: [8, 8.5, 7.8, 9, 8.2],
+        color: "#5eead4",
+      },
+    ],
+  },
+})
+```
+
+---
+
+## Accessibility
+
+- The chart canvas includes a descriptive `aria-label` summarizing the number of points and data ranges
+- Tooltip displays series name and value on hover for individual point identification
+- The dark and light themes provide sufficient contrast for axis labels and grid lines
+- Auto-rotation pauses on mouse interaction so users can inspect specific points
+
+---
+
+## Real-World Examples
+
+### Sensor network monitoring
+
+```tsx
+const sensorData = {
+  series: [
+    {
+      name: "Temperature Sensors",
+      values: [22.5, 24.1, 19.8, 27.3, 21.6, 25.9, 18.4, 23.7],
+      x: [10, 20, 30, 40, 50, 60, 70, 80],
+      z: [5, 15, 25, 35, 10, 20, 30, 40],
+    },
+  ],
+}
+
+Scatter3D("#sensors", {
+  data: sensorData,
+  pointSize: 10,
+  theme: "dark",
+  orbit: { autoRotate: true, autoRotateSpeed: 0.3 },
+})
+```
+
+### Multi-variate clustering
+
+```tsx
+Scatter3D("#clusters", {
+  data: {
+    series: [
+      {
+        name: "Group 1",
+        values: [12, 15, 11, 14, 13, 16, 10, 17],
+        x: [2, 3, 2.5, 3.5, 2.8, 3.2, 2.1, 3.8],
+        z: [1, 1.5, 0.8, 2, 1.2, 1.8, 0.5, 2.3],
+        color: "#6c9eff",
+      },
+      {
+        name: "Group 2",
+        values: [35, 38, 32, 40, 36, 42, 30, 44],
+        x: [7, 8, 7.5, 8.5, 7.8, 8.2, 7.1, 8.8],
+        z: [5, 5.5, 4.8, 6, 5.2, 5.8, 4.5, 6.3],
+        color: "#fbbf24",
+      },
+      {
+        name: "Group 3",
+        values: [60, 65, 58, 70, 62, 68, 55, 72],
+        x: [12, 13, 12.5, 13.5, 12.8, 13.2, 12.1, 13.8],
+        z: [9, 9.5, 8.8, 10, 9.2, 9.8, 8.5, 10.3],
+        color: "#f472b6",
+      },
+    ],
+  },
+  pointSize: 6,
+})
+```
+
+### Financial risk analysis
+
+```tsx
+Scatter3D("#risk", {
+  data: {
+    series: [
+      {
+        name: "Portfolio Assets",
+        values: [8.2, 12.5, 5.1, 15.8, 3.4, 9.7, 18.3, 6.9],
+        x: [0.12, 0.18, 0.08, 0.25, 0.05, 0.15, 0.30, 0.10],
+        z: [0.85, 0.72, 0.95, 0.55, 0.98, 0.78, 0.42, 0.88],
+      },
+    ],
+  },
+  pointSize: 12,
+  camera: {
+    position: [0.5, 0.4, 0.6],
+    target: [0.15, 10, 0.7],
+  },
+  theme: "light",
+})
+```

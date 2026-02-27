@@ -74,6 +74,23 @@ const sidebar = [
     ],
   },
   {
+    title: "3D / WebGL",
+    links: [
+      { label: "Scatter 3D", href: "/docs/charts/scatter3d" },
+      { label: "Bar 3D", href: "/docs/charts/bar3d" },
+      { label: "Surface 3D", href: "/docs/charts/surface3d" },
+      { label: "Globe 3D", href: "/docs/charts/globe3d" },
+      { label: "Map 3D", href: "/docs/charts/map3d" },
+      { label: "Lines 3D", href: "/docs/charts/lines3d" },
+      { label: "Line 3D", href: "/docs/charts/line3d" },
+      { label: "Torus 3D", href: "/docs/charts/torus3d" },
+      { label: "Scatter GL", href: "/docs/charts/scatter-gl" },
+      { label: "Lines GL", href: "/docs/charts/lines-gl" },
+      { label: "Flow GL", href: "/docs/charts/flow-gl" },
+      { label: "Graph GL", href: "/docs/charts/graph-gl" },
+    ],
+  },
+  {
     title: "Frameworks",
     links: [
       { label: "React", href: "/docs/react" },

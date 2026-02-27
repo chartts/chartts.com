@@ -1,0 +1,234 @@
+---
+title: "ScatterGL Chart"
+description: "GPU-accelerated 2D scatter plot that handles millions of points with spatial grid hit-testing, density glow, axes, grid lines, and legend."
+badge: "WebGL"
+---
+
+## Quick Start
+
+```tsx
+import { ScatterGL } from "@chartts/gl"
+
+const chart = ScatterGL("#chart", {
+  data: {
+    series: [
+      {
+        name: "Measurements",
+        x: [12, 45, 23, 67, 34, 89, 56, 78, 90, 15],
+        y: [34, 67, 45, 82, 56, 94, 72, 88, 95, 28],
+      },
+    ],
+  },
+  pointSize: 4,
+})
+```
+
+That renders a GPU-accelerated 2D scatter plot with axes, grid lines, tick labels, and tooltips. Points are rendered as SDF circles with additive blending, so overlapping points create a natural density glow effect. A spatial grid enables efficient hit-testing even with millions of points.
+
+## When to Use ScatterGL Charts
+
+ScatterGL is the high-performance alternative to SVG-based scatter charts. It uses WebGL to render points as GPU primitives, making it capable of handling datasets orders of magnitude larger than DOM-based approaches.
+
+**Use a ScatterGL chart when:**
+- Your dataset has thousands to millions of data points
+- You need smooth, interactive performance with large datasets
+- Density visualization matters (overlapping points glow brighter)
+- You want axes, grid lines, and a legend built into the WebGL canvas
+
+**Don't use a ScatterGL chart when:**
+- You have fewer than 100 points (a standard SVG scatter chart is simpler)
+- You need rich per-point interactivity (custom tooltips, click handlers)
+- The chart needs to be styled with CSS or Tailwind classes
+- You need server-side rendering (WebGL requires a browser context)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `GLChartData` | required | Chart data with `series` array of `GLSeries2D` objects |
+| `pointSize` | `number` | `4` | Point radius in pixels |
+| `theme` | `'dark' \| 'light' \| GLTheme` | `'dark'` | Color theme for background, axes, grid, and palette |
+| `animate` | `boolean` | `true` | Enable fade-in animation on mount |
+| `tooltip` | `boolean` | `true` | Show tooltip on hover with series name and value |
+
+---
+
+## Millions of Points
+
+ScatterGL uses GL_POINTS with SDF circle rendering, which means each point is a single GPU vertex. This allows rendering millions of points at 60fps. The spatial grid hit-testing system divides the viewport into a 64x64 grid for O(1) hover detection regardless of dataset size.
+
+```tsx
+// Generate 500,000 points
+const n = 500000
+const x = new Array(n)
+const y = new Array(n)
+for (let i = 0; i < n; i++) {
+  x[i] = Math.random() * 1000
+  y[i] = Math.random() * 1000
+}
+
+ScatterGL("#chart", {
+  data: {
+    series: [{ name: "Random", x, y }],
+  },
+  pointSize: 2,
+})
+```
+
+Even at half a million points, hover detection remains instantaneous because only the points in the hovered grid cell (and its 8 neighbors) are checked.
+
+---
+
+## Density Glow
+
+When points overlap, their colors are additively blended. This creates a natural density visualization where dense clusters glow brighter than sparse regions. No configuration is needed; the glow effect is built into the rendering pipeline.
+
+```tsx
+// Gaussian cluster with density center
+const n = 100000
+const x = new Array(n)
+const y = new Array(n)
+for (let i = 0; i < n; i++) {
+  x[i] = randn() * 100 + 500
+  y[i] = randn() * 100 + 500
+}
+
+ScatterGL("#chart", {
+  data: {
+    series: [{ name: "Cluster", x, y, color: "#6c9eff" }],
+  },
+  pointSize: 3,
+})
+```
+
+The additive blending formula is `SRC_ALPHA + ONE`, which means overlapping semi-transparent points sum their color contributions. The result is bright cores at dense cluster centers that fade to single-point colors at the edges.
+
+---
+
+## Axes and Grid
+
+ScatterGL automatically computes nice axis tick values using a smart scale algorithm. Grid lines, axis lines, and tick labels are rendered as a 2D overlay on top of the WebGL canvas.
+
+The layout uses fixed margins (top: 20, right: 20, bottom: 40, left: 55) to reserve space for tick labels. Data bounds include 5% padding so no points touch the edges.
+
+```tsx
+ScatterGL("#chart", {
+  data: scatterData,
+  theme: "light",
+})
+```
+
+Large values are formatted automatically:
+- Values over 1,000 display as "1.2K"
+- Values over 1,000,000 display as "1.5M"
+
+---
+
+## Legend
+
+When multiple series are present, a legend appears in the top-right corner of the chart. Each series shows a colored dot and its name. A point count badge in the top-left corner shows the total number of rendered points.
+
+```tsx
+ScatterGL("#chart", {
+  data: {
+    series: [
+      {
+        name: "Group A",
+        x: groupAX,
+        y: groupAY,
+        color: "#6c9eff",
+      },
+      {
+        name: "Group B",
+        x: groupBX,
+        y: groupBY,
+        color: "#5eead4",
+      },
+    ],
+  },
+  pointSize: 3,
+})
+```
+
+---
+
+## Accessibility
+
+- Point count badge displays the total number of rendered points for context
+- Tooltip shows series name and exact value on hover
+- Axis labels with automatically formatted tick values provide scale reference
+- Grid lines give spatial reference for estimating point positions
+- Dark and light themes ensure sufficient contrast for all text elements
+
+---
+
+## Real-World Examples
+
+### Large-scale genomics data
+
+```tsx
+const n = 200000
+const x = new Array(n)
+const y = new Array(n)
+for (let i = 0; i < n; i++) {
+  x[i] = Math.random() * 30000
+  y[i] = -Math.log10(Math.random()) * 5 + Math.random() * 2
+}
+
+ScatterGL("#manhattan", {
+  data: {
+    series: [{ name: "SNPs", x, y, color: "#a78bfa" }],
+  },
+  pointSize: 2,
+  theme: "dark",
+})
+```
+
+### Customer segmentation clusters
+
+```tsx
+function cluster(cx: number, cy: number, n: number, spread: number) {
+  const x = [], y = []
+  for (let i = 0; i < n; i++) {
+    x.push(cx + (Math.random() - 0.5) * spread)
+    y.push(cy + (Math.random() - 0.5) * spread)
+  }
+  return { x, y }
+}
+
+const a = cluster(200, 300, 5000, 100)
+const b = cluster(600, 700, 8000, 150)
+const c = cluster(800, 200, 3000, 80)
+
+ScatterGL("#segments", {
+  data: {
+    series: [
+      { name: "Budget", x: a.x, y: a.y, color: "#5eead4" },
+      { name: "Premium", x: b.x, y: b.y, color: "#fbbf24" },
+      { name: "Enterprise", x: c.x, y: c.y, color: "#f472b6" },
+    ],
+  },
+  pointSize: 3,
+})
+```
+
+### Real-time sensor stream
+
+```tsx
+const sensorX = Array.from({ length: 50000 }, (_, i) => i * 0.1)
+const sensorY = Array.from({ length: 50000 }, (_, i) =>
+  Math.sin(i * 0.01) * 50 + Math.random() * 10 + 50
+)
+
+ScatterGL("#sensors", {
+  data: {
+    series: [
+      { name: "Temperature", x: sensorX, y: sensorY },
+    ],
+  },
+  pointSize: 2,
+  theme: "light",
+})
+```

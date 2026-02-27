@@ -1,0 +1,216 @@
+---
+title: "3D Lines Chart"
+description: "Render multiple 3D polylines as thick ribbons in WebGL. Visualize trajectories, flight paths, and multi-series data flowing through three-dimensional space."
+badge: "3D"
+---
+
+## Quick Start
+
+```tsx
+import { Lines3D } from "@chartts/gl"
+
+const chart = Lines3D("#chart", {
+  data: {
+    series: [
+      {
+        name: "Path A",
+        values: [10, 25, 18, 35, 28, 42, 30],
+        x: [0, 1, 2, 3, 4, 5, 6],
+        z: [0, 1, 2, 1, 3, 2, 4],
+        color: "#6c9eff",
+      },
+      {
+        name: "Path B",
+        values: [5, 15, 30, 22, 38, 20, 45],
+        x: [0, 1, 2, 3, 4, 5, 6],
+        z: [2, 3, 1, 4, 2, 5, 3],
+        color: "#5eead4",
+      },
+    ],
+  },
+  lineWidth: 3,
+  orbit: { autoRotate: true },
+})
+```
+
+That renders two thick 3D polylines flowing through space with distinct colors. Each line is rendered as a triangle-strip ribbon for consistent width at any viewing angle. Orbit controls let you rotate around the lines to see depth relationships.
+
+## When to Use 3D Lines Charts
+
+3D lines charts show multiple paths or trajectories in three-dimensional space. They excel at revealing how multiple series relate spatially.
+
+**Use a 3D lines chart when:**
+- Comparing multiple trajectories or paths through 3D space
+- Visualizing flight paths, particle traces, or physical trajectories
+- Showing multi-series time data where z represents a third variable
+- You need to compare the shape and direction of several 3D paths
+
+**Don't use a 3D lines chart when:**
+- A single path is the focus (use a Line3D chart for clarity)
+- Data is 2D with no meaningful z dimension (use a standard line chart)
+- You need precise value reading at each point (3D perspective distorts)
+- The paths overlap heavily and create visual clutter
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `GLChartData` | required | Chart data with `series` array of `GLSeries3D` objects |
+| `lineWidth` | `number` | `2` | Ribbon width in pixels. Scaled by device pixel ratio |
+| `camera` | `CameraOptions` | auto-fit | Camera position and target. Auto-calculated from data bounds if omitted |
+| `orbit` | `boolean \| OrbitConfig` | `true` | Enable orbit controls with optional auto-rotation |
+| `light` | `Partial<LightConfig>` | default | Lighting configuration for the scene |
+| `theme` | `'dark' \| 'light' \| GLTheme` | `'dark'` | Color theme for background, line palette, text, and grid |
+| `animate` | `boolean` | `true` | Enable fade-in animation on mount |
+| `tooltip` | `boolean` | `true` | Show tooltip on hover with series name, index, and value |
+
+---
+
+## Multi-Series 3D Lines
+
+Each series becomes a separate polyline with its own color. Colors can be set per-series or drawn from the theme palette automatically.
+
+```tsx
+Lines3D("#chart", {
+  data: {
+    series: [
+      {
+        name: "Altitude Track 1",
+        values: [100, 250, 400, 350, 500, 450, 600],
+        x: [0, 10, 20, 30, 40, 50, 60],
+        z: [0, 5, 10, 15, 20, 25, 30],
+      },
+      {
+        name: "Altitude Track 2",
+        values: [50, 150, 300, 250, 400, 350, 550],
+        x: [0, 10, 20, 30, 40, 50, 60],
+        z: [5, 10, 15, 20, 25, 30, 35],
+      },
+      {
+        name: "Altitude Track 3",
+        values: [200, 180, 350, 300, 450, 500, 480],
+        x: [0, 10, 20, 30, 40, 50, 60],
+        z: [10, 15, 20, 25, 30, 35, 40],
+      },
+    ],
+  },
+  lineWidth: 4,
+})
+```
+
+When no explicit `color` is set on a series, it receives the next color from the theme palette. The default dark theme provides 8 distinct colors that cycle for additional series.
+
+---
+
+## Ribbon Rendering
+
+Lines are rendered as triangle-strip ribbons with screen-space width. This means the line width stays consistent regardless of the camera distance or angle. The ribbon always faces the camera, so lines remain visible from any orbit position.
+
+```tsx
+// Thin lines for dense multi-series data
+Lines3D("#chart", {
+  data: denseData,
+  lineWidth: 1,
+})
+
+// Thick ribbons for emphasis
+Lines3D("#chart", {
+  data: highlightData,
+  lineWidth: 6,
+})
+```
+
+The line width is multiplied by the device pixel ratio automatically, so lines appear the same physical size on retina and standard displays.
+
+---
+
+## Orbit Controls
+
+Orbit controls are essential for 3D line charts because depth relationships are only visible when you can rotate the scene.
+
+```tsx
+Lines3D("#chart", {
+  data: lineData,
+  orbit: {
+    autoRotate: true,
+    autoRotateSpeed: 0.3,
+  },
+})
+```
+
+- **Click and drag** to rotate the camera around the lines
+- **Scroll** to zoom in and out
+- **Right-click drag** to pan the view
+
+---
+
+## Accessibility
+
+- Tooltip shows the series name, point index, and value on hover for each vertex
+- Each series has a distinct color from the palette for visual differentiation
+- The ground grid provides spatial reference for the 3D positions
+- Animation fades lines in smoothly, drawing attention to the overall shapes
+
+---
+
+## Real-World Examples
+
+### Flight trajectory comparison
+
+```tsx
+Lines3D("#flights", {
+  data: {
+    series: [
+      {
+        name: "Flight AA101",
+        values: [0, 5000, 15000, 28000, 35000, 35000, 28000, 15000, 5000, 0],
+        x: [0, 50, 120, 200, 300, 400, 500, 580, 650, 700],
+        z: [0, 10, 25, 40, 55, 70, 85, 95, 105, 110],
+        color: "#6c9eff",
+      },
+      {
+        name: "Flight UA202",
+        values: [0, 8000, 20000, 32000, 38000, 38000, 30000, 18000, 6000, 0],
+        x: [0, 40, 100, 180, 280, 380, 480, 560, 640, 700],
+        z: [5, 15, 30, 50, 65, 80, 90, 100, 108, 115],
+        color: "#fbbf24",
+      },
+    ],
+  },
+  lineWidth: 3,
+  orbit: { autoRotate: true, autoRotateSpeed: 0.2 },
+})
+```
+
+### Multi-sensor temperature traces
+
+```tsx
+Lines3D("#sensors", {
+  data: {
+    series: [
+      {
+        name: "Sensor Floor 1",
+        values: [20, 21, 22, 23, 22, 21, 20, 19, 20, 21],
+        x: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+        z: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      },
+      {
+        name: "Sensor Floor 2",
+        values: [22, 23, 24, 25, 24, 23, 22, 21, 22, 23],
+        x: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+        z: [3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+      },
+      {
+        name: "Sensor Floor 3",
+        values: [24, 25, 26, 27, 26, 25, 24, 23, 24, 25],
+        x: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+        z: [6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+      },
+    ],
+  },
+  lineWidth: 4,
+  theme: "dark",
+})
+```

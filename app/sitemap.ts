@@ -75,6 +75,18 @@ const chartSlugs = [
   "pack",
   "voronoi",
   "wordcloud",
+  "scatter3d",
+  "bar3d",
+  "surface3d",
+  "globe3d",
+  "map3d",
+  "lines3d",
+  "line3d",
+  "torus3d",
+  "scatter-gl",
+  "lines-gl",
+  "flow-gl",
+  "graph-gl",
 ];
 
 const exampleSlugs = [

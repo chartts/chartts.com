@@ -1,0 +1,221 @@
+---
+title: "3D Surface Chart"
+description: "Render mathematical functions or grid data as a smooth 3D mesh with computed normals, height-based coloring, and optional wireframe mode."
+badge: "3D"
+---
+
+## Quick Start
+
+```tsx
+import { Surface3D } from "@chartts/gl"
+
+// Generate a sine-cosine surface
+const size = 40
+const grid: number[][] = []
+for (let r = 0; r < size; r++) {
+  const row: number[] = []
+  for (let c = 0; c < size; c++) {
+    const x = (c / size) * 4 * Math.PI - 2 * Math.PI
+    const z = (r / size) * 4 * Math.PI - 2 * Math.PI
+    row.push(Math.sin(x) * Math.cos(z) * 2)
+  }
+  grid.push(row)
+}
+
+const chart = Surface3D("#chart", {
+  data: { series: [], grid },
+  orbit: { autoRotate: true },
+})
+```
+
+That renders a smooth 3D surface mesh with height-based coloring that transitions from deep blue through teal and emerald to gold and coral. The surface has per-vertex normals computed from the height grid for proper Phong lighting. Orbit controls let you rotate, zoom, and pan.
+
+## When to Use 3D Surface Charts
+
+Surface charts visualize continuous functions of two variables or gridded data where each cell has a height value.
+
+**Use a 3D surface chart when:**
+- Visualizing mathematical functions like f(x, z) = y
+- Displaying terrain, elevation maps, or heightfield data
+- Showing how an output varies continuously across two input dimensions
+- Exploring optimization landscapes (loss surfaces, fitness landscapes)
+
+**Don't use a 3D surface chart when:**
+- Your data is sparse or irregularly sampled (use a 3D scatter chart)
+- You need to compare discrete categories (use a bar chart)
+- The surface is mostly flat with rare features (a heatmap is more readable)
+- Users cannot interact with the visualization (wireframe loses depth cues in print)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `GLChartData` | required | Chart data with `grid: number[][]` as the heightmap |
+| `wireframe` | `boolean` | `false` | Render as wireframe lines instead of solid triangles |
+| `camera` | `CameraOptions` | auto-fit | Camera position and target. Auto-calculated from grid bounds if omitted |
+| `orbit` | `boolean \| OrbitConfig` | `true` | Enable orbit controls with optional auto-rotation |
+| `light` | `Partial<LightConfig>` | default | Phong lighting configuration |
+| `theme` | `'dark' \| 'light' \| GLTheme` | `'dark'` | Color theme for background, text, and grid |
+| `animate` | `boolean` | `true` | Enable fade-in animation on mount |
+| `tooltip` | `boolean` | `true` | Show tooltip on hover with row, column, and height value |
+
+---
+
+## Wireframe Mode
+
+Set `wireframe` to `true` to render the surface as a grid of lines instead of filled triangles. Wireframe mode is useful for seeing through the surface and understanding the underlying grid structure.
+
+```tsx
+Surface3D("#chart", {
+  data: { series: [], grid },
+  wireframe: true,
+})
+```
+
+In wireframe mode, each grid cell draws horizontal and vertical lines connecting adjacent vertices. The height-based coloring is still applied to each vertex, so the wireframe retains the elevation gradient.
+
+---
+
+## Height-Based Color Mapping
+
+The surface automatically maps height values to a five-stop color gradient:
+
+- Deep blue for the lowest values
+- Teal for low-mid values
+- Emerald for mid values
+- Gold for mid-high values
+- Coral for the highest values
+
+This mapping is computed per-vertex from the global min and max of the grid, so the full color range is always used regardless of the data scale.
+
+```tsx
+// A simple peak function
+const grid: number[][] = []
+for (let r = 0; r < 50; r++) {
+  const row: number[] = []
+  for (let c = 0; c < 50; c++) {
+    const x = (c / 50) * 10 - 5
+    const z = (r / 50) * 10 - 5
+    row.push(5 * Math.exp(-(x * x + z * z) / 8))
+  }
+  grid.push(row)
+}
+
+Surface3D("#peak", {
+  data: { series: [], grid },
+  orbit: { autoRotate: true, autoRotateSpeed: 0.4 },
+})
+```
+
+---
+
+## Smooth Normals
+
+Surface normals are computed from finite differences of neighboring height values. This produces smooth Phong shading across the entire mesh without visible facets. The normal at each vertex accounts for the slope in both the x and z directions.
+
+```tsx
+Surface3D("#chart", {
+  data: { series: [], grid },
+  light: {
+    ambient: 0.2,
+    diffuse: 0.8,
+    specular: 0.5,
+    shininess: 64,
+    position: [10, 20, 10],
+  },
+})
+```
+
+Adjusting the light position changes how highlights sweep across peaks and valleys. Higher specular shininess produces tighter, brighter highlights on steep slopes.
+
+---
+
+## Accessibility
+
+- Tooltip shows the grid row, column, and exact height value on hover
+- The height-to-color gradient provides a visual legend for value magnitude
+- Wireframe mode offers an alternative view that does not rely solely on color
+- Dark and light themes ensure text and grid lines remain readable against the surface
+
+---
+
+## Real-World Examples
+
+### Mathematical function explorer
+
+```tsx
+const size = 60
+const grid: number[][] = []
+for (let r = 0; r < size; r++) {
+  const row: number[] = []
+  for (let c = 0; c < size; c++) {
+    const x = (c / size) * 6 - 3
+    const z = (r / size) * 6 - 3
+    const d = Math.sqrt(x * x + z * z)
+    row.push(d === 0 ? 1 : Math.sin(d * Math.PI) / (d * Math.PI))
+  }
+  grid.push(row)
+}
+
+Surface3D("#sinc", {
+  data: { series: [], grid },
+  orbit: { autoRotate: true, autoRotateSpeed: 0.5 },
+  theme: "dark",
+})
+```
+
+### Terrain elevation map
+
+```tsx
+// Procedural terrain with multiple octaves
+const size = 80
+const grid: number[][] = []
+for (let r = 0; r < size; r++) {
+  const row: number[] = []
+  for (let c = 0; c < size; c++) {
+    const x = c / size, z = r / size
+    const height =
+      Math.sin(x * 8) * Math.cos(z * 6) * 2 +
+      Math.sin(x * 16 + 1) * Math.cos(z * 12 + 2) * 0.5 +
+      Math.sin(x * 4 - z * 3) * 1.5
+    row.push(height)
+  }
+  grid.push(row)
+}
+
+Surface3D("#terrain", {
+  data: { series: [], grid },
+  camera: {
+    position: [12, 8, 12],
+    target: [0, 0, 0],
+  },
+})
+```
+
+### Optimization loss landscape
+
+```tsx
+const size = 50
+const grid: number[][] = []
+for (let r = 0; r < size; r++) {
+  const row: number[] = []
+  for (let c = 0; c < size; c++) {
+    const x = (c / size) * 8 - 4
+    const z = (r / size) * 8 - 4
+    // Rosenbrock-like function with multiple local minima
+    row.push(
+      (1 - x) * (1 - x) + 10 * (z - x * x) * (z - x * x) * 0.01
+    )
+  }
+  grid.push(row)
+}
+
+Surface3D("#loss", {
+  data: { series: [], grid },
+  wireframe: true,
+  orbit: { autoRotate: true, autoRotateSpeed: 0.2 },
+  theme: "light",
+})
+```

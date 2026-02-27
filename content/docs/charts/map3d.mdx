@@ -1,0 +1,212 @@
+---
+title: "3D Map Chart"
+description: "Top-down 3D map with extruded height regions. Choropleth-style visualization where data values control both color and extrusion height."
+badge: "3D"
+---
+
+## Quick Start
+
+```tsx
+import { Map3D } from "@chartts/gl"
+
+const chart = Map3D("#chart", {
+  data: {
+    series: [
+      {
+        name: "Population",
+        values: [39.5, 29.1, 21.5, 13.0, 12.8, 11.8, 10.6, 8.3],
+        x: [0, 1.2, 2.4, 3.6, 4.8, 6.0, 7.2, 8.4],
+        z: [0, 0, 0, 0, 0, 0, 0, 0],
+      },
+    ],
+    categories: [
+      "California", "Texas", "Florida", "New York",
+      "Pennsylvania", "Illinois", "Ohio", "Georgia",
+    ],
+  },
+})
+```
+
+That renders a grid of extruded 3D blocks where each block's height and color correspond to the data value. The camera auto-positions itself above and slightly angled to give a clear top-down perspective. Labels float above each region, and the choropleth coloring transitions from cool blues (low values) through purples to warm tones (high values).
+
+## When to Use 3D Map Charts
+
+3D map charts combine the spatial layout of a choropleth with the magnitude encoding of bar height. They work best when you want to show both geographic arrangement and value magnitude simultaneously.
+
+**Use a 3D map chart when:**
+- Comparing regional values where spatial position matters
+- You want height and color to double-encode the same value for emphasis
+- The data has a natural grid or geographic layout
+- Interactive orbit controls can help users inspect the tallest and shortest regions
+
+**Don't use a 3D map chart when:**
+- You need actual geographic boundaries (use a GeoJSON-based choropleth)
+- Precise value comparison between regions is critical (height perspective distorts)
+- You have hundreds of regions (the scene becomes too dense)
+- The visualization is for print without interactivity
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `GLChartData` | required | Chart data with `series` of `GLSeries3D`. Use `categories` for region labels |
+| `camera` | `CameraOptions` | auto-fit | Camera auto-positions based on data extent. Override for custom angles |
+| `orbit` | `boolean \| OrbitConfig` | `true` | Enable orbit controls with optional auto-rotation |
+| `light` | `Partial<LightConfig>` | default | Phong lighting for extruded blocks |
+| `theme` | `'dark' \| 'light' \| GLTheme` | `'dark'` | Color theme for background, text, and grid |
+| `animate` | `boolean` | `true` | Enable extrusion growth animation on mount |
+| `tooltip` | `boolean` | `true` | Show tooltip on hover with region name and value |
+
+---
+
+## Extruded Heights
+
+Each data value is normalized against the maximum value in the dataset and then scaled to an extrusion height. This means the tallest block always represents the maximum value, and all other blocks are proportional.
+
+```tsx
+Map3D("#chart", {
+  data: {
+    series: [
+      {
+        name: "GDP",
+        values: [21400, 14700, 5100, 3800, 2800, 2100],
+        x: [0, 1.2, 2.4, 0, 1.2, 2.4],
+        z: [0, 0, 0, 1.2, 1.2, 1.2],
+      },
+    ],
+    categories: ["US", "China", "Japan", "Germany", "UK", "India"],
+  },
+})
+```
+
+The entry animation scales blocks from zero height upward, creating a satisfying growth effect that draws attention to the tallest regions first.
+
+---
+
+## Auto Camera Positioning
+
+When no explicit camera is provided, Map3D computes the spatial extent of all data points and positions the camera at an elevated angle that encompasses the entire layout. This ensures all regions are visible without manual camera adjustment.
+
+```tsx
+// Camera auto-fits to data extent
+Map3D("#chart", { data: mapData })
+
+// Override with a custom angle
+Map3D("#chart", {
+  data: mapData,
+  camera: {
+    position: [15, 12, 15],
+    target: [5, 0, 3],
+  },
+})
+```
+
+The auto-fit algorithm uses the x and z extent of the data to compute a comfortable viewing distance, then places the camera at a 30-degree elevation angle.
+
+---
+
+## Region Coloring
+
+Colors are derived from a value-to-color function that maps the data range to a gradient. Low values appear as cool blue tones, mid values as blue-purple, and high values as warm purple-coral tones. Side faces of each block use a darker shade of the top face color to add depth.
+
+```tsx
+Map3D("#chart", {
+  data: {
+    series: [
+      {
+        name: "Density",
+        values: [1, 5, 15, 30, 50, 80, 100],
+        x: [0, 1.2, 2.4, 3.6, 4.8, 6.0, 7.2],
+        z: [0, 0, 0, 0, 0, 0, 0],
+      },
+    ],
+    categories: [
+      "Low", "Low-Med", "Medium",
+      "Med-High", "High", "Very High", "Peak",
+    ],
+  },
+})
+```
+
+---
+
+## Accessibility
+
+- Each region displays a floating text label with its name above the extruded block
+- Tooltip shows the exact value and region name on hover
+- Height and color provide dual encoding of the same value for redundancy
+- Dark side faces create natural depth cues that do not rely on color alone
+
+---
+
+## Real-World Examples
+
+### State population comparison
+
+```tsx
+Map3D("#population", {
+  data: {
+    series: [
+      {
+        name: "Population (millions)",
+        values: [39.5, 29.1, 21.5, 19.3, 13.0, 12.8, 11.8, 10.6],
+        x: [0, 1.2, 2.4, 3.6, 0, 1.2, 2.4, 3.6],
+        z: [0, 0, 0, 0, 1.2, 1.2, 1.2, 1.2],
+      },
+    ],
+    categories: [
+      "California", "Texas", "Florida", "New York",
+      "Pennsylvania", "Illinois", "Ohio", "Georgia",
+    ],
+  },
+  theme: "dark",
+  orbit: { autoRotate: true, autoRotateSpeed: 0.2 },
+})
+```
+
+### Data center capacity
+
+```tsx
+Map3D("#datacenters", {
+  data: {
+    series: [
+      {
+        name: "Servers",
+        values: [12000, 8500, 6200, 4800, 3500, 2800],
+        x: [0, 1.2, 2.4, 0, 1.2, 2.4],
+        z: [0, 0, 0, 1.2, 1.2, 1.2],
+      },
+    ],
+    categories: [
+      "Virginia", "Oregon", "Dublin",
+      "Singapore", "Tokyo", "Sydney",
+    ],
+  },
+  theme: "light",
+})
+```
+
+### Sales territory performance
+
+```tsx
+Map3D("#sales", {
+  data: {
+    series: [
+      {
+        name: "Revenue ($K)",
+        values: [450, 380, 320, 280, 220, 180, 150, 120, 90],
+        x: [0, 1.2, 2.4, 0, 1.2, 2.4, 0, 1.2, 2.4],
+        z: [0, 0, 0, 1.2, 1.2, 1.2, 2.4, 2.4, 2.4],
+      },
+    ],
+    categories: [
+      "North", "Northeast", "East",
+      "Central", "Metro", "Southeast",
+      "West", "Southwest", "South",
+    ],
+  },
+  orbit: { autoRotate: true, autoRotateSpeed: 0.3 },
+})
+```

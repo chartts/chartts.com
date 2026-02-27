@@ -1,0 +1,202 @@
+---
+title: "3D Torus Chart"
+description: "Stacked cylindrical rings revolved around the Y axis with Catmull-Rom interpolation. A unique 3D donut-style chart for proportional data visualization."
+badge: "3D"
+---
+
+## Quick Start
+
+```tsx
+import { Torus3D } from "@chartts/gl"
+
+const chart = Torus3D("#chart", {
+  data: {
+    series: [
+      {
+        name: "Revenue",
+        values: [85, 62, 45, 38, 28],
+      },
+    ],
+    categories: ["Product A", "Product B", "Product C", "Product D", "Product E"],
+  },
+})
+```
+
+That renders a smooth, sculptural torus shape where each data value controls the radius of a ring segment. The rings are stacked vertically and connected with Catmull-Rom spline interpolation for a seamless, organic profile. Each ring is colored from the theme palette, with labels floating beside each segment showing the category name and value.
+
+## When to Use Torus Charts
+
+Torus charts offer a distinctive 3D approach to showing proportional data. The ring radius encodes the value, creating a profile that is both visually striking and informative.
+
+**Use a torus chart when:**
+- You want a unique, eye-catching visualization for proportional data
+- Showing ranked values where relative magnitude matters more than exact numbers
+- The data has 3 to 10 categories that need comparison
+- You want a sculptural, 3D hero element on a dashboard
+
+**Don't use a torus chart when:**
+- Precise value comparison is critical (ring radius is harder to read than bar height)
+- You have many categories (more than 10 makes the torus cluttered)
+- The audience needs a familiar chart type (bar or pie is more recognizable)
+- The visualization is for print without interactivity
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `GLChartData` | required | Chart data with a single `GLSeries3D`. Use `categories` for ring labels |
+| `intensity` | `number` | `1` | Scale factor for ring radii. Values above 1 exaggerate differences |
+| `camera` | `CameraOptions` | `position: [4,2,6]` | Camera position and target |
+| `orbit` | `boolean \| OrbitConfig` | `true` | Enable orbit controls with optional auto-rotation |
+| `light` | `Partial<LightConfig>` | default | Phong lighting for the torus mesh |
+| `theme` | `'dark' \| 'light' \| GLTheme` | `'dark'` | Color theme. Each ring gets a color from the palette |
+| `animate` | `boolean` | `true` | Enable fade-in animation on mount |
+| `tooltip` | `boolean` | `true` | Show tooltip on hover with category name and value |
+
+---
+
+## Catmull-Rom Interpolation
+
+The torus profile is built from a Catmull-Rom spline that passes through the radius of each ring. This produces a smooth, continuous surface without sharp transitions between segments.
+
+The spline uses the data values to determine ring radii. Each value is normalized against the maximum and mapped to a radius range (0.6 to 2.0 world units by default). The Catmull-Rom algorithm ensures C1 continuity, so the surface tangent is smooth at every ring boundary.
+
+```tsx
+Torus3D("#chart", {
+  data: {
+    series: [
+      {
+        name: "Scores",
+        values: [95, 40, 80, 30, 70, 50, 90],
+      },
+    ],
+    categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+  },
+})
+```
+
+With alternating high and low values, the torus develops a dramatic wave-like profile that clearly shows the variation.
+
+---
+
+## Intensity Control
+
+The `intensity` option scales the ring radii proportionally. Higher intensity exaggerates the differences between values, making small variations more visible.
+
+```tsx
+// Subtle differences
+Torus3D("#chart", {
+  data: torusData,
+  intensity: 0.5,
+})
+
+// Exaggerated differences
+Torus3D("#chart", {
+  data: torusData,
+  intensity: 2.0,
+})
+```
+
+At intensity 1 (the default), the minimum radius is 0.6 and the maximum is 2.0. Adjusting intensity scales these proportionally.
+
+---
+
+## Label Overlay
+
+Each ring segment has a floating label that appears beside the torus at the midpoint of the ring. Labels show the category name and the exact value. A small colored dot matches the ring color from the theme palette.
+
+Labels are rendered as a 2D overlay on top of the 3D scene. They respect z-depth so labels behind the torus are hidden. As the torus rotates, labels on the visible side remain legible.
+
+```tsx
+Torus3D("#chart", {
+  data: {
+    series: [
+      {
+        name: "Departments",
+        values: [120, 85, 65, 45],
+      },
+    ],
+    categories: ["Engineering", "Sales", "Marketing", "Support"],
+  },
+  orbit: { autoRotate: true, autoRotateSpeed: 0.3 },
+})
+```
+
+---
+
+## Accessibility
+
+- Labels display both the category name and exact value for each ring segment
+- Tooltip provides the same information on hover for precise reading
+- Each ring has a distinct color from the theme palette for visual separation
+- Phong lighting provides depth cues that do not rely solely on color
+
+---
+
+## Real-World Examples
+
+### Department headcount
+
+```tsx
+Torus3D("#headcount", {
+  data: {
+    series: [
+      {
+        name: "Headcount",
+        values: [145, 92, 68, 45, 32, 18],
+      },
+    ],
+    categories: [
+      "Engineering", "Product", "Sales",
+      "Marketing", "Design", "Legal",
+    ],
+  },
+  intensity: 1.2,
+  orbit: { autoRotate: true, autoRotateSpeed: 0.4 },
+  theme: "dark",
+})
+```
+
+### Quarterly performance metrics
+
+```tsx
+Torus3D("#performance", {
+  data: {
+    series: [
+      {
+        name: "Score",
+        values: [92, 78, 85, 70],
+      },
+    ],
+    categories: ["Q1", "Q2", "Q3", "Q4"],
+  },
+  camera: {
+    position: [5, 3, 7],
+    target: [0, 0, 0],
+  },
+  theme: "light",
+})
+```
+
+### Resource allocation
+
+```tsx
+Torus3D("#resources", {
+  data: {
+    series: [
+      {
+        name: "Budget ($K)",
+        values: [500, 350, 280, 200, 150, 100, 75, 50],
+      },
+    ],
+    categories: [
+      "Infrastructure", "R&D", "Salaries", "Marketing",
+      "Operations", "Training", "Travel", "Misc",
+    ],
+  },
+  intensity: 0.8,
+  orbit: { autoRotate: true, autoRotateSpeed: 0.2 },
+})
+```

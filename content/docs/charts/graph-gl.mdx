@@ -1,0 +1,284 @@
+---
+title: "GraphGL Chart"
+description: "Force-directed graph with Barnes-Hut optimization rendered in WebGL. Handle thousands of nodes with interactive physics simulation and node labels."
+badge: "WebGL"
+---
+
+## Quick Start
+
+```tsx
+import { GraphGL } from "@chartts/gl"
+
+const chart = GraphGL("#chart", {
+  data: {
+    series: [
+      {
+        name: "Nodes",
+        x: [1, 2, 3, 4, 5, 6, 7, 8],
+        y: [10, 8, 12, 6, 14, 9, 11, 7],
+      },
+    ],
+    categories: [
+      "React", "Vue", "Svelte", "Angular",
+      "Webpack", "Vite", "TypeScript", "ESBuild",
+    ],
+  },
+  edges: [
+    { source: 0, target: 4 },
+    { source: 0, target: 5 },
+    { source: 0, target: 6 },
+    { source: 1, target: 5 },
+    { source: 1, target: 6 },
+    { source: 2, target: 5 },
+    { source: 2, target: 7 },
+    { source: 3, target: 4 },
+    { source: 3, target: 6 },
+  ],
+})
+```
+
+That renders a force-directed graph where nodes repel each other and edges pull connected nodes together. The layout uses Barnes-Hut optimization for O(n log n) force computation, running 300 simulation iterations with 5 steps per frame. Node labels float above each circle, and the simulation converges to a stable layout that reveals cluster structure.
+
+## When to Use GraphGL Charts
+
+GraphGL is the high-performance WebGL alternative to SVG-based graph charts. It renders nodes as GPU points and edges as GPU lines, making it capable of handling much larger graphs.
+
+**Use a GraphGL chart when:**
+- You have hundreds to thousands of nodes with complex edge relationships
+- You need fast force simulation that converges quickly
+- The graph is too large for DOM-based rendering (SVG nodes become slow)
+- You want Barnes-Hut optimized n-body simulation for natural layouts
+
+**Don't use a GraphGL chart when:**
+- You have fewer than 20 nodes (SVG graph charts offer richer styling)
+- You need draggable nodes with DOM event handlers
+- The graph is strictly hierarchical (use a tree chart)
+- You need directed edges with arrowheads (use the SVG graph chart)
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `GLChartData` | required | Chart data with a `GLSeries2D` for nodes. `x` is unused for positioning (random init), `y` controls node size scaling |
+| `edges` | `GEdge[]` | auto-generated | Array of edge objects with `source` and `target` indices |
+| `theme` | `'dark' \| 'light' \| GLTheme` | `'dark'` | Color theme for background, node colors, edge color, and labels |
+| `animate` | `boolean` | `true` | Enable fade-in animation during simulation |
+| `tooltip` | `boolean` | `true` | Show tooltip on hover with node name and value |
+| `pointSize` | `number` | `6` | Base node size in pixels. Actual size is `pointSize + value * 0.5` |
+
+---
+
+## Barnes-Hut Force Simulation
+
+The layout uses a quadtree-based Barnes-Hut algorithm for efficient n-body repulsion. Instead of computing O(n^2) pairwise forces, nodes are grouped into spatial clusters, reducing the computation to O(n log n).
+
+The simulation applies three forces:
+
+1. **Repulsion**: All nodes repel each other (Barnes-Hut approximated). Strength: 500.
+2. **Attraction**: Connected nodes are pulled toward each other with spring forces. Rest length: 100 pixels.
+3. **Centering**: All nodes are gently pulled toward the viewport center to prevent drift.
+
+```tsx
+GraphGL("#chart", {
+  data: graphData,
+  edges: graphEdges,
+  pointSize: 8,
+})
+```
+
+The simulation runs up to 300 iterations with 5 steps per animation frame. Once converged (all velocities below threshold), the animation loop stops automatically.
+
+---
+
+## Edge Configuration
+
+Edges connect nodes by their array index. If no edges are provided, random edges are generated for demonstration purposes.
+
+```tsx
+GraphGL("#chart", {
+  data: {
+    series: [
+      {
+        name: "Network",
+        x: [1, 2, 3, 4, 5],
+        y: [10, 8, 12, 6, 14],
+      },
+    ],
+    categories: ["Server A", "Server B", "Server C", "DB Primary", "DB Replica"],
+  },
+  edges: [
+    { source: 0, target: 3 },
+    { source: 1, target: 3 },
+    { source: 2, target: 3 },
+    { source: 3, target: 4 },
+    { source: 0, target: 1 },
+  ],
+})
+```
+
+Edge rendering uses simple `GL_LINES` with the theme's grid color. Edges are semi-transparent (40% opacity) so they do not visually dominate over the nodes.
+
+---
+
+## Node Labels
+
+Labels are rendered as a 2D canvas overlay on top of the WebGL scene. Each label shows the node's category name centered above the node circle. Labels use the theme's text color and font settings.
+
+```tsx
+GraphGL("#chart", {
+  data: {
+    series: [
+      {
+        name: "Team",
+        x: [1, 2, 3, 4],
+        y: [5, 8, 3, 10],
+      },
+    ],
+    categories: ["Alice", "Bob", "Carol", "Dave"],
+  },
+  edges: [
+    { source: 0, target: 1 },
+    { source: 0, target: 2 },
+    { source: 1, target: 3 },
+    { source: 2, target: 3 },
+  ],
+})
+```
+
+---
+
+## Node Sizing
+
+Node size is determined by the formula `pointSize + value * 0.5`, where `value` comes from the `y` array of the series. This means nodes with higher y-values appear larger, encoding an additional data dimension.
+
+```tsx
+GraphGL("#chart", {
+  data: {
+    series: [
+      {
+        name: "Packages",
+        x: [1, 2, 3, 4, 5],
+        y: [20, 8, 15, 5, 30],
+      },
+    ],
+    categories: ["react", "vue", "angular", "svelte", "next"],
+  },
+  edges: [
+    { source: 0, target: 4 },
+    { source: 1, target: 2 },
+    { source: 3, target: 4 },
+  ],
+  pointSize: 4,
+})
+```
+
+---
+
+## Accessibility
+
+- Node labels provide text identification for each node in the graph
+- Tooltip shows node name and value on hover for precise reading
+- Each node receives a distinct color from the theme palette for visual separation
+- The simulation converges to a stable layout, reducing visual motion for accessibility
+- Semi-transparent edges avoid obscuring node labels or colors
+
+---
+
+## Real-World Examples
+
+### Package dependency graph
+
+```tsx
+GraphGL("#deps", {
+  data: {
+    series: [
+      {
+        name: "Dependencies",
+        x: [1, 2, 3, 4, 5, 6, 7, 8],
+        y: [20, 15, 12, 8, 25, 10, 18, 6],
+      },
+    ],
+    categories: [
+      "react", "react-dom", "typescript", "webpack",
+      "next", "babel", "eslint", "prettier",
+    ],
+  },
+  edges: [
+    { source: 0, target: 1 },
+    { source: 0, target: 2 },
+    { source: 4, target: 0 },
+    { source: 4, target: 1 },
+    { source: 3, target: 5 },
+    { source: 3, target: 2 },
+    { source: 6, target: 2 },
+    { source: 6, target: 7 },
+  ],
+  pointSize: 6,
+  theme: "dark",
+})
+```
+
+### Social network clusters
+
+```tsx
+const nodeCount = 50
+const x = Array.from({ length: nodeCount }, () => Math.random() * 10)
+const y = Array.from({ length: nodeCount }, () => Math.random() * 20 + 5)
+const categories = Array.from(
+  { length: nodeCount },
+  (_, i) => `User ${i + 1}`
+)
+
+const edges = []
+for (let i = 0; i < nodeCount; i++) {
+  const connections = Math.floor(Math.random() * 4) + 1
+  for (let j = 0; j < connections; j++) {
+    const target = Math.floor(Math.random() * nodeCount)
+    if (target !== i) edges.push({ source: i, target })
+  }
+}
+
+GraphGL("#social", {
+  data: {
+    series: [{ name: "Users", x, y }],
+    categories,
+  },
+  edges,
+  pointSize: 4,
+})
+```
+
+### Microservice architecture
+
+```tsx
+GraphGL("#services", {
+  data: {
+    series: [
+      {
+        name: "Services",
+        x: [1, 2, 3, 4, 5, 6, 7],
+        y: [15, 12, 20, 8, 10, 18, 6],
+      },
+    ],
+    categories: [
+      "API Gateway", "Auth Service", "User Service",
+      "Order Service", "Payment Service", "Notification Service",
+      "Analytics Service",
+    ],
+  },
+  edges: [
+    { source: 0, target: 1 },
+    { source: 0, target: 2 },
+    { source: 0, target: 3 },
+    { source: 3, target: 4 },
+    { source: 3, target: 5 },
+    { source: 2, target: 5 },
+    { source: 0, target: 6 },
+    { source: 3, target: 6 },
+  ],
+  pointSize: 8,
+  theme: "dark",
+})
+```

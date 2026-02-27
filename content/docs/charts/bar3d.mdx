@@ -1,0 +1,250 @@
+---
+title: "3D Bar Chart"
+description: "Render categorical data as extruded cuboid bars in 3D space with Phong lighting and interactive orbit controls."
+badge: "3D"
+---
+
+## Quick Start
+
+```tsx
+import { Bar3D } from "@chartts/gl"
+
+const chart = Bar3D("#chart", {
+  data: {
+    series: [
+      {
+        name: "Q1 Revenue",
+        values: [42, 58, 71, 64, 82, 96],
+        x: [0, 1, 2, 3, 4, 5],
+        z: [0, 0, 0, 0, 0, 0],
+      },
+    ],
+    categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+  },
+  barWidth: 0.6,
+  barDepth: 0.6,
+})
+```
+
+That renders a row of 3D cuboid bars lit with Phong shading, complete with orbit controls, tooltips, and entry animation. Bar heights correspond to data values, and the Phong lighting model gives each face realistic diffuse and specular highlights.
+
+## When to Use 3D Bar Charts
+
+3D bar charts add depth to categorical comparisons. They work best in interactive dashboards where users can rotate and inspect the data from different angles.
+
+**Use a 3D bar chart when:**
+- Comparing values across categories with a visually striking presentation
+- Your dashboard is interactive and users can orbit the scene
+- You have multiple series arranged along the z-axis for a grid layout
+- You want to show magnitude differences with physical depth cues
+
+**Don't use a 3D bar chart when:**
+- Precise value comparison is critical (perspective distorts perceived heights)
+- The chart will be viewed as a static image without interaction
+- You have more than 50 bars (the scene becomes cluttered)
+- A flat 2D bar chart communicates the same message effectively
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `GLChartData` | required | Chart data with `series` array of `GLSeries3D` objects |
+| `barWidth` | `number` | `0.6` | Width of each bar along the x-axis |
+| `barDepth` | `number` | `0.6` | Depth of each bar along the z-axis |
+| `camera` | `CameraOptions` | auto-fit | Camera position and target. Auto-calculated from data bounds if omitted |
+| `orbit` | `boolean \| OrbitConfig` | `true` | Enable orbit controls with optional auto-rotation |
+| `light` | `Partial<LightConfig>` | default | Phong lighting configuration (ambient, diffuse, specular) |
+| `theme` | `'dark' \| 'light' \| GLTheme` | `'dark'` | Color theme for background, bar palette, text, and grid |
+| `animate` | `boolean` | `true` | Enable bar growth animation on mount |
+| `tooltip` | `boolean` | `true` | Show tooltip on hover with series name and value |
+
+---
+
+## Phong Lighting
+
+Bars are rendered with the Phong lighting model, which combines ambient, diffuse, and specular components for realistic shading. Each face of the cuboid has proper normals, so top faces catch direct light while side faces show gradual falloff.
+
+```tsx
+Bar3D("#chart", {
+  data: barData,
+  light: {
+    ambient: 0.3,
+    diffuse: 0.7,
+    specular: 0.4,
+    shininess: 32,
+    position: [10, 15, 10],
+  },
+})
+```
+
+The default light position is above and in front of the scene. Adjust it to change the shadow and highlight pattern across your bars.
+
+---
+
+## Bar Dimensions
+
+Control the width and depth of bars independently. This is useful for creating different visual densities or separating closely packed bars.
+
+```tsx
+// Thin, deep bars
+Bar3D("#chart", {
+  data: barData,
+  barWidth: 0.3,
+  barDepth: 0.8,
+})
+
+// Wide, shallow bars
+Bar3D("#chart", {
+  data: barData,
+  barWidth: 0.9,
+  barDepth: 0.3,
+})
+```
+
+Bars with a minimum height of 0.01 are enforced so zero-value bars remain visible as thin slivers on the ground plane.
+
+---
+
+## Multi-Series Layout
+
+Place multiple series along the z-axis to create a grid of bars. Each series gets a distinct color from the theme palette.
+
+```tsx
+Bar3D("#chart", {
+  data: {
+    series: [
+      {
+        name: "Product A",
+        values: [42, 58, 71, 64],
+        x: [0, 1, 2, 3],
+        z: [0, 0, 0, 0],
+        color: "#6c9eff",
+      },
+      {
+        name: "Product B",
+        values: [35, 48, 62, 55],
+        x: [0, 1, 2, 3],
+        z: [1, 1, 1, 1],
+        color: "#5eead4",
+      },
+      {
+        name: "Product C",
+        values: [28, 40, 53, 47],
+        x: [0, 1, 2, 3],
+        z: [2, 2, 2, 2],
+        color: "#fbbf24",
+      },
+    ],
+    categories: ["Q1", "Q2", "Q3", "Q4"],
+  },
+  barWidth: 0.5,
+  barDepth: 0.5,
+})
+```
+
+Orbiting the scene reveals the depth layout, making it easy to compare series side-by-side.
+
+---
+
+## Accessibility
+
+- Tooltips display the series name and exact value on hover for each bar
+- The entry animation scales bars from zero height, drawing attention to magnitude differences
+- Dark and light themes provide sufficient contrast between bars, grid, and background
+- Bar colors are sourced from the theme palette, which is designed for distinguishability
+
+---
+
+## Real-World Examples
+
+### Quarterly sales by region
+
+```tsx
+Bar3D("#sales", {
+  data: {
+    series: [
+      {
+        name: "North America",
+        values: [120, 145, 132, 168],
+        x: [0, 1, 2, 3],
+        z: [0, 0, 0, 0],
+      },
+      {
+        name: "Europe",
+        values: [95, 110, 125, 140],
+        x: [0, 1, 2, 3],
+        z: [1, 1, 1, 1],
+      },
+      {
+        name: "Asia Pacific",
+        values: [78, 92, 115, 135],
+        x: [0, 1, 2, 3],
+        z: [2, 2, 2, 2],
+      },
+    ],
+    categories: ["Q1", "Q2", "Q3", "Q4"],
+  },
+  barWidth: 0.5,
+  barDepth: 0.5,
+  orbit: { autoRotate: true, autoRotateSpeed: 0.3 },
+  theme: "dark",
+})
+```
+
+### Server response times
+
+```tsx
+Bar3D("#servers", {
+  data: {
+    series: [
+      {
+        name: "Response Time (ms)",
+        values: [45, 62, 38, 120, 55, 200],
+        x: [0, 1, 2, 3, 4, 5],
+        z: [0, 0, 0, 0, 0, 0],
+      },
+    ],
+    categories: [
+      "us-east-1", "us-west-2", "eu-west-1",
+      "ap-south-1", "eu-central-1", "sa-east-1",
+    ],
+  },
+  barWidth: 0.7,
+  barDepth: 0.7,
+  theme: "light",
+})
+```
+
+### Monthly budget breakdown
+
+```tsx
+Bar3D("#budget", {
+  data: {
+    series: [
+      {
+        name: "Engineering",
+        values: [85, 92, 88, 95, 90, 98],
+        x: [0, 1, 2, 3, 4, 5],
+        z: [0, 0, 0, 0, 0, 0],
+        color: "#6c9eff",
+      },
+      {
+        name: "Marketing",
+        values: [45, 52, 48, 60, 55, 65],
+        x: [0, 1, 2, 3, 4, 5],
+        z: [1, 1, 1, 1, 1, 1],
+        color: "#f472b6",
+      },
+    ],
+    categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+  },
+  barWidth: 0.4,
+  barDepth: 0.4,
+  camera: {
+    position: [8, 6, 8],
+    target: [2.5, 0, 0.5],
+  },
+})
+```
