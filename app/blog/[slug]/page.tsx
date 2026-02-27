@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import rehypePrettyCode from "rehype-pretty-code";
 import remarkFrontmatter from "remark-frontmatter";
+import remarkGfm from "remark-gfm";
 import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import { mdxComponents } from "@/lib/mdx-components";
@@ -74,7 +75,7 @@ export default async function BlogPostPage({ params }: PageProps) {
               components={mdxComponents}
               options={{
                 mdxOptions: {
-                  remarkPlugins: [remarkFrontmatter, remarkMdxFrontmatter],
+                  remarkPlugins: [remarkGfm, remarkFrontmatter, remarkMdxFrontmatter],
                   rehypePlugins: [
                     [
                       rehypePrettyCode,

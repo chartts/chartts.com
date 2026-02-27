@@ -8,10 +8,10 @@
     "start": "next start"
   },
   "dependencies": {
+    "@chartts/core": "file:../lib/packages/core",
     "@mdx-js/loader": "^3.1.1",
     "@mdx-js/react": "^3.1.1",
     "@next/mdx": "^16.1.6",
-    "@chartts/core": "file:../lib/packages/core",
     "gray-matter": "^4.0.3",
     "next": "^15.1.0",
     "next-mdx-remote": "^6.0.0",
@@ -19,6 +19,7 @@
     "react-dom": "^19.0.0",
     "rehype-pretty-code": "^0.14.1",
     "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.1",
     "remark-mdx-frontmatter": "^5.2.0",
     "shiki": "^3.23.0"
   },

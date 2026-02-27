@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import rehypePrettyCode from "rehype-pretty-code";
 import remarkFrontmatter from "remark-frontmatter";
+import remarkGfm from "remark-gfm";
 import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import { getAllDocSlugs, getDocBySlug } from "@/lib/docs";
 import { mdxComponents } from "@/lib/mdx-components";
@@ -517,7 +518,7 @@ export default async function DocPage({ params }: PageProps) {
             components={mdxComponents}
             options={{
               mdxOptions: {
-                remarkPlugins: [remarkFrontmatter, remarkMdxFrontmatter],
+                remarkPlugins: [remarkGfm, remarkFrontmatter, remarkMdxFrontmatter],
                 rehypePlugins: [
                   [
                     rehypePrettyCode,
