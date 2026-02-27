@@ -10,6 +10,8 @@ import { CodeBlock } from "@/lib/highlight";
 import { getAllChartDocSlugs, getChartDocBySlug } from "@/lib/docs";
 import { mdxComponents } from "@/lib/mdx-components";
 import { renderChart } from "@/lib/charts";
+import { GLChartPreview } from "@/lib/gl-preview";
+import { GL_CHART_SLUGS } from "@/lib/gl-slugs";
 
 const chartDocs: Record<
   string,
@@ -879,7 +881,11 @@ export default async function ChartDocPage({ params }: PageProps) {
         </div>
 
         {/* Large chart preview */}
-        {svg && (
+        {GL_CHART_SLUGS.has(slug) ? (
+          <div className="mb-12 rounded-xl card overflow-hidden p-6">
+            <GLChartPreview slug={slug} theme="dark" />
+          </div>
+        ) : svg ? (
           <div className="mb-12 rounded-xl card overflow-hidden p-6">
             <div
               className="w-full [&>svg]:w-full [&>svg]:h-auto hidden dark:block"
@@ -892,7 +898,7 @@ export default async function ChartDocPage({ params }: PageProps) {
               />
             )}
           </div>
-        )}
+        ) : null}
 
         {/* MDX content */}
         <div className="prose-chartts">

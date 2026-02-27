@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@chartts/core": "file:../lib/packages/core",
+    "@chartts/gl": "file:../lib/packages/gl",
     "@mdx-js/loader": "^3.1.1",
     "@mdx-js/react": "^3.1.1",
     "@next/mdx": "^16.1.6",
