@@ -35,7 +35,8 @@ jobs:
       - name: Build GL library
         working-directory: lib/packages/gl
         run: |
-          npm install
+          mkdir -p node_modules/@chartts
+          ln -s ../../../core node_modules/@chartts/core
           npx tsup
 
       - name: Install web dependencies
