@@ -33,9 +33,9 @@ jobs:
         working-directory: lib
         run: pnpm install --no-frozen-lockfile
 
-      - name: Build lib packages
+      - name: Build core and themes
         working-directory: lib
-        run: pnpm -r build
+        run: pnpm --filter @chartts/core --filter @chartts/themes build
 
       - name: Install web dependencies
         working-directory: web
