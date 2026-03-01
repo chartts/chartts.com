@@ -1,0 +1,353 @@
+---
+title: "Testing Utilities"
+description: "Generate deterministic mock chart data, validate data structures, render charts to strings, and compare datasets for snapshot testing."
+badge: "@chartts/test-utils"
+---
+
+## Installation
+
+```bash
+npm install @chartts/test-utils --save-dev
+```
+
+The test-utils package provides deterministic data generators, validators, and snapshot helpers for testing charts. Every generator uses a seeded PRNG, so output is identical across runs.
+
+---
+
+## Mock Data Generators
+
+### mockChartData()
+
+Generates a `ChartData` object with configurable series count, point count, label type, and value range.
+
+```ts
+import { mockChartData } from '@chartts/test-utils'
+
+// Default: 3 series, 12 points, month labels, range [0, 100]
+const data = mockChartData()
+
+// Custom configuration
+const custom = mockChartData({
+  series: 2,
+  points: 6,
+  labels: 'days',
+  range: [10, 50],
+  names: ['Revenue', 'Expenses'],
+})
+
+console.log(custom.labels)
+// ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+console.log(custom.series[0].name)
+// 'Revenue'
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `series` | `number` | `3` | Number of data series |
+| `points` | `number` | `12` | Number of data points per series |
+| `labels` | `'months' \| 'days' \| 'categories' \| 'numbers'` | `'months'` | Label generation strategy |
+| `range` | `[number, number]` | `[0, 100]` | Min and max for generated values |
+| `names` | `string[]` | Auto-generated | Custom series names |
+
+---
+
+### mockTimeSeries()
+
+Generates time-based data with configurable trend direction and volatility. Useful for testing line charts, area charts, and streaming visualizations.
+
+```ts
+import { mockTimeSeries } from '@chartts/test-utils'
+
+const stock = mockTimeSeries({
+  points: 90,
+  start: new Date('2024-01-01'),
+  interval: 'day',
+  series: 2,
+  trend: 'up',
+  volatility: 3,
+  names: ['AAPL', 'GOOG'],
+})
+
+// Labels: ['2024-01-01', '2024-01-02', ...]
+// Values follow an upward trend with random noise
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `points` | `number` | `30` | Number of time points |
+| `start` | `Date` | `2024-01-01` | Start date |
+| `interval` | `'hour' \| 'day' \| 'week' \| 'month'` | `'day'` | Time interval between points |
+| `series` | `number` | `1` | Number of series |
+| `trend` | `'up' \| 'down' \| 'flat' \| 'random'` | `'random'` | Trend direction |
+| `volatility` | `number` | `5` | How much values fluctuate between points |
+| `names` | `string[]` | Auto-generated | Custom series names |
+
+---
+
+### mockCategories()
+
+Generates categorical data suited for bar charts and grouped comparisons.
+
+```ts
+import { mockCategories } from '@chartts/test-utils'
+
+const data = mockCategories({
+  categories: 4,
+  series: 3,
+  range: [0, 200],
+  categoryPrefix: 'Region',
+  names: ['Q1', 'Q2', 'Q3'],
+})
+
+// Labels: ['Region A', 'Region B', 'Region C', 'Region D']
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `categories` | `number` | `6` | Number of categories |
+| `series` | `number` | `2` | Number of series |
+| `range` | `[number, number]` | `[0, 100]` | Value range |
+| `categoryPrefix` | `string` | `'Category'` | Prefix for auto-generated labels |
+| `names` | `string[]` | Auto-generated | Custom series names |
+
+---
+
+### mockPieData()
+
+Generates pie/donut chart data where values sum to 100.
+
+```ts
+import { mockPieData } from '@chartts/test-utils'
+
+const data = mockPieData({
+  slices: 4,
+  names: ['Desktop', 'Mobile', 'Tablet', 'Other'],
+})
+
+// Values sum to exactly 100
+const total = data.series[0].values.reduce((a, b) => a + b, 0)
+console.log(total) // 100
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `slices` | `number` | `5` | Number of pie slices |
+| `names` | `string[]` | Auto-generated | Slice labels |
+
+---
+
+### mockFinancialData()
+
+Generates OHLCV (Open, High, Low, Close, Volume) data for candlestick and financial charts.
+
+```ts
+import { mockFinancialData } from '@chartts/test-utils'
+
+const ohlcv = mockFinancialData({
+  points: 60,
+  startPrice: 150,
+  volatility: 3,
+})
+
+// Returns 5 series: Open, High, Low, Close, Volume
+console.log(ohlcv.series.map(s => s.name))
+// ['Open', 'High', 'Low', 'Close', 'Volume']
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `points` | `number` | `60` | Number of trading days |
+| `startPrice` | `number` | `100` | Opening price on day 1 |
+| `volatility` | `number` | `2` | Price swing per day |
+
+---
+
+## Validators
+
+### validateChartData()
+
+Validates an unknown value against the `ChartData` schema. Returns `{ valid, errors }` without throwing.
+
+```ts
+import { validateChartData } from '@chartts/test-utils'
+
+const result = validateChartData({
+  labels: ['Jan', 'Feb'],
+  series: [{ name: 'Sales', values: [10, 20], color: '#6366f1' }],
+})
+console.log(result.valid) // true
+
+const bad = validateChartData({ series: 'not an array' })
+console.log(bad.valid)  // false
+console.log(bad.errors) // ['"series" must be an array']
+```
+
+**Checks performed:**
+- `data` is a non-null object
+- `series` exists and is a non-empty array
+- Each series has a string `name` and a numeric `values` array
+- `color` is a string if provided
+- `style` is one of `'solid'`, `'dashed'`, `'dotted'` if provided
+- `labels` is an array if provided
+
+---
+
+### assertChartData()
+
+Type assertion that throws if the data is invalid. Use in test assertions where you want the test to fail on bad data.
+
+```ts
+import { assertChartData } from '@chartts/test-utils'
+
+// Throws Error if invalid
+assertChartData(responseFromApi)
+
+// After this line, TypeScript narrows the type to ChartData
+console.log(responseFromApi.series[0].name)
+```
+
+---
+
+### assertSeries()
+
+Type assertion for a single `Series` object.
+
+```ts
+import { assertSeries } from '@chartts/test-utils'
+
+const series = { name: 'Revenue', values: [10, 20, 30] }
+assertSeries(series) // passes
+
+assertSeries({ name: 123 }) // throws: "series.name must be a string"
+```
+
+---
+
+## Snapshot Helpers
+
+### renderChartToString()
+
+Renders a chart to an SVG string. Useful for snapshot tests or server-side rendering verification.
+
+```ts
+import { renderChartToString } from '@chartts/test-utils'
+import { mockChartData } from '@chartts/test-utils'
+import { Line } from '@chartts/core'
+
+const svg = renderChartToString(Line, mockChartData(), {
+  width: 600,
+  height: 400,
+})
+
+expect(svg).toContain('<svg')
+expect(svg).toContain('</svg>')
+```
+
+---
+
+### chartSnapshot()
+
+Returns an object containing the rendered SVG, data, and options. Designed for snapshot testing workflows where you want to capture the full state.
+
+```ts
+import { chartSnapshot, mockTimeSeries } from '@chartts/test-utils'
+import { Line } from '@chartts/core'
+
+const snapshot = chartSnapshot(Line, mockTimeSeries({ points: 30 }), {
+  theme: 'dark',
+})
+
+// snapshot.svg   -> SVG string
+// snapshot.data  -> ChartData used
+// snapshot.options -> ChartOptions used
+
+expect(snapshot).toMatchSnapshot()
+```
+
+---
+
+## Comparison
+
+### compareChartData()
+
+Compares two `ChartData` objects and returns a detailed diff. Useful for testing data transformations or verifying that updates preserve expected values.
+
+```ts
+import { compareChartData, mockChartData } from '@chartts/test-utils'
+
+const before = mockChartData({ series: 2, points: 6 })
+const after = {
+  ...before,
+  series: before.series.map(s => ({
+    ...s,
+    values: s.values.map(v => v * 2),
+  })),
+}
+
+const diff = compareChartData(before, after)
+console.log(diff.equal)       // false
+console.log(diff.differences)
+// ['Series[0].values[0] differs: 38.47 vs 76.94', ...]
+```
+
+---
+
+## Example: Full Test Suite
+
+```ts
+import { describe, it, expect } from 'vitest'
+import {
+  mockChartData,
+  mockTimeSeries,
+  mockPieData,
+  mockFinancialData,
+  validateChartData,
+  chartSnapshot,
+  compareChartData,
+} from '@chartts/test-utils'
+import { Line, Bar, Pie, Candlestick } from '@chartts/core'
+
+describe('Chart rendering', () => {
+  it('renders a line chart', () => {
+    const snap = chartSnapshot(Line, mockTimeSeries({ trend: 'up' }))
+    expect(snap.svg).toContain('<svg')
+    expect(snap.data.series).toHaveLength(1)
+  })
+
+  it('renders a bar chart with categories', () => {
+    const data = mockChartData({ series: 3, labels: 'categories' })
+    const snap = chartSnapshot(Bar, data)
+    expect(snap.svg).toContain('<rect')
+  })
+
+  it('renders a pie chart summing to 100', () => {
+    const data = mockPieData({ slices: 6 })
+    const total = data.series[0].values.reduce((a, b) => a + b, 0)
+    expect(total).toBeCloseTo(100)
+  })
+
+  it('generates valid financial data', () => {
+    const data = mockFinancialData({ points: 30 })
+    const result = validateChartData(data)
+    expect(result.valid).toBe(true)
+    expect(data.series).toHaveLength(5)
+  })
+
+  it('detects data differences', () => {
+    const a = mockChartData()
+    const b = mockChartData()
+    const diff = compareChartData(a, b)
+    expect(diff.equal).toBe(true)
+  })
+})
+```

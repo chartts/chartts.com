@@ -1,0 +1,322 @@
+---
+title: "Custom Chart Types"
+description: "Define your own chart type with defineChartType(). Provide a render function, scale configuration, and optional hit testing."
+badge: "Advanced"
+---
+
+## Overview
+
+`defineChartType()` lets you create a fully custom chart type that plugs into the Chart.ts rendering pipeline. You define how to render, what scales to use, and how hit testing works. The framework handles everything else: axes, grid, legend, tooltips, zoom, pan, responsive resizing, and theming.
+
+Only two fields are required: `type` (a unique string identifier) and `render` (a function that returns render nodes). Everything else has sensible defaults.
+
+---
+
+## Quick Start
+
+```ts
+import { defineChartType, registerChartType, createChart } from "@chartts/core"
+
+const dotPlot = defineChartType({
+  type: "dot-plot",
+
+  render(ctx) {
+    const { data, area, xScale, yScale, theme } = ctx
+    const nodes = []
+
+    for (const series of data.series) {
+      for (let i = 0; i < series.values.length; i++) {
+        const x = xScale.map(data.labels[i]!)
+        const y = yScale.map(series.values[i]!)
+
+        nodes.push({
+          type: "circle" as const,
+          cx: x,
+          cy: y,
+          r: 6,
+          attrs: {
+            fill: series.color,
+            fillOpacity: 0.7,
+            stroke: series.color,
+            strokeWidth: 1.5,
+          },
+        })
+      }
+    }
+
+    return nodes
+  },
+})
+
+registerChartType(dotPlot)
+
+const chart = createChart(container, { type: "dot-plot" })
+chart.setData({
+  labels: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+  series: [{ name: "Tasks", values: [12, 8, 15, 6, 20] }],
+})
+```
+
+---
+
+## defineChartType() Config
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `type` | `string` | Yes | - | Unique identifier for this chart type |
+| `render` | `(ctx: RenderContext) => RenderNode[]` | Yes | - | Produces the visual output as render tree nodes |
+| `getScaleTypes` | `() => { x: ScaleType; y: ScaleType }` | No | categorical x, linear y | Scale types for each axis |
+| `prepareData` | `(data: ChartData, options: ResolvedOptions) => PreparedData` | No | standard pipeline | Custom data preparation |
+| `hitTest` | `(ctx: RenderContext, x: number, y: number) => HitResult \| null` | No | returns null | Pointer hit detection for tooltips and hover |
+| `getHighlightNodes` | `(ctx: RenderContext, hit: HitResult) => RenderNode[]` | No | default glow ring | Custom hover highlight effect |
+| `suppressAxes` | `boolean` | No | `false` | If true, axes, grid, and legend are not rendered |
+| `useBandScale` | `boolean` | No | `false` | If true, x-scale uses band mode (prevents bars from overflowing) |
+
+---
+
+## RenderContext
+
+The `render` function receives a `RenderContext` with everything needed to produce output:
+
+```ts
+interface RenderContext {
+  data: PreparedData       // Validated data with computed bounds
+  options: ResolvedOptions // Fully resolved chart options
+  area: ChartArea          // { x, y, width, height } of the plot area
+  xScale: Scale            // Maps data values to x pixel positions
+  yScale: Scale            // Maps data values to y pixel positions
+  theme: ThemeConfig       // Current theme colors and sizes
+  zoomPan?: ZoomPanState   // Present when zoom/pan is active
+}
+```
+
+### PreparedData
+
+```ts
+interface PreparedData {
+  labels: (string | number | Date)[]
+  series: PreparedSeries[]
+  bounds: { xMin: number; xMax: number; yMin: number; yMax: number }
+}
+
+interface PreparedSeries {
+  name: string
+  values: number[]
+  color: string      // Resolved from theme palette
+  style: 'solid' | 'dashed' | 'dotted'
+  fill: boolean
+  fillOpacity: number
+  showPoints: boolean
+  index: number
+}
+```
+
+---
+
+## RenderNode Types
+
+The render function returns an array of `RenderNode` objects. These are renderer-agnostic descriptions that work with SVG, Canvas, and WebGL.
+
+| Node Type | Key Properties | Use Case |
+|-----------|---------------|----------|
+| `rect` | `x, y, width, height, rx?, ry?` | Bars, backgrounds, regions |
+| `circle` | `cx, cy, r` | Data points, bubbles |
+| `line` | `x1, y1, x2, y2` | Grid lines, connectors |
+| `path` | `d` | Complex shapes, curves, areas |
+| `text` | `x, y, content` | Labels, annotations |
+| `group` | `children` | Grouping with shared transforms or attrs |
+| `clipPath` | `id, children` | Clip regions |
+
+Every node accepts an `attrs` object for styling: `fill`, `stroke`, `strokeWidth`, `opacity`, `transform`, `class`, and more.
+
+---
+
+## Hit Testing
+
+To enable tooltips and hover interactions, implement `hitTest`. It receives the pointer position (in chart pixel coordinates) and should return the nearest data point:
+
+```ts
+const customChart = defineChartType({
+  type: "bubble",
+
+  render(ctx) { /* ... */ },
+
+  hitTest(ctx, mouseX, mouseY) {
+    const { data, xScale, yScale } = ctx
+    let best = null
+    let bestDist = 20 // max pixel distance to register a hit
+
+    for (const series of data.series) {
+      for (let i = 0; i < series.values.length; i++) {
+        const px = xScale.map(data.labels[i]!)
+        const py = yScale.map(series.values[i]!)
+        const dist = Math.sqrt((mouseX - px) ** 2 + (mouseY - py) ** 2)
+
+        if (dist < bestDist) {
+          bestDist = dist
+          best = {
+            seriesIndex: series.index,
+            pointIndex: i,
+            distance: dist,
+            x: px,
+            y: py,
+          }
+        }
+      }
+    }
+
+    return best
+  },
+})
+```
+
+### HitResult
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `seriesIndex` | `number` | Index of the matched series |
+| `pointIndex` | `number` | Index of the matched data point |
+| `distance` | `number` | Pixel distance from the pointer to the hit point |
+| `x` | `number` | Pixel x of the hit point in chart coordinates |
+| `y` | `number` | Pixel y of the hit point in chart coordinates |
+
+---
+
+## Custom Highlight
+
+Override the default hover highlight by providing `getHighlightNodes`:
+
+```ts
+defineChartType({
+  type: "ring-highlight",
+
+  render(ctx) { /* ... */ },
+  hitTest(ctx, x, y) { /* ... */ },
+
+  getHighlightNodes(ctx, hit) {
+    return [
+      {
+        type: "circle",
+        cx: hit.x,
+        cy: hit.y,
+        r: 12,
+        attrs: {
+          fill: "none",
+          stroke: ctx.theme.colors[hit.seriesIndex],
+          strokeWidth: 2,
+          strokeDasharray: "4,2",
+        },
+      },
+    ]
+  },
+})
+```
+
+---
+
+## Scale Types
+
+By default, custom chart types use categorical x and linear y scales. Override `getScaleTypes` for different behaviors:
+
+```ts
+defineChartType({
+  type: "time-scatter",
+  getScaleTypes: () => ({ x: "time", y: "linear" }),
+  render(ctx) { /* ... */ },
+})
+```
+
+Available scale types:
+- `'categorical'`: Discrete labels with equal spacing
+- `'linear'`: Continuous numeric range
+- `'time'`: Date/time axis with automatic tick formatting
+- `'log'`: Logarithmic scale
+
+---
+
+## Full Example: Horizontal Lollipop Chart
+
+```ts
+import { defineChartType, registerChartType } from "@chartts/core"
+
+const lollipop = defineChartType({
+  type: "lollipop",
+  useBandScale: true,
+
+  render(ctx) {
+    const { data, area, xScale, yScale, theme } = ctx
+    const nodes = []
+    const series = data.series[0]
+    if (!series) return nodes
+
+    for (let i = 0; i < series.values.length; i++) {
+      const x = xScale.map(data.labels[i]!)
+      const y = yScale.map(series.values[i]!)
+      const baseY = yScale.map(0)
+
+      // Stem
+      nodes.push({
+        type: "line" as const,
+        x1: x,
+        y1: baseY,
+        x2: x,
+        y2: y,
+        attrs: {
+          stroke: series.color,
+          strokeWidth: 2,
+        },
+      })
+
+      // Head
+      nodes.push({
+        type: "circle" as const,
+        cx: x,
+        cy: y,
+        r: 6,
+        attrs: {
+          fill: series.color,
+          stroke: theme.background,
+          strokeWidth: 2,
+        },
+      })
+    }
+
+    return nodes
+  },
+
+  hitTest(ctx, mouseX, mouseY) {
+    const { data, xScale, yScale } = ctx
+    const series = data.series[0]
+    if (!series) return null
+
+    let best = null
+    let bestDist = 25
+
+    for (let i = 0; i < series.values.length; i++) {
+      const px = xScale.map(data.labels[i]!)
+      const py = yScale.map(series.values[i]!)
+      const dist = Math.sqrt((mouseX - px) ** 2 + (mouseY - py) ** 2)
+
+      if (dist < bestDist) {
+        bestDist = dist
+        best = { seriesIndex: 0, pointIndex: i, distance: dist, x: px, y: py }
+      }
+    }
+
+    return best
+  },
+})
+
+registerChartType(lollipop)
+```
+
+---
+
+## Tips
+
+- Start with just `type` and `render`. Add hit testing and highlights later
+- The `area` in `RenderContext` gives you the exact pixel bounds for the plot region (excluding axes and padding). Always position elements relative to this
+- Use `theme.colors[series.index]` to pick colors from the active palette
+- Set `suppressAxes: true` for chart types that do not need standard axes (pie, radar, gauge, etc.)
+- Set `useBandScale: true` for bar-like charts to prevent elements from overflowing the category boundaries
+- `prepareData` defaults to the standard pipeline (validation, bounds computation, color assignment). Override it only if your chart type has unusual data requirements

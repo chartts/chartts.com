@@ -1,0 +1,289 @@
+---
+title: "Creating Custom Themes"
+description: "Define custom visual themes for Chart.ts using the ThemeConfig interface. Control colors, typography, grid styles, and more. Themes are applied as CSS custom properties for easy overriding."
+badge: "Theming"
+---
+
+## Overview
+
+Every Chart.ts chart is styled through a `ThemeConfig` object that controls colors, typography, grid appearance, tooltips, and element sizing. The library ships with built-in presets (`light`, `dark`, `corporate`, `saas`, `startup`, `editorial`, `ocean`) and the `@chartts/themes` package adds 34 more community presets.
+
+You can also create your own theme from scratch or extend an existing one.
+
+## Built-in Theme Presets
+
+Pass a preset name as a string to the `theme` option:
+
+```ts
+import { createChart } from "@chartts/core"
+
+const chart = createChart(container, {
+  theme: "dark",
+})
+```
+
+### Core presets (always available)
+
+| Name | Description |
+|------|-------------|
+| `light` | Default light theme with neutral grays |
+| `dark` | Dark background with light text |
+| `auto` | Follows system `prefers-color-scheme` |
+| `corporate` | Muted blues and grays, conservative styling |
+| `saas` | Vibrant, modern palette with rounded elements |
+| `startup` | High contrast, energetic colors |
+| `editorial` | Newspaper-inspired serif typography |
+| `ocean` | Dark mode with ocean-inspired gradients |
+
+### @chartts/themes (34 additional presets)
+
+Install the themes package for more options:
+
+```bash
+npm install @chartts/themes
+```
+
+```ts
+import { EXTRA_THEMES } from "@chartts/themes"
+```
+
+Available themes: `neon`, `pastel`, `monochrome`, `luxury`, `retro`, `minimal`, `midnight`, `earth`, `nord`, `dracula`, `solarized-light`, `solarized-dark`, `catppuccin`, `tokyo-night`, `gruvbox`, `one-dark`, `synthwave`, `forest`, `sunset`, `arctic`, `autumn`, `spring`, `cyberpunk`, `vintage`, `blueprint`, `newspaper`, `chalk`, `watercolor`, `material`, `corporate-blue`, `corporate-green`, `corporate-red`, `sketchy`, `rose-pine`.
+
+---
+
+## ThemeConfig Interface
+
+Every theme is a plain object conforming to `ThemeConfig`:
+
+```ts
+interface ThemeConfig {
+  colors: string[]           // Series color palette (10 recommended)
+  background: string         // Chart background color
+  textColor: string          // Primary text color
+  textMuted: string          // Secondary/muted text color
+  axisColor: string          // Axis line color
+  gridColor: string          // Grid line color
+  tooltipBackground: string  // Tooltip background
+  tooltipText: string        // Tooltip text color
+  tooltipBorder: string      // Tooltip border color
+  fontFamily: string         // Font family stack
+  fontSize: number           // Base font size (px)
+  fontSizeSmall: number      // Small labels font size (px)
+  fontSizeLarge: number      // Large labels font size (px)
+  borderRadius: number       // Border radius for tooltips and UI elements (px)
+  gridStyle: 'solid' | 'dashed' | 'dotted'  // Grid line style
+  gridWidth: number          // Grid line width
+  axisWidth: number          // Axis line width
+  pointRadius: number        // Data point dot radius
+  lineWidth: number          // Line/stroke width for series
+}
+```
+
+All fields are required. There are no optional properties.
+
+---
+
+## Creating a Custom Theme
+
+### From scratch
+
+Define every property of the ThemeConfig:
+
+```ts
+import type { ThemeConfig } from "@chartts/core"
+
+const brandTheme: ThemeConfig = {
+  colors: [
+    "#2563eb", "#7c3aed", "#db2777", "#ea580c", "#ca8a04",
+    "#059669", "#0891b2", "#4f46e5", "#be185d", "#b45309",
+  ],
+  background: "transparent",
+  textColor: "#1e293b",
+  textMuted: "#64748b",
+  axisColor: "#94a3b8",
+  gridColor: "#e2e8f0",
+  tooltipBackground: "#0f172a",
+  tooltipText: "#f8fafc",
+  tooltipBorder: "#334155",
+  fontFamily: '"Inter", -apple-system, sans-serif',
+  fontSize: 12,
+  fontSizeSmall: 10,
+  fontSizeLarge: 14,
+  borderRadius: 8,
+  gridStyle: "dashed",
+  gridWidth: 1,
+  axisWidth: 1,
+  pointRadius: 3.5,
+  lineWidth: 2,
+}
+
+const chart = createChart(container, {
+  theme: brandTheme,
+})
+```
+
+### Extending an existing theme
+
+Import a built-in preset and override specific properties:
+
+```ts
+import { createChart } from "@chartts/core"
+
+// The resolveTheme function converts a name to a ThemeConfig object.
+// Or you can spread from an imported preset directly.
+import { CORPORATE_THEME } from "@chartts/core"
+
+const customCorporate: ThemeConfig = {
+  ...CORPORATE_THEME,
+  colors: ["#1d4ed8", "#7e22ce", "#be123c", "#c2410c", "#a16207"],
+  fontFamily: '"Poppins", "Inter", sans-serif',
+  borderRadius: 12,
+  gridStyle: "dotted",
+}
+
+const chart = createChart(container, {
+  theme: customCorporate,
+})
+```
+
+---
+
+## CSS Custom Properties
+
+When a theme is applied to a chart, Chart.ts sets CSS custom properties on the chart's root element. This means you can override theme values with CSS or Tailwind without touching JavaScript.
+
+### Property mapping
+
+| CSS Variable | ThemeConfig Field | Example Value |
+|-------------|-------------------|---------------|
+| `--chartts-color-1` through `--chartts-color-10` | `colors[0..9]` | `#2563eb` |
+| `--chartts-bg` | `background` | `transparent` |
+| `--chartts-text` | `textColor` | `#1e293b` |
+| `--chartts-text-muted` | `textMuted` | `#64748b` |
+| `--chartts-axis` | `axisColor` | `#94a3b8` |
+| `--chartts-grid` | `gridColor` | `#e2e8f0` |
+| `--chartts-tooltip-bg` | `tooltipBackground` | `#ffffff` |
+| `--chartts-tooltip-text` | `tooltipText` | `#1e293b` |
+| `--chartts-tooltip-border` | `tooltipBorder` | `#cbd5e1` |
+| `--chartts-font-family` | `fontFamily` | `"Inter", sans-serif` |
+| `--chartts-font-size` | `fontSize` | `12px` |
+| `--chartts-font-size-sm` | `fontSizeSmall` | `10px` |
+| `--chartts-font-size-lg` | `fontSizeLarge` | `14px` |
+| `--chartts-radius` | `borderRadius` | `8px` |
+| `--chartts-grid-width` | `gridWidth` | `1` |
+| `--chartts-axis-width` | `axisWidth` | `1` |
+| `--chartts-point-r` | `pointRadius` | `3.5` |
+| `--chartts-line-w` | `lineWidth` | `2` |
+
+### Override with CSS
+
+```css
+/* Override the first series color site-wide */
+.chartts-root {
+  --chartts-color-1: #7c3aed;
+  --chartts-grid: #f3f4f6;
+}
+
+/* Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+  .chartts-root {
+    --chartts-text: #e2e8f0;
+    --chartts-grid: #1e293b;
+    --chartts-axis: #334155;
+  }
+}
+```
+
+### Override with Tailwind
+
+```html
+<div class="[--chartts-color-1:#7c3aed] [--chartts-grid:#f3f4f6]">
+  <!-- chart renders here -->
+</div>
+```
+
+---
+
+## Auto Theme (System Preference)
+
+The `"auto"` theme follows the user's system color scheme preference. It uses `light` when `prefers-color-scheme: light` and `dark` when `prefers-color-scheme: dark`.
+
+```ts
+const chart = createChart(container, {
+  theme: "auto",
+})
+```
+
+Chart.ts also exports `watchScheme()` for listening to system scheme changes:
+
+```ts
+import { watchScheme } from "@chartts/core"
+
+const unsubscribe = watchScheme((scheme) => {
+  console.log("System scheme changed to:", scheme) // "light" or "dark"
+  chart.setOptions({ theme: scheme })
+})
+
+// Later: stop watching
+unsubscribe()
+```
+
+---
+
+## Full Example: Dashboard with Brand Theme
+
+```ts
+import { createChart } from "@chartts/core"
+import type { ThemeConfig } from "@chartts/core"
+
+const acmeTheme: ThemeConfig = {
+  colors: [
+    "#0066ff", "#00cc88", "#ff6600", "#cc00ff", "#ffcc00",
+    "#0099cc", "#ff3366", "#33cc33", "#9966ff", "#ff9900",
+  ],
+  background: "transparent",
+  textColor: "#1a1a2e",
+  textMuted: "#6b6b8a",
+  axisColor: "#b0b0c0",
+  gridColor: "#ececf0",
+  tooltipBackground: "#1a1a2e",
+  tooltipText: "#ffffff",
+  tooltipBorder: "#3a3a5c",
+  fontFamily: '"Poppins", "Inter", sans-serif',
+  fontSize: 12,
+  fontSizeSmall: 10,
+  fontSizeLarge: 15,
+  borderRadius: 10,
+  gridStyle: "dashed",
+  gridWidth: 1,
+  axisWidth: 1.5,
+  pointRadius: 4,
+  lineWidth: 2.5,
+}
+
+const chart = createChart(document.getElementById("revenue-chart")!, {
+  theme: acmeTheme,
+  xLabel: "Quarter",
+  yLabel: "Revenue ($M)",
+  legend: "top",
+  tooltip: true,
+  animate: true,
+})
+
+chart.setData({
+  labels: ["Q1 2024", "Q2 2024", "Q3 2024", "Q4 2024", "Q1 2025"],
+  series: [
+    { name: "Product A", values: [4.2, 5.1, 5.8, 6.3, 7.1] },
+    { name: "Product B", values: [2.8, 3.2, 3.9, 4.1, 4.6] },
+    { name: "Services", values: [1.5, 1.8, 2.1, 2.4, 2.9] },
+  ],
+})
+```
+
+## Tips
+
+- Set `background: "transparent"` in most cases. This lets the chart inherit the page background, which works better with CSS dark mode and container styling.
+- Provide at least 10 colors in the `colors` array. Series cycle through these colors, and fewer than 10 can cause color repetition in multi-series charts.
+- The `gridStyle` property accepts `"solid"`, `"dashed"`, or `"dotted"`. Dashed grids work well for dark themes; solid grids are better for print and editorial styles.
+- Use `fontSizeSmall` for axis tick labels and `fontSizeLarge` for chart titles. The base `fontSize` applies to legend text and general labels.
+- All CSS custom properties are set on the chart root element, so multiple charts on the same page can each have different themes.

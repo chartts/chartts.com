@@ -1,0 +1,176 @@
+# Chart.ts
+
+> Chart.ts is an enterprise-grade JavaScript/TypeScript charting library with 65+ chart types, triple-renderer architecture (SVG/Canvas/WebGL), GPU-accelerated rendering, real-time streaming, financial indicators, and a full plugin system. Under 15kb gzipped. MIT licensed. https://chartts.com
+
+## Key Specs
+- Chart types: 65+ (52 core + 13 WebGL/3D)
+- Bundle size: under 15kb gzipped (entire library)
+- npm packages: 25
+- Theme presets: 100+
+- Frameworks: React, Vue, Svelte, Solid, Angular, Vanilla JS
+- License: MIT (free for commercial use, forever)
+- Accessibility: WCAG AA compliant
+- TypeScript: strict mode, zero any types
+
+## Core Chart Types (52)
+Line, Bar, Stacked Bar, Horizontal Bar, Area, Step, Sparkline, Range, Baseline, Combo, Pie, Donut, Scatter, Bubble, Radar, Polar, Radial Bar, Candlestick, OHLC, Volume, Kagi, Renko, Waterfall, Funnel, Gauge, Heatmap, Calendar, Matrix, Box Plot, Histogram, Violin, Treemap, Sunburst, Pack, Sankey, Chord, Tree, Graph/Network, Parallel Coordinates, Themeriver, Pictorial Bar, Geo/Maps, Lines, Lollipop, Bullet, Dumbbell, Voronoi, Word Cloud, Pillar, Pareto, Gantt, Org Chart, Flow
+
+## WebGL/3D Chart Types (13) via @chartts/gl
+Bar3D, Line3D, Lines3D, Scatter3D, Surface3D, Globe3D, Map3D, Torus3D, Scatter-GL (100k+ points), Lines-GL, Flow-GL, Graph-GL
+
+## Rendering Architecture
+- SVG (default): Full DOM, CSS styleable, screen reader accessible, SSR compatible
+- Canvas (auto at 10k+ points): 2D context, 60fps performance
+- WebGL (auto at 100k+ points): GPU-accelerated, handles millions of data points
+- Override via renderer option: 'svg' | 'canvas' | 'webgl'
+
+## Real-Time Streaming
+- createStreamingChart() with circular buffer and configurable rolling window
+- @chartts/websocket package: WebSocket, Server-Sent Events (SSE), HTTP polling
+- Auto-reconnect with exponential backoff
+- Pause/resume, batch push, throttled rendering via requestAnimationFrame
+
+## Financial Analysis (@chartts/finance)
+Moving averages: SMA, EMA, WMA
+Oscillators: RSI, Stochastic, MACD (line, signal, histogram)
+Volatility: Bollinger Bands (upper/middle/lower), ATR
+Volume: VWAP, OBV
+Returns: simple, log, cumulative, drawdown, max drawdown
+Risk: Sharpe ratio, volatility (annualized, rolling)
+Data builders: toOHLC, volumeDirections, toBollingerData, toMACDData
+
+## Plugin System
+- defineChartType() creates fully custom chart types
+- Render context provides: scales, theme, data, chart area, hit testing
+- Renderer-agnostic render nodes work with SVG, Canvas, and WebGL
+- Custom scales, custom interactions, custom tooltip templates
+
+## Interaction System
+- Zoom: wheel zoom, pinch-to-zoom, configurable min/max (1-20x)
+- Pan: drag to pan, axis-locked or free
+- Brush: click-drag selection, emits brush:end with selected range
+- Crosshair: vertical, horizontal, or both modes with value labels
+- Linked charts: cross-chart crosshair sync via linkCharts()
+
+## Framework Packages
+- @chartts/react: hooks, refs, Next.js SSR
+- @chartts/vue: Composition API, Nuxt SSR
+- @chartts/svelte: stores, SvelteKit SSR
+- @chartts/solid: signals, SolidStart SSR
+- @chartts/angular: standalone components, Angular signals
+- @chartts/core: vanilla JS, no framework needed
+
+## Additional Packages
+- @chartts/ssr: Server-side rendering (SVG, PNG, JPEG export)
+- @chartts/cli: Command-line chart generation
+- @chartts/regression: Linear, polynomial, exponential, logarithmic, power regression + trend lines + forecasting
+- @chartts/statistics: mean, median, mode, variance, percentile, quartiles, outliers, KDE, bootstrap
+- @chartts/test-utils: Mock data generators, chart data assertions, snapshot testing
+- @chartts/annotation: Reference lines, reference areas, thresholds, data labels
+- @chartts/datalabels: Labels on chart elements (bar values, pie percentages)
+- @chartts/themes: 100+ presets (Nord, Dracula, Catppuccin, Tokyo Night, Gruvbox, Synthwave, Material, Solarized, Rose Pine, and more)
+- @chartts/csv, @chartts/json, @chartts/excel, @chartts/parquet, @chartts/arrow: Data import/export
+- @chartts/date-fns, @chartts/dayjs: Date formatting adapters
+- @chartts/tailwind: Tailwind CSS plugin
+
+## Documentation
+- Docs: https://chartts.com/docs
+- All Chart Types: https://chartts.com/demos
+- Examples: https://chartts.com/examples
+- API: https://chartts.com/docs/api
+- Comparisons: https://chartts.com/compare
+- Pricing: https://chartts.com/pricing (MIT free, enterprise support available)
+
+---
+
+## Code Examples
+
+### Basic Chart (React)
+
+```tsx
+import { Chart } from '@chartts/react'
+
+export function Dashboard() {
+  return (
+    <Chart
+      type="line"
+      data={{
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+        series: [{ name: 'Revenue', values: [30, 45, 28, 65, 52] }]
+      }}
+      options={{ theme: 'nord' }}
+    />
+  )
+}
+```
+
+### Financial Chart with Indicators
+
+```tsx
+import { Chart } from '@chartts/react'
+import { sma, ema, bollingerBands, rsi, macd } from '@chartts/finance'
+
+const closes = [44.34, 44.09, 43.61, 44.33, 44.83, 45.10, 45.42, 45.84, ...]
+const sma20 = sma(closes, 20)
+const bands = bollingerBands(closes, 20, 2)
+const macdData = macd(closes, 12, 26, 9)
+```
+
+### Real-Time Streaming
+
+```ts
+import { createStreamingChart } from '@chartts/core'
+import { createWebSocketStream } from '@chartts/websocket'
+
+const chart = createStreamingChart(container, {
+  type: 'line',
+  window: 200,
+  throttle: 16,
+})
+
+const stream = createWebSocketStream(chart, 'wss://api.example.com/live', {
+  parse: (msg) => ({ values: [msg.price], label: msg.time })
+})
+```
+
+### 3D Chart
+
+```ts
+import { createChart } from '@chartts/gl'
+
+createChart(container, {
+  type: 'scatter3d',
+  data: { x: [...], y: [...], z: [...], size: [...] },
+  options: { camera: { distance: 3 } }
+})
+```
+
+### Plugin System
+
+```ts
+import { defineChartType } from '@chartts/core'
+
+const myChart = defineChartType({
+  name: 'custom-gauge',
+  render(ctx) { /* SVG/Canvas/WebGL render nodes */ },
+  hitTest(ctx, x, y) { /* pointer hit detection */ },
+})
+```
+
+### Server-Side Rendering
+
+```ts
+import { renderChart } from '@chartts/ssr'
+
+const svg = renderChart({
+  type: 'bar',
+  data: { labels: ['Q1', 'Q2', 'Q3'], series: [{ values: [10, 25, 18] }] },
+})
+```
+
+### CLI
+
+```bash
+chartts render --type line --data sales.csv -o chart.svg
+chartts render --type bar --data data.json -o chart.png --theme dracula
+```

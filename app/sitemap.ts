@@ -24,6 +24,34 @@ const hardcodedDocSlugs = [
   "angular",
   "vanilla",
   "cdn",
+  "remix",
+  "astro",
+  "nuxt",
+  "sveltekit",
+  "streaming",
+  "zoom-pan",
+  "brush",
+  "export",
+  "data-adapters",
+  "plugins",
+  "linked-charts",
+  "decimation",
+  "annotations",
+  "richtext",
+  "theme-creation",
+  "datazoom",
+  "debug",
+  "ssr",
+  "finance-pkg",
+  "annotation-plugin",
+  "datalabels",
+  "regression",
+  "statistics-pkg",
+  "test-utils",
+  "cli",
+  "date-fns-adapter",
+  "dayjs-adapter",
+  "websocket",
 ];
 
 const chartSlugs = [
@@ -113,6 +141,12 @@ const compareSlugs = [
   "nivo",
   "visx",
   "highcharts",
+  "plotly",
+  "victory",
+  "tremor",
+  "tradingview",
+  "shadcn-charts",
+  "google-charts",
 ];
 
 const seoLandingSlugs = [
@@ -140,6 +174,67 @@ const seoLandingSlugs = [
   "bitcoin-chart",
   "ai-chart",
   "data-visualization",
+  // React chart type landings
+  "react-area-chart",
+  "react-scatter-plot",
+  "react-radar-chart",
+  "react-heatmap",
+  "react-treemap",
+  "react-gauge-chart",
+  "react-funnel-chart",
+  "react-waterfall-chart",
+  "react-candlestick-chart",
+  "react-donut-chart",
+  "react-bubble-chart",
+  "react-sparkline",
+  "react-sankey-diagram",
+  "react-boxplot",
+  // Framework landings
+  "angular-chart-library",
+  "solid-js-charts",
+  "remix-charts",
+  "astro-charts",
+  "nuxt-chart-library",
+  "sveltekit-charts",
+  "qwik-charts",
+  // Feature landings
+  "svg-chart-library",
+  "ssr-charts-nextjs",
+  "lightweight-react-charts",
+  "accessible-chart-library",
+  "dark-mode-charts",
+  "real-time-charts-react",
+  "chart-library-typescript",
+  "react-dashboard-charts",
+  "react-financial-charts",
+  "open-source-charts",
+  "free-chart-library",
+  // Generic chart type landings
+  "sankey-diagram",
+  "treemap-chart",
+  "radar-chart",
+  "heatmap-chart",
+  "gauge-chart",
+  "funnel-chart",
+  "bubble-chart",
+  "scatter-plot",
+  "donut-chart",
+  "stock-chart",
+  "area-chart",
+  "histogram-chart",
+  "boxplot-chart",
+  "dashboard-components",
+  // Advanced capability landings
+  "webgl-charts",
+  "3d-charts-javascript",
+  "real-time-charts",
+  "financial-chart-library",
+  "network-graph-javascript",
+  "sankey-diagram-javascript",
+  "enterprise-chart-library",
+  "chart-plugin-system",
+  "react-3d-charts",
+  "react-real-time-charts",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -157,6 +252,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/changelog`, changeFrequency: "weekly", priority: 0.7, lastModified: now },
     { url: `${BASE}/compare`, changeFrequency: "monthly", priority: 0.8, lastModified: now },
     { url: `${BASE}/chart-maker`, changeFrequency: "weekly", priority: 0.9, lastModified: now },
+    { url: `${BASE}/capabilities`, changeFrequency: "monthly", priority: 0.9, lastModified: now },
+    { url: `${BASE}/benchmarks`, changeFrequency: "monthly", priority: 0.8, lastModified: now },
   ];
 
   // Doc pages (hardcoded + MDX)
@@ -210,6 +307,50 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: now,
   }));
 
+  // Migration guides
+  const migrateSlugs = [
+    "from-chartjs",
+    "from-recharts",
+    "from-d3",
+    "from-echarts",
+    "from-highcharts",
+    "from-apexcharts",
+  ];
+  const migratePages: MetadataRoute.Sitemap = [
+    { url: `${BASE}/migrate`, changeFrequency: "monthly", priority: 0.8, lastModified: now },
+    ...migrateSlugs.map((slug) => ({
+      url: `${BASE}/migrate/${slug}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+      lastModified: now,
+    })),
+  ];
+
+  // Use case pages
+  const useCaseSlugs = [
+    "saas-dashboard",
+    "financial-analytics",
+    "admin-panel",
+    "iot-monitoring",
+    "ecommerce",
+    "healthcare",
+    "startup-mvp",
+    "trading-platform",
+    "scientific-research",
+    "network-monitoring",
+    "supply-chain",
+    "operations-center",
+  ];
+  const useCasePages: MetadataRoute.Sitemap = [
+    { url: `${BASE}/use-cases`, changeFrequency: "monthly", priority: 0.8, lastModified: now },
+    ...useCaseSlugs.map((slug) => ({
+      url: `${BASE}/use-cases/${slug}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+      lastModified: now,
+    })),
+  ];
+
   return [
     ...staticPages,
     ...docPages,
@@ -218,5 +359,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...blogPages,
     ...comparePages,
     ...seoPages,
+    ...migratePages,
+    ...useCasePages,
   ];
 }

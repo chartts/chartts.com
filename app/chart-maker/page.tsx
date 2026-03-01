@@ -2,22 +2,53 @@
 
 import { useState, useRef, useCallback, useMemo, type DragEvent } from "react";
 import Link from "next/link";
+import { renderToString } from "@chartts/core";
+import type { ThemeConfig } from "@chartts/core";
+import { EXTRA_THEMES } from "@chartts/themes";
+import { sampleData, chartDisplayNames, chartTypes } from "@/lib/charts";
 
 // ---------- types ----------
 
-type ChartType = "bar" | "line" | "pie" | "scatter" | "area" | "donut";
-
 interface ChartConfig {
-  type: ChartType;
+  type: string;
   xColumn: string | null;
   yColumns: string[];
 }
 
-// ---------- colours ----------
+// ---------- theme categories (same as playground) ----------
 
-const PALETTE = [
-  "#06b6d4", "#10b981", "#f59e0b", "#ef4444",
-  "#8b5cf6", "#ec4899", "#14b8a6", "#f97316",
+const BUILTIN_THEMES = ["dark", "light", "corporate", "saas", "startup", "editorial", "ocean"];
+const THEME_CATEGORIES: { label: string; themes: string[] }[] = [
+  { label: "Built-in", themes: BUILTIN_THEMES },
+  { label: "Popular", themes: ["nord", "dracula", "catppuccin", "tokyo-night", "gruvbox", "one-dark", "rose-pine", "solarized-light", "solarized-dark", "synthwave", "cyberpunk"] },
+  { label: "Editor", themes: ["monokai", "github-light", "github-dark", "ayu-light", "ayu-dark", "panda", "cobalt", "night-owl", "palenight", "andromeda"] },
+  { label: "Brand", themes: ["stripe", "vercel", "linear", "figma", "notion", "slack", "spotify", "discord"] },
+  { label: "Data Viz", themes: ["tableau", "d3-category10", "observable", "economist", "bloomberg", "financial-times"] },
+  { label: "Nature", themes: ["forest", "ocean-deep", "volcanic", "aurora", "coral-reef", "desert-sand", "earth", "arctic", "autumn", "spring", "sunset"] },
+  { label: "Modern UI", themes: ["glassmorphism", "neomorphism", "flat-design", "metro", "ios-light", "ios-dark", "carbon", "frost", "material", "minimal"] },
+  { label: "Industry", themes: ["healthcare", "fintech", "gaming", "education", "government"] },
+  { label: "Accessibility", themes: ["high-contrast-light", "high-contrast-dark", "colorblind-safe", "deuteranopia-safe"] },
+];
+
+function getThemeConfig(name: string): string | ThemeConfig {
+  if (BUILTIN_THEMES.includes(name)) return name;
+  const config = EXTRA_THEMES[name];
+  return config ?? name;
+}
+
+// ---------- chart type categories ----------
+
+const CHART_CATEGORIES: { label: string; types: string[] }[] = [
+  { label: "Basic", types: ["bar", "line", "area", "pie", "donut", "scatter"] },
+  { label: "Trending", types: ["step", "sparkline", "range", "baseline", "combo"] },
+  { label: "Comparison", types: ["stacked-bar", "horizontal-bar", "lollipop", "bullet", "dumbbell", "pillar", "pareto"] },
+  { label: "Composition", types: ["treemap", "sunburst", "pack", "funnel", "waterfall"] },
+  { label: "Distribution", types: ["bubble", "histogram", "boxplot", "violin", "heatmap"] },
+  { label: "Radial", types: ["radar", "polar", "radial-bar", "gauge"] },
+  { label: "Financial", types: ["candlestick", "ohlc", "volume", "kagi", "renko"] },
+  { label: "Relationship", types: ["sankey", "chord", "graph", "flow", "parallel"] },
+  { label: "Hierarchy", types: ["tree", "org", "gantt"] },
+  { label: "Specialty", types: ["calendar", "matrix", "geo", "wordcloud", "voronoi", "themeriver", "pictorialbar", "lines"] },
 ];
 
 // ---------- sample data ----------
@@ -41,10 +72,6 @@ function isNumericCol(rows: string[][], colIdx: number): boolean {
   return rows.every((r) => r[colIdx] !== undefined && !isNaN(parseFloat(r[colIdx])) && r[colIdx].trim() !== "");
 }
 
-function getNumVal(rows: string[][], rowIdx: number, colIdx: number): number {
-  return parseFloat(rows[rowIdx]?.[colIdx] ?? "0") || 0;
-}
-
 function parseCSVToGrid(raw: string): { columns: string[]; rows: string[][] } {
   const lines = raw.trim().split(/\r?\n/).filter(Boolean);
   if (lines.length < 1) return { columns: [], rows: [] };
@@ -55,268 +82,11 @@ function parseCSVToGrid(raw: string): { columns: string[]; rows: string[][] } {
   return { columns, rows };
 }
 
-// ---------- chart type config ----------
-
-const CHART_TYPES: { value: ChartType; label: string }[] = [
-  { value: "bar", label: "Bar" },
-  { value: "line", label: "Line" },
-  { value: "area", label: "Area" },
-  { value: "pie", label: "Pie" },
-  { value: "donut", label: "Donut" },
-  { value: "scatter", label: "Scatter" },
-];
-
-// ---------- multi-series chart renderers ----------
-
-const W = 500;
-const H = 300;
-const PAD = { t: 25, r: 20, b: 50, l: 58 };
-const CW = W - PAD.l - PAD.r;
-const CH = H - PAD.t - PAD.b;
-
-function GridAndAxes({ max, xLabels, yLabel }: { max: number; xLabels: string[]; yLabel: string }) {
-  return (
-    <>
-      {[0, 0.25, 0.5, 0.75, 1].map((f) => (
-        <g key={f}>
-          <line x1={PAD.l} y1={PAD.t + CH * (1 - f)} x2={W - PAD.r} y2={PAD.t + CH * (1 - f)} stroke="currentColor" opacity={0.07} />
-          <text x={PAD.l - 8} y={PAD.t + CH * (1 - f) + 3} textAnchor="end" fontSize="9" fill="currentColor" className="fill-current muted-text">
-            {Math.round(max * f).toLocaleString()}
-          </text>
-        </g>
-      ))}
-      {xLabels.map((label, i) => (
-        <text key={i} x={PAD.l + (i + 0.5) * (CW / xLabels.length)} y={H - PAD.b + 16} textAnchor="middle" fontSize="9" fill="currentColor" className="fill-current muted-text">
-          {label.slice(0, 10)}
-        </text>
-      ))}
-      <line x1={PAD.l} y1={PAD.t + CH} x2={W - PAD.r} y2={PAD.t + CH} stroke="currentColor" opacity={0.15} />
-      <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={PAD.t + CH} stroke="currentColor" opacity={0.15} />
-      <text x={14} y={H / 2} textAnchor="middle" fontSize="9" fill="currentColor" className="fill-current muted-text" transform={`rotate(-90,14,${H / 2})`}>{yLabel}</text>
-    </>
-  );
-}
-
-function Legend({ series }: { series: { name: string; color: string }[] }) {
-  if (series.length <= 1) return null;
-  return (
-    <>
-      {series.map((s, i) => (
-        <g key={i}>
-          <rect x={PAD.l + i * 90} y={H - 12} width={10} height={10} rx={2} fill={s.color} opacity={0.85} />
-          <text x={PAD.l + i * 90 + 14} y={H - 3} fontSize="9" fill="currentColor" className="fill-current muted-text">
-            {s.name.slice(0, 10)}
-          </text>
-        </g>
-      ))}
-    </>
-  );
-}
-
-interface MultiProps {
-  rows: string[][];
-  columns: string[];
-  xCol: number;
-  yCols: number[];
-}
-
-function BarChartMulti({ rows, columns, xCol, yCols }: MultiProps) {
-  const labels = rows.map((r) => r[xCol] || "");
-  const allVals = yCols.flatMap((ci) => rows.map((r) => getNumVal(rows, rows.indexOf(r), ci)));
-  const max = Math.max(...allVals, 1);
-  const groupW = CW / rows.length;
-  const barW = Math.min(30, (groupW - 4) / yCols.length - 2);
-  const series = yCols.map((ci, si) => ({ name: columns[ci], color: PALETTE[si % PALETTE.length] }));
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full">
-      <GridAndAxes max={max} xLabels={labels} yLabel={yCols.map((c) => columns[c]).join(", ")} />
-      {rows.map((row, ri) =>
-        yCols.map((ci, si) => {
-          const v = getNumVal(rows, ri, ci);
-          const barH = (v / max) * CH || 1;
-          const xPos = PAD.l + ri * groupW + (groupW - barW * yCols.length - 2 * (yCols.length - 1)) / 2 + si * (barW + 2);
-          return (
-            <rect key={`${ri}-${si}`} x={xPos} y={PAD.t + CH - barH} width={barW} height={barH} rx={2} fill={series[si].color} opacity={0.85} />
-          );
-        })
-      )}
-      <Legend series={series} />
-    </svg>
-  );
-}
-
-function LineChartMulti({ rows, columns, xCol, yCols }: MultiProps) {
-  const labels = rows.map((r) => r[xCol] || "");
-  const allVals = yCols.flatMap((ci) => rows.map((_, ri) => getNumVal(rows, ri, ci)));
-  const max = Math.max(...allVals, 1);
-  const series = yCols.map((ci, si) => ({ name: columns[ci], color: PALETTE[si % PALETTE.length] }));
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full">
-      <GridAndAxes max={max} xLabels={labels} yLabel={yCols.map((c) => columns[c]).join(", ")} />
-      {yCols.map((ci, si) => {
-        const pts = rows.map((_, ri) => ({
-          x: PAD.l + (ri / Math.max(rows.length - 1, 1)) * CW,
-          y: PAD.t + CH - (getNumVal(rows, ri, ci) / max) * CH,
-        }));
-        const d = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
-        return (
-          <g key={si}>
-            <path d={d} fill="none" stroke={series[si].color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" opacity={0.85} />
-            {pts.map((p, i) => (
-              <circle key={i} cx={p.x} cy={p.y} r={3.5} fill="var(--c-bg, #0a0a0f)" stroke={series[si].color} strokeWidth={2} />
-            ))}
-          </g>
-        );
-      })}
-      <Legend series={series} />
-    </svg>
-  );
-}
-
-function AreaChartMulti({ rows, columns, xCol, yCols }: MultiProps) {
-  const labels = rows.map((r) => r[xCol] || "");
-  const allVals = yCols.flatMap((ci) => rows.map((_, ri) => getNumVal(rows, ri, ci)));
-  const max = Math.max(...allVals, 1);
-  const series = yCols.map((ci, si) => ({ name: columns[ci], color: PALETTE[si % PALETTE.length] }));
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full">
-      <defs>
-        {yCols.map((_, si) => (
-          <linearGradient key={si} id={`af${si}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={series[si].color} stopOpacity={0.25} />
-            <stop offset="100%" stopColor={series[si].color} stopOpacity={0.02} />
-          </linearGradient>
-        ))}
-      </defs>
-      <GridAndAxes max={max} xLabels={labels} yLabel={yCols.map((c) => columns[c]).join(", ")} />
-      {yCols.map((ci, si) => {
-        const pts = rows.map((_, ri) => ({
-          x: PAD.l + (ri / Math.max(rows.length - 1, 1)) * CW,
-          y: PAD.t + CH - (getNumVal(rows, ri, ci) / max) * CH,
-        }));
-        const lineD = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
-        const areaD = `${lineD} L${pts[pts.length - 1].x},${PAD.t + CH} L${pts[0].x},${PAD.t + CH} Z`;
-        return (
-          <g key={si}>
-            <path d={areaD} fill={`url(#af${si})`} />
-            <path d={lineD} fill="none" stroke={series[si].color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" opacity={0.85} />
-          </g>
-        );
-      })}
-      <Legend series={series} />
-    </svg>
-  );
-}
-
-function PieChartMulti({ rows, columns, xCol, yCols }: MultiProps) {
-  const ci = yCols[0];
-  const labels = rows.map((r) => r[xCol] || "");
-  const values = rows.map((_, ri) => getNumVal(rows, ri, ci));
-  const total = values.reduce((a, b) => a + b, 0) || 1;
-  const cx = 200; const cy = 150; const r = 105;
-  let start = -Math.PI / 2;
-  const slices = values.map((v, i) => {
-    const angle = (v / total) * Math.PI * 2;
-    const end = start + angle;
-    const x1 = cx + r * Math.cos(start); const y1 = cy + r * Math.sin(start);
-    const x2 = cx + r * Math.cos(end); const y2 = cy + r * Math.sin(end);
-    const d = `M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${angle > Math.PI ? 1 : 0} 1 ${x2},${y2} Z`;
-    start = end;
-    return { d, color: PALETTE[i % PALETTE.length], label: labels[i], pct: Math.round((v / total) * 100) };
-  });
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full">
-      {slices.map((s, i) => <path key={i} d={s.d} fill={s.color} opacity={0.85} stroke="var(--c-bg, #0a0a0f)" strokeWidth={2} />)}
-      {slices.map((s, i) => (
-        <g key={`l${i}`}>
-          <rect x={380} y={20 + i * 22} width={12} height={12} rx={3} fill={s.color} opacity={0.85} />
-          <text x={398} y={30 + i * 22} fontSize="9" fill="currentColor" className="fill-current muted-text">{s.label?.slice(0, 12)} ({s.pct}%)</text>
-        </g>
-      ))}
-      {yCols.length > 1 && <text x={cx} y={H - 8} textAnchor="middle" fontSize="8" fill="currentColor" className="fill-current muted-text">Showing: {columns[ci]}</text>}
-    </svg>
-  );
-}
-
-function DonutChartMulti({ rows, columns, xCol, yCols }: MultiProps) {
-  const ci = yCols[0];
-  const labels = rows.map((r) => r[xCol] || "");
-  const values = rows.map((_, ri) => getNumVal(rows, ri, ci));
-  const total = values.reduce((a, b) => a + b, 0) || 1;
-  const cx = 200; const cy = 150; const outer = 105; const inner = 65;
-  let start = -Math.PI / 2;
-  const arcs = values.map((v, i) => {
-    const angle = (v / total) * Math.PI * 2;
-    const end = start + angle;
-    const la = angle > Math.PI ? 1 : 0;
-    const d = `M${cx + outer * Math.cos(start)},${cy + outer * Math.sin(start)} A${outer},${outer} 0 ${la} 1 ${cx + outer * Math.cos(end)},${cy + outer * Math.sin(end)} L${cx + inner * Math.cos(end)},${cy + inner * Math.sin(end)} A${inner},${inner} 0 ${la} 0 ${cx + inner * Math.cos(start)},${cy + inner * Math.sin(start)} Z`;
-    start = end;
-    return { d, color: PALETTE[i % PALETTE.length], label: labels[i], pct: Math.round((v / total) * 100) };
-  });
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full">
-      {arcs.map((a, i) => <path key={i} d={a.d} fill={a.color} opacity={0.85} stroke="var(--c-bg, #0a0a0f)" strokeWidth={2} />)}
-      <text x={cx} y={cy} textAnchor="middle" fontSize="22" fontWeight="700" fill="currentColor" className="fill-current heading">{total.toLocaleString()}</text>
-      <text x={cx} y={cy + 16} textAnchor="middle" fontSize="9" fill="currentColor" className="fill-current muted-text">total</text>
-      {arcs.map((a, i) => (
-        <g key={`l${i}`}>
-          <rect x={380} y={20 + i * 22} width={12} height={12} rx={3} fill={a.color} opacity={0.85} />
-          <text x={398} y={30 + i * 22} fontSize="9" fill="currentColor" className="fill-current muted-text">{a.label?.slice(0, 12)} ({a.pct}%)</text>
-        </g>
-      ))}
-    </svg>
-  );
-}
-
-function ScatterChartMulti({ rows, columns, xCol, yCols }: MultiProps) {
-  const xIsNum = isNumericCol(rows, xCol);
-  const xVals = rows.map((r, i) => xIsNum ? (parseFloat(r[xCol]) || 0) : i);
-  const allYVals = yCols.flatMap((ci) => rows.map((_, ri) => getNumVal(rows, ri, ci)));
-  const xMax = Math.max(...xVals, 1);
-  const yMax = Math.max(...allYVals, 1);
-  const labels = xIsNum ? [] : rows.map((r) => r[xCol] || "");
-  const series = yCols.map((ci, si) => ({ name: columns[ci], color: PALETTE[si % PALETTE.length] }));
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full">
-      {[0, 0.25, 0.5, 0.75, 1].map((f) => (
-        <line key={f} x1={PAD.l} y1={PAD.t + CH * (1 - f)} x2={W - PAD.r} y2={PAD.t + CH * (1 - f)} stroke="currentColor" opacity={0.07} />
-      ))}
-      {yCols.map((ci, si) =>
-        rows.map((_, ri) => {
-          const px = PAD.l + (xVals[ri] / xMax) * CW;
-          const py = PAD.t + CH - (getNumVal(rows, ri, ci) / yMax) * CH;
-          return <circle key={`${si}-${ri}`} cx={px} cy={py} r={5} fill={series[si].color} opacity={0.7} />;
-        })
-      )}
-      <line x1={PAD.l} y1={PAD.t + CH} x2={W - PAD.r} y2={PAD.t + CH} stroke="currentColor" opacity={0.15} />
-      <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={PAD.t + CH} stroke="currentColor" opacity={0.15} />
-      {!xIsNum && labels.map((l, i) => (
-        <text key={i} x={PAD.l + (i + 0.5) * (CW / labels.length)} y={H - PAD.b + 16} textAnchor="middle" fontSize="9" fill="currentColor" className="fill-current muted-text">{l.slice(0, 10)}</text>
-      ))}
-      <Legend series={series} />
-    </svg>
-  );
-}
-
-const RENDERERS: Record<ChartType, React.FC<MultiProps>> = {
-  bar: BarChartMulti,
-  line: LineChartMulti,
-  area: AreaChartMulti,
-  pie: PieChartMulti,
-  donut: DonutChartMulti,
-  scatter: ScatterChartMulti,
-};
-
 // ---------- editable cell ----------
 
 function EditableCell({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const commit = () => {
     setEditing(false);
@@ -326,7 +96,6 @@ function EditableCell({ value, onChange }: { value: string; onChange: (v: string
   if (editing) {
     return (
       <input
-        ref={inputRef}
         autoFocus
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
@@ -371,16 +140,10 @@ function ColumnPill({ name, isNumeric, onDragStart }: { name: string; isNumeric:
   );
 }
 
-// ---------- multi Y axis drop zone ----------
+// ---------- Y axis drop zone ----------
 
 function YAxisDropZone({
-  yColumns,
-  columns,
-  onDrop,
-  onRemove,
-  dragOver,
-  onDragOver,
-  onDragLeave,
+  yColumns, columns, onDrop, onRemove, dragOver, onDragOver, onDragLeave,
 }: {
   yColumns: string[];
   columns: string[];
@@ -424,25 +187,91 @@ function ChartMakerApp() {
     xColumn: "Month",
     yColumns: ["Revenue", "Users"],
   });
+  const [theme, setTheme] = useState("dark");
+  const [themeOpen, setThemeOpen] = useState(false);
+  const [typeSearch, setTypeSearch] = useState("");
   const [fileDragOver, setFileDragOver] = useState(false);
   const [xDragOver, setXDragOver] = useState(false);
   const [yDragOver, setYDragOver] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
   const svgRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const numericCols = useMemo(() => columns.filter((_, ci) => isNumericCol(rows, ci)), [columns, rows]);
 
   // resolve effective columns
   const xColIdx = config.xColumn ? columns.indexOf(config.xColumn) : -1;
   const effectiveXIdx = xColIdx >= 0 ? xColIdx : columns.findIndex((_, ci) => !isNumericCol(rows, ci));
   const effectiveX = effectiveXIdx >= 0 ? columns[effectiveXIdx] : columns[0] || null;
-
   const effectiveYCols = config.yColumns.filter((c) => columns.includes(c));
   const yColIdxs = effectiveYCols.map((c) => columns.indexOf(c)).filter((i) => i >= 0);
-
-  const Renderer = RENDERERS[config.type];
   const canRender = effectiveX !== null && yColIdxs.length > 0 && rows.length > 0;
+
+  // convert grid data to chartts format
+  const chartData = useMemo(() => {
+    if (!canRender) return null;
+    const labels = rows.map((r) => r[effectiveXIdx] || "");
+    const series = yColIdxs.map((ci) => ({
+      name: columns[ci],
+      values: rows.map((r) => parseFloat(r[ci]) || 0),
+    }));
+    return { labels, series };
+  }, [canRender, rows, effectiveXIdx, yColIdxs, columns]);
+
+  // render chart using @chartts/core
+  const svg = useMemo(() => {
+    if (!chartData) return null;
+    const plugin = chartTypes[config.type];
+    if (!plugin) return null;
+    try {
+      const result = renderToString(plugin, chartData, {
+        width: 600,
+        height: 380,
+        theme: getThemeConfig(theme) as any,
+      });
+      return result.replace('class="chartts"', 'class="chartts chartts-skip-anim"');
+    } catch {
+      return null;
+    }
+  }, [chartData, config.type, theme]);
+
+  // also try to render using built-in sample data for chart types that need special data
+  const sampleSvg = useMemo(() => {
+    if (svg) return null; // primary render succeeded
+    if (!chartData) return null;
+    const plugin = chartTypes[config.type];
+    if (!plugin) return null;
+    const sample = sampleData[config.type];
+    if (!sample) return null;
+    try {
+      const result = renderToString(plugin, sample, {
+        width: 600,
+        height: 380,
+        theme: getThemeConfig(theme) as any,
+      });
+      return result.replace('class="chartts"', 'class="chartts chartts-skip-anim"');
+    } catch {
+      return null;
+    }
+  }, [svg, chartData, config.type, theme]);
+
+  const renderedSvg = svg || sampleSvg;
+  const usingSampleData = !svg && !!sampleSvg;
+
+  // chart type display name
+  const displayName = chartDisplayNames[config.type] ?? config.type;
+
+  // chart type filtering
+  const allAvailableTypes = Object.keys(chartTypes);
+  const filteredCategories = useMemo(() => {
+    if (!typeSearch.trim()) return CHART_CATEGORIES;
+    const q = typeSearch.toLowerCase();
+    return CHART_CATEGORIES.map((cat) => ({
+      ...cat,
+      types: cat.types.filter((t) =>
+        t.includes(q) || (chartDisplayNames[t] ?? "").toLowerCase().includes(q)
+      ),
+    })).filter((cat) => cat.types.length > 0);
+  }, [typeSearch]);
 
   // --- data editing ---
   const updateCell = useCallback((ri: number, ci: number, value: string) => {
@@ -571,42 +400,58 @@ function ChartMakerApp() {
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
       const a = document.createElement("a");
-      a.download = `chart.png`;
+      a.download = `chart-${config.type}.png`;
       a.href = canvas.toDataURL("image/png");
       a.click();
     };
     img.src = url;
-  }, []);
+  }, [config.type]);
 
   const handleDownloadSVG = useCallback(() => {
     const svgEl = svgRef.current?.querySelector("svg");
     if (!svgEl) return;
     const blob = new Blob([new XMLSerializer().serializeToString(svgEl)], { type: "image/svg+xml;charset=utf-8" });
     const a = document.createElement("a");
-    a.download = `chart.svg`;
+    a.download = `chart-${config.type}.svg`;
     a.href = URL.createObjectURL(blob);
     a.click();
-  }, []);
+  }, [config.type]);
+
+  const handleCopyChartURL = useCallback(() => {
+    if (!chartData) return;
+    const params = new URLSearchParams();
+    for (const s of chartData.series) {
+      params.append("d", s.values.join(","));
+    }
+    if (chartData.labels.length > 0) params.set("l", chartData.labels.join(","));
+    params.set("n", chartData.series.map((s) => s.name).join(","));
+    params.set("theme", theme);
+    const url = `https://i.chartts.com/${config.type}.svg?${params.toString()}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setUrlCopied(true);
+      setTimeout(() => setUrlCopied(false), 2000);
+    });
+  }, [chartData, config.type, theme]);
 
   return (
     <>
       {/* Hero */}
-      <section className="pt-32 pb-10 px-6">
+      <section className="pt-24 sm:pt-32 pb-10 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight heading">
             Free Chart Maker
           </h1>
           <p className="mt-4 text-lg body-text max-w-2xl mx-auto">
-            Edit data inline, drag columns to axes, plot multiple series. Export as SVG or PNG.
-            No sign-up, no watermarks. Free graph maker powered by Chart.ts.
+            55+ chart types. 100+ themes. Edit data inline, drag columns to axes. Export as SVG, PNG, or shareable URL.
+            No sign-up, no watermarks. Powered by Chart.ts.
           </p>
         </div>
       </section>
 
       {/* Workspace */}
-      <section className="pb-6 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-[360px_1fr] gap-6">
+      <section className="pb-6 px-4 sm:px-6">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="grid lg:grid-cols-[320px_1fr] gap-6">
             {/* Left panel */}
             <div className="space-y-4">
               {/* File drop */}
@@ -623,24 +468,99 @@ function ChartMakerApp() {
                 <p className="text-sm heading font-medium">Drop CSV file or click to browse</p>
               </div>
 
-              {/* Chart type */}
+              {/* Chart type selector */}
               <div>
-                <label className="block text-xs font-mono uppercase tracking-wider muted-text mb-2">Chart type</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {CHART_TYPES.map((ct) => (
-                    <button
-                      key={ct.value}
-                      onClick={() => setConfig((c) => ({ ...c, type: ct.value }))}
-                      className={`px-3 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
-                        config.type === ct.value
-                          ? "bg-cyan-500/15 text-cyan-300 border-cyan-500/30"
-                          : "card border-transparent hover:border-gray-600/50 body-text"
-                      }`}
-                    >
-                      {ct.label}
-                    </button>
-                  ))}
+                <label className="block text-xs font-mono uppercase tracking-wider muted-text mb-2">
+                  Chart type
+                  <span className="ml-1 text-cyan-400 normal-case">({allAvailableTypes.length})</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Search charts..."
+                  value={typeSearch}
+                  onChange={(e) => setTypeSearch(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs rounded-lg body-text placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/40 mb-2"
+                  style={{ background: "var(--c-input-bg, rgba(255,255,255,0.05))", border: "1px solid var(--c-border, rgba(255,255,255,0.1))" }}
+                />
+                <div className="max-h-[280px] overflow-y-auto space-y-2 pr-1">
+                  {filteredCategories.map((cat) => {
+                    const avail = cat.types.filter((t) => chartTypes[t]);
+                    if (!avail.length) return null;
+                    return (
+                      <div key={cat.label}>
+                        <p className="text-[9px] font-mono muted-text uppercase tracking-wider mb-1">{cat.label}</p>
+                        <div className="grid grid-cols-2 gap-1">
+                          {avail.map((t) => (
+                            <button
+                              key={t}
+                              onClick={() => setConfig((c) => ({ ...c, type: t }))}
+                              className={`px-2 py-1.5 text-[11px] font-mono rounded transition-all cursor-pointer text-left truncate ${
+                                config.type === t
+                                  ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/30"
+                                  : "card border-transparent hover:border-gray-600/50 body-text"
+                              }`}
+                            >
+                              {chartDisplayNames[t] ?? t}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
+              </div>
+
+              {/* Theme selector */}
+              <div>
+                <button
+                  onClick={() => setThemeOpen(!themeOpen)}
+                  className="flex items-center gap-2 w-full cursor-pointer group mb-2"
+                >
+                  <label className="text-xs font-mono uppercase tracking-wider muted-text group-hover:text-cyan-400 transition-colors cursor-pointer">
+                    Theme
+                  </label>
+                  <span className="text-xs font-mono text-cyan-400 px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20">
+                    {theme}
+                  </span>
+                  <svg className={`w-3 h-3 muted-text ml-auto transition-transform ${themeOpen ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+                {themeOpen && (
+                  <div className="max-h-[240px] overflow-y-auto space-y-2 pr-1">
+                    {THEME_CATEGORIES.map((cat) => (
+                      <div key={cat.label}>
+                        <p className="text-[9px] font-mono muted-text uppercase tracking-wider mb-1">{cat.label}</p>
+                        <div className="grid grid-cols-2 gap-1">
+                          {cat.themes.map((t) => {
+                            const cfg = typeof getThemeConfig(t) === "object" ? (getThemeConfig(t) as ThemeConfig) : null;
+                            const previewColors = cfg?.colors?.slice(0, 3) ?? [];
+                            return (
+                              <button
+                                key={t}
+                                onClick={() => setTheme(t)}
+                                className={`flex items-center gap-1.5 px-2 py-1 text-[10px] font-mono rounded transition-all cursor-pointer truncate ${
+                                  theme === t
+                                    ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/30"
+                                    : "card hover:border-cyan-500/20"
+                                }`}
+                              >
+                                {previewColors.length > 0 && (
+                                  <span className="flex gap-0.5 flex-shrink-0">
+                                    {previewColors.map((c, i) => (
+                                      <span key={i} className="w-2 h-2 rounded-full" style={{ backgroundColor: c }} />
+                                    ))}
+                                  </span>
+                                )}
+                                <span className="truncate">{t}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Columns */}
@@ -692,15 +612,20 @@ function ChartMakerApp() {
               </div>
 
               {/* Export */}
-              <div className="flex gap-2">
-                <button onClick={handleCopySVG} disabled={!canRender} className="flex-1 px-3 py-2.5 text-xs font-semibold rounded-lg bg-cyan-500 text-white hover:bg-cyan-400 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
-                  {copyFeedback ? "Copied!" : "Copy SVG"}
-                </button>
-                <button onClick={handleDownloadSVG} disabled={!canRender} className="flex-1 px-3 py-2.5 text-xs font-semibold rounded-lg card body-text hover:border-cyan-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
-                  SVG
-                </button>
-                <button onClick={handleDownloadPNG} disabled={!canRender} className="flex-1 px-3 py-2.5 text-xs font-semibold rounded-lg card body-text hover:border-cyan-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
-                  PNG
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <button onClick={handleCopySVG} disabled={!renderedSvg} className="flex-1 px-3 py-2.5 text-xs font-semibold rounded-lg bg-cyan-500 text-white hover:bg-cyan-400 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                    {copyFeedback ? "Copied!" : "Copy SVG"}
+                  </button>
+                  <button onClick={handleDownloadSVG} disabled={!renderedSvg} className="flex-1 px-3 py-2.5 text-xs font-semibold rounded-lg card body-text hover:border-cyan-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                    SVG
+                  </button>
+                  <button onClick={handleDownloadPNG} disabled={!renderedSvg} className="flex-1 px-3 py-2.5 text-xs font-semibold rounded-lg card body-text hover:border-cyan-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                    PNG
+                  </button>
+                </div>
+                <button onClick={handleCopyChartURL} disabled={!chartData} className="w-full px-3 py-2.5 text-xs font-semibold rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                  {urlCopied ? "URL Copied!" : "Copy i.chartts.com URL"}
                 </button>
               </div>
             </div>
@@ -708,15 +633,25 @@ function ChartMakerApp() {
             {/* Right panel: chart + editable table */}
             <div className="space-y-4">
               {/* Chart preview */}
-              <div className="card rounded-xl p-6 min-h-[380px] flex items-center justify-center">
-                {canRender ? (
-                  <div ref={svgRef} className="w-full heading">
-                    <Renderer rows={rows} columns={columns} xCol={effectiveXIdx} yCols={yColIdxs} />
+              <div className="card rounded-xl p-6 min-h-[420px] flex items-center justify-center">
+                {renderedSvg ? (
+                  <div ref={svgRef} className="w-full [&>svg]:w-full [&>svg]:h-auto">
+                    <div dangerouslySetInnerHTML={{ __html: renderedSvg }} />
+                    {usingSampleData && (
+                      <p className="text-[10px] muted-text text-center mt-2 font-mono">
+                        Showing sample data for {displayName}. This chart type requires specific data format.
+                      </p>
+                    )}
                   </div>
                 ) : (
-                  <p className="muted-text text-sm">
-                    {rows.length === 0 ? "Drop a CSV file or add data below" : "Drag columns to X and Y axis"}
-                  </p>
+                  <div className="text-center">
+                    <p className="muted-text text-sm mb-1">
+                      {rows.length === 0 ? "Drop a CSV file or add data below" : "Drag columns to X and Y axis"}
+                    </p>
+                    <p className="text-xs muted-text">
+                      Selected: <span className="text-cyan-400">{displayName}</span>
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -792,7 +727,7 @@ function ChartMakerApp() {
           <div className="rounded-2xl card p-10 text-center">
             <h2 className="text-xl font-bold heading mb-3">Build charts in your own app</h2>
             <p className="body-text mb-6 max-w-md mx-auto text-sm">
-              This chart maker is powered by Chart.ts. 40+ chart types, Tailwind CSS, React/Vue/Svelte/Solid/Angular. Under 15kb, free and open source.
+              This chart maker is powered by Chart.ts. 65+ chart types, 100+ themes, Tailwind CSS, React/Vue/Svelte/Solid/Angular. Under 15kb, free and open source.
             </p>
             <div className="inline-flex items-center gap-3 px-5 py-3 rounded-xl bg-gray-800/50 border border-gray-700/50 mb-6">
               <span className="muted-text font-mono text-sm">$</span>
@@ -800,7 +735,7 @@ function ChartMakerApp() {
             </div>
             <div className="flex items-center justify-center gap-4">
               <Link href="/docs" className="px-6 py-3 text-sm font-semibold rounded-lg bg-cyan-500 text-white hover:bg-cyan-400 transition-colors cursor-pointer">Read the Docs</Link>
-              <Link href="/examples" className="px-6 py-3 text-sm font-semibold rounded-lg card body-text transition-all cursor-pointer">View Examples</Link>
+              <Link href="/playground" className="px-6 py-3 text-sm font-semibold rounded-lg card body-text transition-all cursor-pointer">Open Playground</Link>
             </div>
           </div>
         </div>

@@ -1,0 +1,478 @@
+---
+title: "Financial Indicators"
+description: "Moving averages, oscillators, Bollinger Bands, MACD, risk metrics, and OHLC data builders. Pure math, zero dependencies."
+badge: "@chartts/finance"
+---
+
+## Quick Start
+
+```ts
+import { sma, ema, bollingerBands, macd, rsi } from '@chartts/finance'
+
+const closes = [44.34, 44.09, 43.61, 44.33, 44.83, 45.10, 45.42, 45.84,
+  46.08, 45.89, 46.03, 45.61, 46.28, 46.28, 46.00, 46.03, 46.41, 46.22,
+  45.64, 46.21, 46.25, 45.71, 46.45, 45.78]
+
+const sma20 = sma(closes, 20)
+const ema12 = ema(closes, 12)
+const bands = bollingerBands(closes, 20, 2)
+const rsi14 = rsi(closes, 14)
+const macdResult = macd(closes, 12, 26, 9)
+```
+
+Every function returns plain arrays or simple objects. No classes, no side effects. Plug results directly into Chart.ts series.
+
+## Installation
+
+```bash
+npm install @chartts/finance
+```
+
+Zero dependencies. Works in any JavaScript runtime.
+
+---
+
+## Moving Averages
+
+### `sma(values, period)`
+
+Simple Moving Average. Uses a running sum for O(n) performance. The first `period - 1` values are `NaN`.
+
+```ts
+function sma(values: number[], period: number): number[]
+```
+
+```ts
+import { sma } from '@chartts/finance'
+
+const prices = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+const sma5 = sma(prices, 5)
+// [NaN, NaN, NaN, NaN, 12, 13, 14, 15, 16, 17]
+```
+
+### `ema(values, period)`
+
+Exponential Moving Average. Seeded with the SMA of the first `period` values, then applies smoothing factor `k = 2 / (period + 1)`. The first `period - 1` values are `NaN`.
+
+```ts
+function ema(values: number[], period: number): number[]
+```
+
+```ts
+import { ema } from '@chartts/finance'
+
+const ema12 = ema(closes, 12)
+const ema26 = ema(closes, 26)
+```
+
+### `wma(values, period)`
+
+Weighted Moving Average. Weights increase linearly: `[1, 2, ..., period]`. The first `period - 1` values are `NaN`. Complexity is O(n * period).
+
+```ts
+function wma(values: number[], period: number): number[]
+```
+
+```ts
+import { wma } from '@chartts/finance'
+
+const wma10 = wma(closes, 10)
+```
+
+---
+
+## Oscillators
+
+### `rsi(values, period?)`
+
+Relative Strength Index using Wilder's smoothing. Returns values scaled 0 to 100. The first `period` values are `NaN`. Default period: 14.
+
+```ts
+function rsi(values: number[], period?: number): number[]
+```
+
+```ts
+import { rsi } from '@chartts/finance'
+
+const rsi14 = rsi(closes)         // default period = 14
+const rsi9 = rsi(closes, 9)      // custom period
+```
+
+### `stochastic(high, low, close, kPeriod?, dPeriod?)`
+
+Stochastic Oscillator. `%K` measures where the close sits within the high/low range over `kPeriod`. `%D` is an SMA of `%K` over `dPeriod`. Defaults: kPeriod=14, dPeriod=3.
+
+```ts
+function stochastic(
+  high: number[],
+  low: number[],
+  close: number[],
+  kPeriod?: number,
+  dPeriod?: number,
+): StochasticResult
+```
+
+```ts
+import { stochastic } from '@chartts/finance'
+
+const result = stochastic(highs, lows, closes, 14, 3)
+// result.k  -> %K line (fast stochastic)
+// result.d  -> %D line (smoothed %K)
+```
+
+**`StochasticResult`**:
+```ts
+interface StochasticResult {
+  k: number[]   // %K (fast stochastic)
+  d: number[]   // %D (smoothed %K)
+}
+```
+
+---
+
+## MACD
+
+### `macd(values, fastPeriod?, slowPeriod?, signalPeriod?)`
+
+Moving Average Convergence Divergence. MACD line = EMA(fast) minus EMA(slow). Signal = EMA of MACD line. Histogram = MACD minus Signal. Defaults: fast=12, slow=26, signal=9.
+
+```ts
+function macd(
+  values: number[],
+  fastPeriod?: number,
+  slowPeriod?: number,
+  signalPeriod?: number,
+): MACDResult
+```
+
+```ts
+import { macd } from '@chartts/finance'
+
+const result = macd(closes)
+// result.macd      -> MACD line
+// result.signal    -> signal line
+// result.histogram -> MACD minus signal
+```
+
+**`MACDResult`**:
+```ts
+interface MACDResult {
+  macd: number[]       // MACD line (fast EMA minus slow EMA), NaN-padded
+  signal: number[]     // Signal line (EMA of MACD), NaN-padded
+  histogram: number[]  // MACD minus signal, NaN-padded
+}
+```
+
+---
+
+## Volatility
+
+### `bollingerBands(values, period?, k?)`
+
+Bollinger Bands. Middle = SMA(period). Upper = middle + k * stddev. Lower = middle minus k * stddev. First `period - 1` values are `NaN`. Defaults: period=20, k=2.
+
+```ts
+function bollingerBands(
+  values: number[],
+  period?: number,
+  k?: number,
+): BollingerResult
+```
+
+```ts
+import { bollingerBands } from '@chartts/finance'
+
+const bands = bollingerBands(closes, 20, 2)
+// bands.upper  -> upper band
+// bands.middle -> SMA (middle band)
+// bands.lower  -> lower band
+```
+
+**`BollingerResult`**:
+```ts
+interface BollingerResult {
+  upper: number[]   // SMA + k * stddev
+  middle: number[]  // SMA
+  lower: number[]   // SMA minus k * stddev
+}
+```
+
+### `atr(high, low, close, period?)`
+
+Average True Range with Wilder's smoothing. True Range = max(high minus low, |high minus prevClose|, |low minus prevClose|). First `period` values are `NaN`. Default period: 14.
+
+```ts
+function atr(
+  high: number[],
+  low: number[],
+  close: number[],
+  period?: number,
+): number[]
+```
+
+```ts
+import { atr } from '@chartts/finance'
+
+const atr14 = atr(highs, lows, closes)
+const atr21 = atr(highs, lows, closes, 21)
+```
+
+### `volatility(returns, rollingPeriod?, annualizationFactor?)`
+
+Standard deviation of returns. If `rollingPeriod` is provided, returns a `number[]` with NaN padding for the warmup. Otherwise returns a single annualized number. Default annualization: 252 (trading days).
+
+```ts
+function volatility(
+  returns: number[],
+  rollingPeriod?: number,
+  annualizationFactor?: number,
+): number | number[]
+```
+
+```ts
+import { simpleReturns, volatility } from '@chartts/finance'
+
+const returns = simpleReturns(closes)
+const annualVol = volatility(returns) as number
+const rollingVol = volatility(returns, 20) as number[]
+```
+
+---
+
+## Volume Indicators
+
+### `vwap(price, volume)`
+
+Volume Weighted Average Price. `VWAP[i] = cumulative(price * volume) / cumulative(volume)`. Full-length output, no NaN padding.
+
+```ts
+function vwap(price: number[], volume: number[]): number[]
+```
+
+```ts
+import { vwap } from '@chartts/finance'
+
+const vwapLine = vwap(closes, volumes)
+```
+
+### `obv(close, volume)`
+
+On-Balance Volume. Starts at 0. If close is above prevClose, adds volume. If close is below prevClose, subtracts volume. Full-length output.
+
+```ts
+function obv(close: number[], volume: number[]): number[]
+```
+
+```ts
+import { obv } from '@chartts/finance'
+
+const obvLine = obv(closes, volumes)
+```
+
+---
+
+## Returns and Risk
+
+### `simpleReturns(prices)`
+
+Percentage returns: `(price[i] - price[i-1]) / price[i-1]`. First value is `NaN`.
+
+```ts
+function simpleReturns(prices: number[]): number[]
+```
+
+### `logReturns(prices)`
+
+Logarithmic returns: `ln(price[i] / price[i-1])`. First value is `NaN`.
+
+```ts
+function logReturns(prices: number[]): number[]
+```
+
+### `cumulativeReturns(prices)`
+
+Growth from the initial price: `(price[i] - price[0]) / price[0]`. First value is 0.
+
+```ts
+function cumulativeReturns(prices: number[]): number[]
+```
+
+### `drawdown(prices)`
+
+Drawdown at each point relative to the running peak. Always zero or negative.
+
+```ts
+function drawdown(prices: number[]): number[]
+```
+
+### `maxDrawdown(prices)`
+
+Single number: the deepest trough from the drawdown series. Always zero or negative.
+
+```ts
+function maxDrawdown(prices: number[]): number
+```
+
+### `sharpeRatio(returns, riskFreeRate?, annualizationFactor?)`
+
+Annualized Sharpe ratio. Filters out NaN values. Defaults: riskFreeRate=0, annualizationFactor=252.
+
+```ts
+function sharpeRatio(
+  returns: number[],
+  riskFreeRate?: number,
+  annualizationFactor?: number,
+): number
+```
+
+```ts
+import { simpleReturns, sharpeRatio, maxDrawdown } from '@chartts/finance'
+
+const prices = [100, 102, 98, 105, 110, 108, 115, 120]
+const returns = simpleReturns(prices)
+
+const sharpe = sharpeRatio(returns)
+const mdd = maxDrawdown(prices)
+console.log(`Sharpe: ${sharpe.toFixed(2)}, Max Drawdown: ${(mdd * 100).toFixed(1)}%`)
+```
+
+---
+
+## Data Builders
+
+These functions transform raw data into formats ready for Chart.ts chart components.
+
+### `toOHLC(timestamps, prices, interval, volumes?)`
+
+Aggregate tick-level data into OHLC bars. `interval` is in milliseconds. Returns labels formatted as `M/D`.
+
+```ts
+function toOHLC(
+  timestamps: number[],
+  prices: number[],
+  interval: number,
+  volumes?: number[],
+): OHLCAggregation
+```
+
+```ts
+import { toOHLC } from '@chartts/finance'
+
+const DAY = 86400000
+const ohlc = toOHLC(timestamps, prices, DAY, volumes)
+// ohlc.labels -> ['1/2', '1/3', '1/4', ...]
+// ohlc.open, ohlc.high, ohlc.low, ohlc.close -> number[]
+// ohlc.volume -> number[] (present only if volumes provided)
+```
+
+**`OHLCAggregation`**:
+```ts
+interface OHLCAggregation {
+  labels: string[]
+  open: number[]
+  high: number[]
+  low: number[]
+  close: number[]
+  volume?: number[]
+}
+```
+
+### `volumeDirections(values)`
+
+Determine volume bar directions from consecutive close prices. Returns `'up'` or `'down'` for each bar, suitable for the Volume chart's `directions` option.
+
+```ts
+function volumeDirections(values: number[]): ('up' | 'down')[]
+```
+
+```ts
+import { volumeDirections } from '@chartts/finance'
+
+const directions = volumeDirections(closes)
+// ['up', 'up', 'down', 'up', 'down', ...]
+```
+
+### `toBollingerData(close, period?, k?)`
+
+Compute Bollinger Bands ready for a Range chart. Returns `{ upper, lower, middle }`. Equivalent to calling `bollingerBands()` directly. Defaults: period=20, k=2.
+
+```ts
+function toBollingerData(
+  close: number[],
+  period?: number,
+  k?: number,
+): BollingerResult
+```
+
+### `toMACDData(close, fastPeriod?, slowPeriod?, signalPeriod?)`
+
+Compute MACD in Combo chart format. Returns `{ macd, signal, histogram }`. Equivalent to calling `macd()` directly. Defaults: fast=12, slow=26, signal=9.
+
+```ts
+function toMACDData(
+  close: number[],
+  fastPeriod?: number,
+  slowPeriod?: number,
+  signalPeriod?: number,
+): MACDResult
+```
+
+---
+
+## Full Example: Stock Dashboard Data
+
+```ts
+import {
+  sma, ema, bollingerBands, macd, rsi, atr,
+  vwap, obv, simpleReturns, sharpeRatio, maxDrawdown,
+  toOHLC, volumeDirections,
+} from '@chartts/finance'
+
+// Raw tick data from API
+const ohlc = toOHLC(timestamps, tickPrices, 86400000, tickVolumes)
+const { close, high, low, volume } = ohlc
+
+// Overlay indicators
+const sma20 = sma(close, 20)
+const ema50 = ema(close, 50)
+const bands = bollingerBands(close, 20, 2)
+
+// Oscillator panel
+const rsi14 = rsi(close, 14)
+const macdData = macd(close, 12, 26, 9)
+
+// Volume analysis
+const vwapLine = vwap(close, volume!)
+const obvLine = obv(close, volume!)
+const directions = volumeDirections(close)
+
+// Risk metrics
+const returns = simpleReturns(close)
+const sharpe = sharpeRatio(returns)
+const mdd = maxDrawdown(close)
+const avgTrueRange = atr(high, low, close, 14)
+```
+
+---
+
+## NaN Handling
+
+Most indicators pad the first few values with `NaN` during the warmup period. This matches standard financial convention. When plotting, Chart.ts automatically handles NaN values by skipping those points.
+
+| Function | First valid index |
+|----------|------------------|
+| `sma(values, p)` | `p - 1` |
+| `ema(values, p)` | `p - 1` |
+| `wma(values, p)` | `p - 1` |
+| `rsi(values, p)` | `p` |
+| `bollingerBands(values, p)` | `p - 1` |
+| `atr(high, low, close, p)` | `p` |
+| `macd(values)` | `25` (slowPeriod minus 1) |
+
+---
+
+## Related
+
+- [Candlestick Chart](/docs/charts/candlestick) for OHLC visualization
+- [@chartts/statistics](/docs/statistics-pkg) for general statistical analysis
+- [@chartts/regression](/docs/regression) for trend lines and forecasting

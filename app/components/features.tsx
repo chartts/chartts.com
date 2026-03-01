@@ -90,8 +90,81 @@ const features = [
   },
 ];
 
+const powerFeatures = [
+  {
+    title: "65+ chart types",
+    description: "Sankey, treemap, sunburst, chord, parallel coordinates, network graphs, geo maps, 3D scatter, 3D surface, globe. All built in.",
+    href: "/demos",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+        <path d="M3 3v18h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M7 14l4-6 4 3 5-7" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="18" cy="6" r="2" fill="#f59e0b" fillOpacity="0.3" stroke="#f59e0b" strokeWidth="1" />
+      </svg>
+    ),
+  },
+  {
+    title: "GPU accelerated",
+    description: "@chartts/gl renders 100k+ data points at 60fps via WebGL. 13 3D chart types: Bar3D, Scatter3D, Surface3D, Globe3D, Map3D.",
+    href: "/docs/charts",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+        <path d="M4 8l8-4 8 4v8l-8 4-8-4V8z" stroke="#a855f7" strokeWidth="1.5" strokeLinejoin="round" />
+        <path d="M4 8l8 4 8-4M12 12v8" stroke="#a855f7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
+      </svg>
+    ),
+  },
+  {
+    title: "Real-time streaming",
+    description: "createStreamingChart() with rolling buffers and pause/resume. @chartts/websocket for WebSocket, SSE, and HTTP polling.",
+    href: "/docs/streaming",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+        <path d="M4 12h2l3-8 4 16 3-8h4" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    title: "Financial indicators",
+    description: "@chartts/finance: SMA, EMA, RSI, MACD, Bollinger Bands, ATR, VWAP, Sharpe ratio. Pure math, zero dependencies.",
+    href: "/docs/finance-pkg",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+        <path d="M3 3v18h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M7 17V13M11 17V9M15 17V7M19 17V5" stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
+        <path d="M7 10h4M11 6h4M15 4h4" stroke="#10b981" strokeWidth="1" strokeLinecap="round" opacity="0.4" />
+      </svg>
+    ),
+  },
+  {
+    title: "Plugin system",
+    description: "defineChartType() creates fully custom chart types with render context, hit testing, and custom scales. Not locked in.",
+    href: "/docs/plugins",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+        <path d="M12 2v4m0 12v4M2 12h4m12 0h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="12" cy="12" r="5" stroke="#ec4899" strokeWidth="1.5" />
+        <circle cx="12" cy="12" r="2" fill="#ec4899" fillOpacity="0.3" />
+      </svg>
+    ),
+  },
+  {
+    title: "Zoom, pan, brush",
+    description: "Built-in interaction system. Zoom into ranges, pan across data, brush to select regions, crosshair for precision. linkCharts() for sync.",
+    href: "/docs/zoom-pan",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+        <circle cx="10" cy="10" r="6" stroke="#06b6d4" strokeWidth="1.5" />
+        <path d="M14.5 14.5L20 20" stroke="#06b6d4" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M10 7v6M7 10h6" stroke="#06b6d4" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+      </svg>
+    ),
+  },
+];
+
 export function Features() {
   return (
+    <>
     <section id="features" className="py-24 px-6">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
@@ -124,5 +197,59 @@ export function Features() {
         </div>
       </div>
     </section>
+
+    {/* Power features */}
+    <section id="power" className="pb-24 px-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-16">
+          <p className="section-label text-amber-400 mb-4">Beyond the basics</p>
+          <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight heading">
+            Enterprise power.
+            <br />
+            <span className="faint-text">Startup simplicity.</span>
+          </h2>
+        </div>
+
+        {/* By the numbers */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-12">
+          {[
+            { num: "65+", label: "Chart types" },
+            { num: "13", label: "WebGL/3D charts" },
+            { num: "25", label: "npm packages" },
+            { num: "100+", label: "Theme presets" },
+            { num: "5", label: "Frameworks" },
+            { num: "<15kb", label: "Gzipped" },
+            { num: "AA", label: "WCAG accessible" },
+            { num: "MIT", label: "Free forever" },
+          ].map((stat) => (
+            <div key={stat.label} className="text-center p-4 rounded-xl card">
+              <p className="text-2xl sm:text-3xl font-extrabold font-mono text-cyan-400">{stat.num}</p>
+              <p className="text-xs muted-text mt-1">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {powerFeatures.map((feature) => (
+            <Link
+              key={feature.title}
+              href={feature.href}
+              className="group p-5 rounded-xl card hover:border-amber-500/20 transition-all cursor-pointer block"
+            >
+              <div className="muted-text group-hover:text-amber-400 transition-colors mb-3">
+                {feature.icon}
+              </div>
+              <h3 className="text-sm font-semibold heading mb-1.5">
+                {feature.title}
+              </h3>
+              <p className="text-sm body-text leading-relaxed">
+                {feature.description}
+              </p>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+    </>
   );
 }

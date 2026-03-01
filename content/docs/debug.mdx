@@ -1,0 +1,219 @@
+---
+title: "Debug Panel"
+description: "Inspect the render tree, view chart metadata, and monitor SVG node counts with the built-in debug panel. Attach it to any chart during development."
+badge: "Dev Tools"
+---
+
+## Overview
+
+Chart.ts includes a debug panel that overlays on top of your chart during development. It shows the full render tree, chart metadata (series count, point count, area dimensions, theme, curve type), and highlights SVG elements on hover. This is useful for understanding what the chart engine is producing and diagnosing layout or styling issues.
+
+The debug panel is a development-only tool. Do not ship it in production builds.
+
+## Import
+
+```ts
+import { createDebugPanel } from "@chartts/core"
+```
+
+## Usage
+
+### Attach to a chart container
+
+```ts
+import { createChart, createDebugPanel } from "@chartts/core"
+
+const container = document.getElementById("chart")!
+const chart = createChart(container, {
+  theme: "light",
+  xLabel: "Month",
+  yLabel: "Revenue",
+})
+
+chart.setData({
+  labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+  series: [
+    { name: "Revenue", values: [42, 48, 55, 51, 67, 73] },
+    { name: "Costs", values: [30, 32, 35, 38, 40, 42] },
+  ],
+})
+
+// Attach the debug panel
+const debug = createDebugPanel()
+debug.attach(container, chart.element as SVGElement)
+```
+
+### Update the panel
+
+Call `debug.update()` with the current render context and node tree after each render cycle:
+
+```ts
+// After chart renders or data changes
+debug.update(renderContext, renderNodes)
+```
+
+The `update` method refreshes both the stats section and the render tree display.
+
+### Remove the panel
+
+```ts
+debug.destroy()
+```
+
+This removes the debug overlay DOM elements from the container.
+
+---
+
+## DebugPanel API
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `attach` | `(container: HTMLElement, svg: SVGElement) => void` | Mount the panel onto the chart container and wire up SVG hover inspection |
+| `update` | `(ctx: RenderContext, nodes: RenderNode[]) => void` | Refresh the panel with current chart state |
+| `destroy` | `() => void` | Remove the panel from the DOM |
+
+---
+
+## Panel Sections
+
+### Chart Info
+
+The stats section displays a grid of key metrics:
+
+| Metric | Description |
+|--------|-------------|
+| Series | Number of data series |
+| Points | Number of data points in the first series |
+| SVG nodes | Total count of render nodes in the tree (including nested children) |
+| Area | Chart drawing area dimensions (width x height in pixels) |
+| Y range | Data bounds (yMin to yMax) |
+| Theme | Active theme name or "custom" for inline ThemeConfig objects |
+| Curve | Current curve interpolation type |
+| Animate | Whether animation is enabled |
+
+### Render Tree
+
+A formatted tree view of all render nodes. Each node shows:
+
+- **Node type** (e.g. `group`, `path`, `rect`, `text`, `circle`, `line`)
+- **CSS class** if present (e.g. `.chartts-grid`, `.chartts-series-0`)
+- **Child count** for group nodes
+- **Content preview** for text nodes (the actual text string)
+- **Path data preview** for path nodes (first 40 characters of the `d` attribute)
+
+Example output:
+
+```
+group .chartts-root (5)
+  group .chartts-grid (8)
+    line .chartts-gridline
+    line .chartts-gridline
+    ...
+  group .chartts-axes (2)
+    group .chartts-x-axis (6)
+    group .chartts-y-axis (6)
+  group .chartts-series (2)
+    path .chartts-series-0 d="M40,280L140,..."
+    path .chartts-series-1 d="M40,300L140,..."
+  group .chartts-legend (2)
+    text "Revenue"
+    text "Costs"
+```
+
+### SVG Element Hover Inspection
+
+When the debug panel is attached, hovering over any SVG element in the chart highlights it with a purple outline (`rgba(139, 92, 246, 0.5)`). This makes it easy to identify which visual element corresponds to which node in the render tree.
+
+---
+
+## Full Example: Development Setup
+
+```ts
+import { createChart, createDebugPanel } from "@chartts/core"
+
+const container = document.getElementById("chart")!
+
+const chart = createChart(container, {
+  theme: "saas",
+  curve: "monotone",
+  tooltip: true,
+  legend: "top",
+  xLabel: "Week",
+  yLabel: "Signups",
+  animate: true,
+})
+
+chart.setData({
+  labels: ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8"],
+  series: [
+    { name: "Organic", values: [120, 180, 240, 210, 320, 410, 380, 450] },
+    { name: "Paid", values: [80, 120, 160, 190, 250, 300, 280, 340] },
+    { name: "Referral", values: [30, 45, 60, 70, 90, 110, 100, 130] },
+  ],
+})
+
+// Only attach in development
+if (import.meta.env.DEV) {
+  const debug = createDebugPanel()
+  debug.attach(container, chart.element as SVGElement)
+
+  // Update on data changes
+  chart.on("data:change", () => {
+    // Re-fetch context and nodes from internal state
+    // (exact method depends on your integration)
+  })
+}
+```
+
+## Conditional Loading
+
+To keep the debug panel out of production bundles, use dynamic imports:
+
+```ts
+if (import.meta.env.DEV) {
+  import("@chartts/core").then(({ createDebugPanel }) => {
+    const debug = createDebugPanel()
+    debug.attach(container, chart.element as SVGElement)
+  })
+}
+```
+
+Or with a build-time flag:
+
+```ts
+// vite.config.ts
+export default defineConfig({
+  define: {
+    __DEV__: JSON.stringify(process.env.NODE_ENV !== "production"),
+  },
+})
+
+// In your code
+if (__DEV__) {
+  const debug = createDebugPanel()
+  debug.attach(container, chart.element as SVGElement)
+}
+```
+
+---
+
+## Panel Styling
+
+The debug panel renders as an absolutely-positioned `<div>` overlaying the top-right corner of the chart container. It has these default styles:
+
+- Width: 320px
+- Background: `rgba(0, 0, 0, 0.9)`
+- Text: `#e5e7eb` monospace (SF Mono, Fira Code)
+- Font size: 11px
+- Z-index: 10000
+- Border-left: 1px solid `#333`
+
+The container element gets `position: relative` set automatically so the panel positions correctly.
+
+## Tips
+
+- The node count displayed in "SVG nodes" includes all nested children. A chart with 8 series and 100 points per series can easily have 1000+ nodes. High node counts may indicate an opportunity to use the canvas or WebGL renderer.
+- Use the render tree to verify that your custom graphic elements, annotations, and overlays are being placed in the correct position in the tree.
+- The hover inspection only outlines direct SVG child elements. It does not highlight canvas or WebGL rendered content.
+- The debug panel modifies the container's `position` to `relative`. If your layout depends on a different position value, be aware of this side effect.
+- Call `destroy()` to fully clean up. The panel removes its DOM nodes and does not leave event listeners attached.

@@ -1,0 +1,320 @@
+---
+title: "WebSocket Streaming"
+description: "Push real-time data to charts over WebSocket, Server-Sent Events, or HTTP polling. Built-in auto-reconnect and configurable message parsing."
+badge: "@chartts/websocket"
+---
+
+## Installation
+
+```bash
+npm install @chartts/websocket
+```
+
+This package provides three stream sources that push live data into a Chart.ts streaming chart: WebSocket, Server-Sent Events (SSE), and HTTP polling. All three implement the same `StreamSource` interface and support auto-reconnect.
+
+---
+
+## createWebSocketStream()
+
+Connects to a WebSocket server and pushes incoming messages to a `StreamingInstance`.
+
+```ts
+import { createWebSocketStream } from '@chartts/websocket'
+import { createChart, createStreamingChart, Line } from '@chartts/core'
+
+const chart = createChart('#chart', Line, { labels: [], series: [] })
+
+const stream = createStreamingChart(chart, {
+  windowSize: 200,
+  seriesCount: 3,
+  seriesNames: ['CPU', 'Memory', 'Disk'],
+})
+
+const ws = createWebSocketStream('wss://metrics.example.com/live')
+ws.connect(stream)
+
+// Later: disconnect cleanly
+ws.disconnect()
+```
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `url` | `string` | WebSocket URL (`ws://` or `wss://`) |
+| `options` | `StreamSourceOptions` | Optional configuration (see below) |
+
+---
+
+## createSSEStream()
+
+Connects to a Server-Sent Events endpoint. SSE is a good choice when you only need server-to-client data flow over HTTP.
+
+```ts
+import { createSSEStream } from '@chartts/websocket'
+import { createChart, createStreamingChart, Line } from '@chartts/core'
+
+const chart = createChart('#chart', Line, { labels: [], series: [] })
+
+const stream = createStreamingChart(chart, {
+  windowSize: 100,
+  seriesCount: 1,
+  seriesNames: ['Temperature'],
+})
+
+const sse = createSSEStream('https://api.example.com/temperature/stream', {
+  eventName: 'reading',
+})
+sse.connect(stream)
+```
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `url` | `string` | SSE endpoint URL |
+| `options` | `StreamSourceOptions & { eventName?: string }` | Optional config. `eventName` listens for a specific SSE event type instead of the default `message` event. |
+
+---
+
+## createPollingStream()
+
+Fetches data from an HTTP endpoint at a fixed interval. Use this when your server does not support WebSocket or SSE.
+
+```ts
+import { createPollingStream } from '@chartts/websocket'
+import { createChart, createStreamingChart, Line } from '@chartts/core'
+
+const chart = createChart('#chart', Line, { labels: [], series: [] })
+
+const stream = createStreamingChart(chart, {
+  windowSize: 60,
+  seriesCount: 2,
+  seriesNames: ['Requests/s', 'Errors/s'],
+})
+
+const poller = createPollingStream(
+  'https://api.example.com/metrics/current',
+  5000, // poll every 5 seconds
+)
+poller.connect(stream)
+```
+
+You can also pass a function instead of a URL for custom fetch logic:
+
+```ts
+const poller = createPollingStream(
+  () => fetch('https://api.example.com/metrics', {
+    headers: { Authorization: 'Bearer token123' },
+  }),
+  3000,
+)
+```
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `url` | `string \| (() => Promise<Response>)` | URL to fetch, or a function returning a fetch Response |
+| `interval` | `number` | Polling interval in milliseconds |
+| `options` | `StreamSourceOptions` | Optional configuration |
+
+---
+
+## StreamSourceOptions
+
+All three stream sources accept these options:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `parse` | `(message: unknown) => { values: number[]; label?: string \| number \| Date } \| null` | Built-in parser | Custom function to extract values from incoming messages |
+| `reconnect` | `boolean` | `true` | Auto-reconnect on disconnect (WebSocket and SSE only) |
+| `reconnectInterval` | `number` | `3000` | Milliseconds between reconnect attempts |
+| `maxReconnects` | `number` | `10` | Maximum reconnect attempts before giving up |
+
+---
+
+## Message Format
+
+The built-in parser accepts several message formats. No custom `parse` function is needed if your server sends one of these:
+
+**Single value:**
+```json
+42
+```
+
+**Object with value:**
+```json
+{ "value": 42, "label": "10:30:15" }
+```
+
+**Object with values array (multi-series):**
+```json
+{ "values": [72.5, 48.3, 91.0], "label": "10:30:15" }
+```
+
+**Plain array of numbers:**
+```json
+[72.5, 48.3, 91.0]
+```
+
+String messages are auto-parsed as JSON. If JSON parsing fails, the parser attempts to read the string as a plain number.
+
+---
+
+## Custom Parser
+
+For non-standard message formats, provide a `parse` function:
+
+```ts
+const ws = createWebSocketStream('wss://exchange.example.com/trades', {
+  parse: (msg) => {
+    const data = JSON.parse(msg as string)
+    return {
+      values: [data.price, data.volume / 1000],
+      label: data.timestamp,
+    }
+  },
+})
+```
+
+Return `null` from the parser to skip a message (e.g., heartbeats or control frames).
+
+---
+
+## Auto-Reconnect
+
+WebSocket and SSE sources reconnect automatically when the connection drops. The reconnect counter resets on each successful connection.
+
+```ts
+const ws = createWebSocketStream('wss://metrics.example.com/live', {
+  reconnect: true,
+  reconnectInterval: 5000,  // wait 5s between attempts
+  maxReconnects: 20,        // give up after 20 failures
+})
+```
+
+To disable auto-reconnect:
+
+```ts
+const ws = createWebSocketStream('wss://example.com/data', {
+  reconnect: false,
+})
+```
+
+---
+
+## StreamSource Interface
+
+All three factories return a `StreamSource` object:
+
+```ts
+interface StreamSource {
+  connect(stream: StreamingInstance): void
+  disconnect(): void
+  readonly connected: boolean
+}
+```
+
+| Method | Description |
+|--------|-------------|
+| `connect(stream)` | Attach to a `StreamingInstance` and start pushing data |
+| `disconnect()` | Close the connection and stop pushing data |
+| `connected` | `true` when the source is actively connected |
+
+---
+
+## Full Example: Live Dashboard
+
+```ts
+import { createChart, createStreamingChart, Line } from '@chartts/core'
+import { createWebSocketStream } from '@chartts/websocket'
+
+// Create chart
+const chart = createChart('#dashboard', Line, {
+  labels: [],
+  series: [],
+}, {
+  theme: 'dark',
+  width: 800,
+  height: 400,
+})
+
+// Set up streaming with a 120-point rolling window
+const stream = createStreamingChart(chart, {
+  windowSize: 120,
+  seriesCount: 3,
+  seriesNames: ['CPU %', 'Memory %', 'Network MB/s'],
+  seriesColors: ['#6366f1', '#f59e0b', '#10b981'],
+})
+
+// Connect WebSocket source
+const source = createWebSocketStream('wss://monitoring.internal/metrics', {
+  reconnect: true,
+  reconnectInterval: 2000,
+  maxReconnects: 50,
+  parse: (msg) => {
+    const d = JSON.parse(msg as string)
+    return {
+      values: [d.cpu, d.memory, d.network],
+      label: new Date().toLocaleTimeString(),
+    }
+  },
+})
+
+source.connect(stream)
+
+// Pause and resume streaming
+document.getElementById('pause')?.addEventListener('click', () => {
+  stream.pause()
+})
+
+document.getElementById('resume')?.addEventListener('click', () => {
+  stream.resume()
+})
+
+// Clean up on page unload
+window.addEventListener('beforeunload', () => {
+  source.disconnect()
+  stream.destroy()
+})
+```
+
+---
+
+## React Integration
+
+```tsx
+import { useEffect, useRef } from 'react'
+import { createChart, createStreamingChart, Line } from '@chartts/core'
+import { createWebSocketStream } from '@chartts/websocket'
+
+function LiveChart({ url }: { url: string }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    const chart = createChart(containerRef.current, Line, {
+      labels: [],
+      series: [],
+    })
+
+    const stream = createStreamingChart(chart, {
+      windowSize: 100,
+      seriesCount: 1,
+      seriesNames: ['Value'],
+    })
+
+    const source = createWebSocketStream(url)
+    source.connect(stream)
+
+    return () => {
+      source.disconnect()
+      stream.destroy()
+    }
+  }, [url])
+
+  return <div ref={containerRef} className="h-64 w-full" />
+}
+```

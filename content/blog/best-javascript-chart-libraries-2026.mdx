@@ -1,0 +1,348 @@
+---
+title: "Best JavaScript Chart Libraries in 2026: The Definitive Guide"
+description: "A framework-agnostic comparison of the best JavaScript charting libraries in 2026. D3, Plotly, Highcharts, Chart.js, ECharts, Google Charts, Chart.ts, and more - with honest tradeoffs, bundle sizes, and code examples."
+date: "2026-02-18"
+readTime: "16 min read"
+tag: "Guide"
+---
+
+The JavaScript charting ecosystem in 2026 has more options than ever. Some libraries have been around for over a decade. Others were built recently for modern toolchains. The right choice depends on your project constraints: framework, bundle budget, chart complexity, licensing, and how much control you need over the output.
+
+This guide compares the most viable JavaScript charting libraries available today. We focus on framework-agnostic usage - vanilla JavaScript or any framework - and evaluate each on its actual merits. No sponsored rankings, no artificial scoring. Just the information you need.
+
+## Evaluation criteria
+
+- **Bundle size** - Gzipped production size
+- **Rendering** - SVG, Canvas, WebGL, or a combination
+- **Chart types** - Breadth and depth of available visualizations
+- **Vanilla JS API** - Quality of the framework-free API
+- **TypeScript** - Type quality and development experience
+- **License** - Open source terms and commercial restrictions
+- **Performance** - Handling of large datasets
+- **Learning curve** - Time from zero to productive
+
+## 1. D3.js
+
+[D3](https://d3js.org/) is the foundation of data visualization on the web. It is not a charting library - it is a collection of low-level modules for bindingdata to DOM elements, computing layouts, and drawing shapes.
+
+**What it does:** D3 provides primitives for scales, axes, shapes, transitions, geography, hierarchies, and force simulations. You use these primitives to build whatever visualization you can imagine.
+
+**Pros:**
+- Unlimited flexibility - if you can draw it, D3 can build it
+- The gold standard for custom, publication-quality visualizations
+- Modular - import only the packages you need (`d3-scale`, `d3-shape`, etc.)
+- Massive community, thousands of examples on Observable
+- Well-maintained by Mike Bostock with regular updates
+- MIT licensed
+
+**Cons:**
+- Not a charting library. Building a simple line chart from scratch requires 50-100 lines of code
+- Steep learning curve - you need to understand selections, joins, scales, and the SVG coordinate system
+- No built-in tooltips, legends, responsive containers, or interactivity patterns
+- You own all the complexity: responsiveness, accessibility, animation, and state management
+- Imperative by nature, which clashes with declarative UI frameworks
+
+**Bundle size:** ~30kb gzipped (full library), ~5-10kb for individual modules
+
+**Best for:** Custom, one-of-a-kind visualizations where no existing library has what you need. Data journalism. Academic publications. If you need a standard bar chart, D3 is overkill.
+
+```js
+import * as d3 from "d3"
+
+const svg = d3.select("#chart").append("svg").attr("width", 600).attr("height", 400)
+const x = d3.scaleLinear().domain([0, 10]).range([50, 550])
+const y = d3.scaleLinear().domain([0, 100]).range([350, 50])
+
+svg.append("path")
+  .datum(data)
+  .attr("fill", "none")
+  .attr("stroke", "steelblue")
+  .attr("stroke-width", 2)
+  .attr("d", d3.line().x(d => x(d.x)).y(d => y(d.y)))
+
+svg.append("g").attr("transform", "translate(0,350)").call(d3.axisBottom(x))
+svg.append("g").attr("transform", "translate(50,0)").call(d3.axisLeft(y))
+```
+
+That is a minimal line chart. No tooltips, no responsiveness, no labels, no legend.
+
+## 2. Plotly.js
+
+[Plotly](https://plotly.com/javascript/) is a high-level charting library built on D3 and WebGL. It is particularly strong for scientific and statistical visualizations.
+
+**Pros:**
+- Extremely wide chart type selection - 40+ types including 3D charts, statistical plots, geographic maps
+- Interactive by default - zoom, pan, hover tooltips, and selection all built in
+- WebGL rendering for scatter plots makes it handle millions of points
+- Good for scientific/statistical use cases (box plots, violin plots, contour plots)
+- Declarative JSON API that is easy to understand
+- Free and open source (MIT license)
+
+**Cons:**
+- Massive bundle size - 1MB+ minified for the full library, ~300kb for the partial bundle
+- The "partial" bundle still includes more than most applications need
+- Styling is done through Plotly's own layout and trace configuration, not CSS
+- The output DOM is complex and difficult to customize beyond Plotly's options
+- Does not integrate with CSS frameworks or design systems
+- Loading time is noticeable on slower connections
+
+**Bundle size:** ~300kb-1MB gzipped (depending on build)
+
+**Best for:** Scientific applications, data exploration tools, and internal tools where bundle size does not matter and you need advanced statistical chart types.
+
+## 3. Highcharts
+
+[Highcharts](https://www.highcharts.com/) is a commercially-licensed charting library that has been a staple of enterprise applications since 2009.
+
+**Pros:**
+- Extremely polished and battle-tested across thousands of enterprise deployments
+- Comprehensive chart types with excellent defaults
+- SVG rendering with good accessibility support
+- Extensive documentation and professional support
+- Responsive by default
+- Strong handling of edge cases (empty data, single data points, extreme values)
+- Regular updates and active development
+
+**Cons:**
+- **Not free for commercial use** - requires a paid license starting at $590/developer
+- Bundle size is ~70kb gzipped for core, more with modules
+- The API is imperative and configuration-heavy
+- No native TypeScript (community types exist but are imperfect)
+- Styling requires Highcharts theme objects, not CSS
+- The wrapper libraries for React/Vue/Angular are thin and do not feel native
+
+**Bundle size:** ~70kb gzipped (core)
+
+**License:** Free for non-commercial use. Commercial licenses start at $590/developer/year.
+
+**Best for:** Enterprise applications with budget for commercial licensing, where you need guaranteed support, polished output, and do not want to debug open-source edge cases.
+
+## 4. Chart.js
+
+[Chart.js](https://www.chartjs.org/) is the most popular open-source charting library by npm downloads. Version 4 introduced tree-shaking and a more modular architecture.
+
+**Pros:**
+- Largest community of any open-source charting library
+- Canvas rendering provides good performance with moderate datasets
+- Tree-shakeable since v4 - register only what you use
+- Simple, clean API that is easy to learn
+- Good plugin ecosystem (annotation, zoom, streaming data)
+- MIT licensed
+
+**Cons:**
+- Canvas means no CSS styling - colors and fonts are configured in JavaScript
+- Limited chart types compared to Plotly or ECharts (~10 core types)
+- Canvas output is invisible to screen readers without extra effort
+- SSR requires polyfills or server-side Canvas implementations
+- The plugin API is powerful but complex
+- TypeScript types can be imprecise for advanced configurations
+
+**Bundle size:** ~25-35kb gzipped (tree-shaken)
+
+**Best for:** Standard dashboards that need line, bar, pie, scatter, and radar charts with Canvas performance and minimal setup.
+
+```js
+import { Chart, registerables } from "chart.js"
+Chart.register(...registerables)
+
+new Chart(document.getElementById("chart"), {
+  type: "line",
+  data: {
+    labels: ["Jan", "Feb", "Mar", "Apr", "May"],
+    datasets: [{
+      label: "Revenue",
+      data: [12, 19, 3, 5, 2],
+      borderColor: "rgb(75, 192, 192)",
+      tension: 0.1
+    }]
+  }
+})
+```
+
+## 5. Apache ECharts
+
+[ECharts](https://echarts.apache.org/) is a powerful visualization library developed by Baidu and now maintained by the Apache Foundation.
+
+**Pros:**
+- One of the widest chart type selections available - 20+ base types with countless variations
+- Exceptional performance with Canvas and WebGL renderers
+- Built-in support for geographic maps with GeoJSON
+- Excellent animation system
+- Large community, especially in Asia
+- Active development with regular major releases
+- Apache 2.0 licensed
+
+**Cons:**
+- Large bundle - the full library is 300kb+ gzipped, even tree-shaken builds are 100kb+
+- The API is a massive JSON configuration object that is hard to learn and debug
+- Documentation is extensive but partially in Chinese, with English translations sometimes incomplete
+- TypeScript types are auto-generated and can be painful to work with
+- No CSS styling - everything is configured through options objects
+- SSR requires additional setup and does not work with Canvas mode
+
+**Bundle size:** ~100-300kb gzipped
+
+**Best for:** Complex enterprise dashboards needing geographic maps, large dataset performance, and a wide variety of chart types. Applications where bundle size is a secondary concern.
+
+## 6. Google Charts
+
+[Google Charts](https://developers.google.com/chart) is Google's free charting library, loaded via a script tag from Google's CDN.
+
+**Pros:**
+- Free to use with no bundle to manage (loaded from CDN)
+- Simple API that is easy to learn
+- Decent variety of chart types including some unique ones (Org Chart, Sankey, Timeline)
+- Material Design styling option
+- No npm dependencies to manage
+
+**Cons:**
+- **Requires loading from Google's CDN** - cannot be self-hosted or bundled
+- Adds an external dependency on Google's servers (privacy, reliability, and compliance concerns)
+- Not open source - you use it under Google's terms of service
+- Limited customization - you get Google's design or very little else
+- No TypeScript types in the official package
+- Not suitable for offline applications
+- Performance is mediocre with large datasets
+- The API feels dated compared to modern libraries
+
+**Bundle size:** N/A (loaded from CDN, ~150kb transferred)
+
+**Best for:** Quick prototypes and internal tools where you do not mind the Google CDN dependency and want zero npm setup.
+
+## 7. Frappe Charts
+
+[Frappe Charts](https://frappe.io/charts) is a lightweight charting library focused on simplicity.
+
+**Pros:**
+- Very small bundle - ~15kb gzipped
+- Clean, minimal API
+- SVG rendering
+- No dependencies
+- Good for simple use cases
+- MIT licensed
+
+**Cons:**
+- Very limited chart types - Line, Bar, Pie, Percentage, and Heatmap only
+- Minimal customization options
+- Small community and infrequent updates
+- No TypeScript support
+- Limited interactivity
+- Not suitable for anything beyond basic charts
+
+**Bundle size:** ~15kb gzipped
+
+**Best for:** Simple dashboards where you only need basic chart types and want the smallest possible library.
+
+## 8. uPlot
+
+[uPlot](https://github.com/leeoniya/uPlot) is a micro-sized, fast time series chart library focused on performance.
+
+**Pros:**
+- Incredibly small - ~10kb gzipped
+- Exceptional performance - handles millions of data points on a Canvas
+- Purpose-built for time series data
+- MIT licensed
+- Minimal memory footprint
+
+**Cons:**
+- Time series only - no pie charts, no bar charts (well, bar charts via plugin), no scatter
+- The API is low-level and configuration-heavy
+- Minimal documentation
+- Small community
+- Canvas only - no SVG, no SSR
+- No built-in interactivity beyond basic hover
+
+**Bundle size:** ~10kb gzipped
+
+**Best for:** High-frequency time series data (monitoring, trading, IoT) where you need to render millions of points with minimal overhead.
+
+## 9. Chart.ts
+
+[Chart.ts](https://chartts.com) is a modern charting library designed from the ground up for the current JavaScript ecosystem. It works with any framework or no framework at all.
+
+**Pros:**
+- Under 15kb gzipped for the entire library with 65+ chart types
+- SVG-first rendering with automatic Canvas fallback at 10k+ points and WebGL at 100k+
+- Native Tailwind CSS support - every element accepts `className` props
+- TypeScript-first with full type inference
+- Works with vanilla JS, React, Vue, Svelte, Solid, and Angular
+- Full SSR support - SVG output works on the server
+- Built-in accessibility with ARIA attributes and keyboard navigation
+- Dark mode via Tailwind `dark:` variant or CSS `prefers-color-scheme`
+- MIT licensed
+
+**Cons:**
+- Newer library with a smaller community than D3, Chart.js, or Highcharts
+- Fewer third-party plugins and extensions
+- Less battle-tested in exotic production environments
+- Some very specialized statistical chart types (violin, contour) are still in development
+
+**Bundle size:** &lt;15kb gzipped (entire library, all chart types)
+
+**Best for:** Modern applications using Tailwind CSS, projects that need a wide variety of chart types without a large bundle, and teams that want the same library across multiple frameworks.
+
+```js
+import { createChart } from "@chartts/core"
+
+const chart = createChart(document.getElementById("chart"), {
+  type: "line",
+  data: data,
+  x: "month",
+  y: "revenue",
+  className: "h-64 w-full",
+  lineClassName: "stroke-blue-500",
+  areaClassName: "fill-blue-500/10",
+})
+```
+
+## Comparison table
+
+| Library | Bundle (gzip) | Renderer | Chart Types | TypeScript | License | SSR |
+|---------|--------------|----------|-------------|------------|---------|-----|
+| D3 | ~5-30kb | SVG | Unlimited (manual) | Good | MIT | Yes |
+| Plotly | ~300kb-1MB | SVG/WebGL | 40+ | Fair | MIT | No |
+| Highcharts | ~70kb | SVG | 30+ | Community | Commercial | Yes |
+| Chart.js | ~25-35kb | Canvas | ~10 | Fair | MIT | No |
+| ECharts | ~100-300kb | Canvas/SVG | 30+ | Fair | Apache 2.0 | Partial |
+| Google Charts | ~150kb (CDN) | SVG | ~25 | No | Proprietary | No |
+| Frappe Charts | ~15kb | SVG | ~5 | No | MIT | Yes |
+| uPlot | ~10kb | Canvas | ~3 | Fair | MIT | No |
+| Chart.ts | &lt;15kb | SVG/Canvas/WebGL | 50+ | Excellent | MIT | Yes |
+
+## Decision framework
+
+Choosing a charting library is ultimately about matching your constraints to a library's strengths. Here is how to think about it:
+
+### By project type
+
+**Marketing site or landing page:** Bundle size is critical. Chart.ts (&lt;15kb) or Frappe Charts (~15kb) will not hurt your Lighthouse score. Avoid Plotly, ECharts, or anything over 50kb.
+
+**SaaS dashboard:** You need a variety of chart types, good interactivity, and design system integration. Chart.ts, Recharts (React), or Nivo (React) are strong choices. If bundle size is not a concern, ECharts covers everything.
+
+**Scientific or research application:** Plotly is purpose-built for this. 3D charts, statistical plots, and WebGL scatter with millions of points. Accept the bundle size.
+
+**Enterprise with commercial license budget:** Highcharts is polished, supported, and reliable. If you can afford the license, it eliminates many headaches.
+
+**Monitoring or time series:** uPlot for pure performance with millions of points. Chart.ts if you need other chart types alongside your time series.
+
+**Quick prototype:** Google Charts if you do not mind the CDN dependency. Chart.js if you want something familiar.
+
+### By constraint
+
+**Bundle size matters:** Chart.ts < uPlot < Frappe < Chart.js < everything else.
+
+**Need SSR:** Chart.ts, Highcharts, and D3 render SVG that works on the server. Canvas libraries (Chart.js, uPlot) require polyfills or client-only rendering.
+
+**Need Tailwind integration:** Chart.ts is the only library with native `className` props. Everything else requires separate theme configuration.
+
+**Need maximum chart types:** ECharts and Plotly have the widest selections. Chart.ts covers 50+ types at a fraction of the bundle size.
+
+**Need maximum performance:** uPlot for time series. ECharts for general Canvas/WebGL. Chart.ts auto-scales from SVG to Canvas to WebGL based on data volume.
+
+## The state of charting in 2026
+
+The JavaScript charting landscape has matured significantly. The older generation (Highcharts, D3, Google Charts) continues to serve its use cases well. The middle generation (Chart.js, ECharts, Plotly) dominates in downloads and community size. The newer generation (Chart.ts, Tremor) is built for modern toolchains - TypeScript, Tailwind, server rendering, and tree-shaking.
+
+The biggest shift in the last two years has been the expectation that charts integrate with your existing design system rather than imposing their own. Teams using Tailwind CSS do not want to learn a separate theming API for their charts. Teams using TypeScript do not want to fight with `any` types. Teams using Next.js do not want to dynamic-import their entire charting layer.
+
+No single library is the best for every project. But the gap between what modern projects need and what legacy libraries provide is widening. If you are starting a new project today, it is worth evaluating the newer options before defaulting to whatever you used last time.

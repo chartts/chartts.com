@@ -1,0 +1,481 @@
+---
+title: "Statistics Utilities"
+description: "Descriptive statistics, correlation, normalization, outlier detection, distributions, and resampling. Pure functions, zero dependencies."
+badge: "@chartts/statistics"
+---
+
+## Quick Start
+
+```ts
+import { mean, median, stddev, percentile, histogram } from '@chartts/statistics'
+
+const data = [12, 15, 18, 22, 25, 30, 28, 35, 38, 42, 45, 50]
+
+console.log(mean(data))            // 30
+console.log(median(data))          // 29
+console.log(stddev(data))          // 12.31
+console.log(percentile(data, 90))  // 46.5
+console.log(histogram(data, 5))    // { edges: [...], counts: [...] }
+```
+
+Every function is pure, operates on plain `number[]` arrays, and has no dependencies. All computation happens in a single pass where possible.
+
+## Installation
+
+```bash
+npm install @chartts/statistics
+```
+
+---
+
+## Descriptive Statistics
+
+### `sum(values)`
+
+Sum of all values. O(n).
+
+```ts
+function sum(values: number[]): number
+```
+
+### `mean(values)`
+
+Arithmetic mean. Returns 0 for empty arrays.
+
+```ts
+function mean(values: number[]): number
+```
+
+### `median(values)`
+
+Middle value of a sorted copy. For even-length arrays, returns the average of the two middle values. Returns 0 for empty arrays.
+
+```ts
+function median(values: number[]): number
+```
+
+### `mode(values)`
+
+Most frequently occurring values, sorted ascending. Returns an empty array if all values appear exactly once (no mode). Can return multiple values in case of a tie.
+
+```ts
+function mode(values: number[]): number[]
+```
+
+```ts
+import { mode } from '@chartts/statistics'
+
+mode([1, 2, 2, 3, 3, 4])  // [2, 3] (bimodal)
+mode([1, 2, 3, 4])         // [] (no mode)
+mode([5, 5, 5, 1, 2])      // [5]
+```
+
+### `variance(values, population?)`
+
+Variance of the dataset. Uses sample variance (n-1 denominator) by default. Set `population: true` for population variance (n denominator).
+
+```ts
+function variance(values: number[], population?: boolean): number
+```
+
+### `stddev(values, population?)`
+
+Standard deviation: the square root of variance. Same `population` flag as `variance`.
+
+```ts
+function stddev(values: number[], population?: boolean): number
+```
+
+### `percentile(values, p)`
+
+Value at the given percentile using linear interpolation. `p` ranges from 0 to 100.
+
+```ts
+function percentile(values: number[], p: number): number
+```
+
+```ts
+import { percentile } from '@chartts/statistics'
+
+const data = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+percentile(data, 25)   // 27.5
+percentile(data, 50)   // 55
+percentile(data, 75)   // 82.5
+percentile(data, 99)   // 99.1
+```
+
+### `quartiles(values)`
+
+Returns Q1 (25th percentile), Q2 (50th), and Q3 (75th).
+
+```ts
+function quartiles(values: number[]): { q1: number; q2: number; q3: number }
+```
+
+### `iqr(values)`
+
+Interquartile range: Q3 minus Q1.
+
+```ts
+function iqr(values: number[]): number
+```
+
+### `range(values)`
+
+Difference between maximum and minimum values.
+
+```ts
+function range(values: number[]): number
+```
+
+### `min(values)` / `max(values)`
+
+Minimum and maximum. Return `Infinity` and `-Infinity` respectively for empty arrays.
+
+```ts
+function min(values: number[]): number
+function max(values: number[]): number
+```
+
+---
+
+## Correlation and Association
+
+### `covariance(a, b)`
+
+Sample covariance between two arrays. If lengths differ, uses the shorter length. Returns 0 for arrays with fewer than 2 elements.
+
+```ts
+function covariance(a: number[], b: number[]): number
+```
+
+### `correlation(a, b)`
+
+Pearson correlation coefficient (ranges from -1 to 1). Returns 0 if either standard deviation is 0.
+
+```ts
+function correlation(a: number[], b: number[]): number
+```
+
+```ts
+import { correlation } from '@chartts/statistics'
+
+const temperature = [20, 22, 25, 28, 30, 32, 35, 33, 30, 27]
+const iceCreamSales = [200, 250, 340, 420, 500, 560, 650, 600, 480, 350]
+
+const r = correlation(temperature, iceCreamSales)
+// r ≈ 0.99 (strong positive correlation)
+```
+
+### `spearmanCorrelation(a, b)`
+
+Spearman rank correlation. Converts values to ranks (handles ties via average rank), then computes Pearson correlation on the ranks. Better for monotonic but non-linear relationships.
+
+```ts
+function spearmanCorrelation(a: number[], b: number[]): number
+```
+
+```ts
+import { correlation, spearmanCorrelation } from '@chartts/statistics'
+
+const experience = [1, 2, 3, 5, 8, 10, 15, 20]
+const salary = [35, 42, 48, 60, 78, 85, 95, 100]
+
+console.log(correlation(experience, salary))          // Pearson
+console.log(spearmanCorrelation(experience, salary))  // Spearman (handles non-linearity)
+```
+
+---
+
+## Normalization
+
+### `normalize(values)`
+
+Min-max normalization. Scales all values to the [0, 1] range. If all values are equal, returns 0.5 for each.
+
+```ts
+function normalize(values: number[]): number[]
+```
+
+```ts
+import { normalize } from '@chartts/statistics'
+
+normalize([10, 20, 30, 40, 50])
+// [0, 0.25, 0.5, 0.75, 1]
+```
+
+### `zScore(values)`
+
+Z-score standardization. Each value becomes `(value - mean) / stddev`. If standard deviation is 0, returns all zeros.
+
+```ts
+function zScore(values: number[]): number[]
+```
+
+```ts
+import { zScore } from '@chartts/statistics'
+
+const scores = [85, 90, 78, 92, 88, 76, 95]
+const standardized = zScore(scores)
+// Values centered around 0, measured in standard deviations
+```
+
+---
+
+## Outlier Detection
+
+### `outliers(values, method?, threshold?)`
+
+Detect outliers using either the IQR method or z-score method. Returns both the indices and values of detected outliers.
+
+```ts
+function outliers(
+  values: number[],
+  method?: 'iqr' | 'zscore',
+  threshold?: number,
+): { indices: number[]; values: number[] }
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `method` | `'iqr' \| 'zscore'` | `'iqr'` | Detection method |
+| `threshold` | `number` | `1.5` (IQR) or `3` (zscore) | Sensitivity |
+
+**IQR method**: Points below Q1 minus 1.5*IQR or above Q3 plus 1.5*IQR are outliers. Adjust the multiplier with `threshold`.
+
+**Z-score method**: Points with |z-score| > 3 are outliers. Adjust with `threshold`.
+
+```ts
+import { outliers } from '@chartts/statistics'
+
+const data = [10, 12, 11, 13, 12, 14, 11, 100, 13, 12, -50]
+
+const iqrResult = outliers(data, 'iqr')
+// { indices: [7, 10], values: [100, -50] }
+
+const zResult = outliers(data, 'zscore', 2)
+// { indices: [7, 10], values: [100, -50] }
+```
+
+---
+
+## Distribution
+
+### `histogram(values, bins?)`
+
+Compute a frequency histogram. If `bins` is not specified, uses `ceil(sqrt(n))` as the bin count. Returns edge boundaries and counts.
+
+```ts
+function histogram(
+  values: number[],
+  bins?: number,
+): { edges: number[]; counts: number[] }
+```
+
+```ts
+import { histogram } from '@chartts/statistics'
+
+const data = [1.2, 2.5, 2.8, 3.1, 3.4, 3.7, 4.0, 4.2, 4.5, 5.8]
+
+const h = histogram(data, 4)
+// h.edges  = [1.2, 2.35, 3.5, 4.65, 5.8]
+// h.counts = [1, 3, 3, 3]
+```
+
+The `edges` array has length `bins + 1`. The maximum value is included in the last bin.
+
+### `kde(values, bandwidth?, points?)`
+
+Kernel Density Estimation using a Gaussian kernel. Produces a smooth probability density curve. If bandwidth is not provided, uses Silverman's rule of thumb: `1.06 * stddev * n^(-0.2)`.
+
+```ts
+function kde(
+  values: number[],
+  bandwidth?: number,
+  points?: number,
+): { x: number[]; y: number[] }
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `bandwidth` | `number` | Silverman's rule | Smoothing bandwidth (h) |
+| `points` | `number` | `100` | Number of evaluation points |
+
+```ts
+import { kde } from '@chartts/statistics'
+
+const data = [2.1, 2.5, 2.8, 3.1, 3.4, 3.7, 4.0, 4.2, 4.5, 5.8]
+
+const density = kde(data)
+// density.x = [100 evenly spaced x-values]
+// density.y = [probability density at each x]
+
+// Plot as a line chart
+const chartData = {
+  labels: density.x.map(v => v.toFixed(1)),
+  series: [{ name: 'Density', values: density.y }],
+}
+```
+
+---
+
+## Sampling
+
+### `sample(values, n)`
+
+Random sample without replacement using a partial Fisher-Yates shuffle. If `n >= values.length`, returns a copy of the full array.
+
+```ts
+function sample(values: number[], n: number): number[]
+```
+
+```ts
+import { sample } from '@chartts/statistics'
+
+const population = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+const subset = sample(population, 3)
+// e.g. [7, 2, 9]
+```
+
+### `bootstrap(values, statFn, iterations?)`
+
+Bootstrap resampling for confidence interval estimation. Resamples with replacement `iterations` times, computes the statistic on each resample, and returns the mean and 95% confidence interval.
+
+```ts
+function bootstrap(
+  values: number[],
+  statFn: (v: number[]) => number,
+  iterations?: number,
+): { mean: number; ci: [number, number] }
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `statFn` | `(values) => number` | required | Statistic to compute on each resample |
+| `iterations` | `number` | `1000` | Number of bootstrap iterations |
+
+```ts
+import { bootstrap, mean, median } from '@chartts/statistics'
+
+const data = [12, 15, 18, 22, 25, 30, 28, 35, 38, 42, 45, 50]
+
+// Bootstrap the mean
+const bootMean = bootstrap(data, mean, 5000)
+console.log(`Mean: ${bootMean.mean.toFixed(2)}`)
+console.log(`95% CI: [${bootMean.ci[0].toFixed(2)}, ${bootMean.ci[1].toFixed(2)}]`)
+
+// Bootstrap the median
+const bootMedian = bootstrap(data, median, 5000)
+console.log(`Median: ${bootMedian.mean.toFixed(2)}`)
+console.log(`95% CI: [${bootMedian.ci[0].toFixed(2)}, ${bootMedian.ci[1].toFixed(2)}]`)
+```
+
+---
+
+## Practical Examples
+
+### Summary statistics panel
+
+```ts
+import {
+  mean, median, stddev, min, max, quartiles, outliers,
+} from '@chartts/statistics'
+
+const latencies = [12, 15, 14, 18, 22, 13, 16, 200, 14, 15, 17, 19]
+
+const summary = {
+  mean: mean(latencies).toFixed(1),
+  median: median(latencies).toFixed(1),
+  stddev: stddev(latencies).toFixed(1),
+  min: min(latencies),
+  max: max(latencies),
+  ...quartiles(latencies),
+  outliers: outliers(latencies),
+}
+
+// summary.outliers.values = [200]
+```
+
+### Correlation matrix
+
+```ts
+import { correlation } from '@chartts/statistics'
+
+const metrics = {
+  cpu: [45, 62, 78, 55, 90, 42, 88, 70],
+  memory: [30, 45, 60, 40, 80, 35, 75, 55],
+  requests: [100, 180, 250, 150, 350, 120, 320, 220],
+  errors: [2, 5, 12, 4, 25, 3, 20, 10],
+}
+
+const pairs = ['cpu', 'memory', 'requests', 'errors'] as const
+for (const a of pairs) {
+  for (const b of pairs) {
+    if (a >= b) continue
+    const r = correlation(metrics[a], metrics[b])
+    console.log(`${a} vs ${b}: r = ${r.toFixed(3)}`)
+  }
+}
+```
+
+### Distribution analysis for chart data
+
+```ts
+import { histogram, kde, normalize } from '@chartts/statistics'
+
+const responseTimes = [/* array of 1000 response times in ms */]
+
+// Histogram for a bar chart
+const hist = histogram(responseTimes, 20)
+const barData = {
+  labels: hist.edges.slice(0, -1).map((e, i) =>
+    `${e.toFixed(0)}-${hist.edges[i + 1].toFixed(0)}`
+  ),
+  series: [{ name: 'Frequency', values: hist.counts }],
+}
+
+// KDE for a smooth density overlay
+const density = kde(responseTimes)
+const lineData = {
+  labels: density.x.map(v => v.toFixed(0)),
+  series: [{ name: 'Density', values: density.y }],
+}
+```
+
+### Z-score anomaly detection
+
+```ts
+import { zScore, outliers } from '@chartts/statistics'
+
+const daily = [100, 105, 98, 110, 102, 95, 108, 350, 97, 103]
+
+const scores = zScore(daily)
+const anomalies = outliers(daily, 'zscore', 2)
+
+// Highlight anomalous points on the chart
+const colors = daily.map((_, i) =>
+  anomalies.indices.includes(i) ? '#ef4444' : '#3b82f6'
+)
+```
+
+---
+
+## Full API Summary
+
+| Category | Functions |
+|----------|-----------|
+| Descriptive | `sum`, `mean`, `median`, `mode`, `variance`, `stddev`, `percentile`, `quartiles`, `iqr`, `range`, `min`, `max` |
+| Correlation | `covariance`, `correlation`, `spearmanCorrelation` |
+| Normalization | `normalize`, `zScore` |
+| Outliers | `outliers` (IQR or z-score methods) |
+| Distribution | `histogram`, `kde` |
+| Sampling | `sample`, `bootstrap` |
+
+---
+
+## Related
+
+- [@chartts/regression](/docs/regression) for trend fitting and forecasting
+- [@chartts/finance](/docs/finance-pkg) for financial indicators and risk metrics
+- [Histogram Chart](/docs/charts/histogram) for rendering histogram data
+- [Box Plot](/docs/charts/boxplot) for rendering quartile data

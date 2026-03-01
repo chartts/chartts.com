@@ -1,0 +1,296 @@
+---
+title: "Best React Chart Libraries in 2026: A Comprehensive Comparison"
+description: "An honest comparison of the top React charting libraries in 2026. Bundle sizes, DX, SSR support, Tailwind compatibility, and real tradeoffs for Recharts, Chart.js, Nivo, ECharts, ApexCharts, Victory, Visx, Tremor, and Chart.ts."
+date: "2026-02-20"
+readTime: "14 min read"
+tag: "Guide"
+---
+
+Choosing a charting library for a React project is one of those decisions that seems simple until you are three sprints in and realize the library you picked does not support server components, adds 80kb to your bundle, or fights your design system at every turn.
+
+This guide compares the most popular React chart libraries available in 2026. For each, we cover what it does well, where it falls short, bundle size, and the specific use cases where it shines. No fluff, no filler, just the information you need to make a good decision.
+
+## What we evaluated
+
+Every library was evaluated on these criteria:
+
+- **Bundle size** - Gzipped size added to your production build
+- **TypeScript support** - Type quality, inference, and autocomplete experience
+- **SSR compatibility** - Works with Next.js App Router, Remix, Astro, and other server-rendering frameworks
+- **Customization** - How easy it is to match charts to your design system
+- **Chart types** - Breadth of available visualizations
+- **Performance** - Handling of large datasets (1k, 10k, 100k+ points)
+- **Accessibility** - Screen reader support, keyboard navigation, ARIA attributes
+- **Community and maintenance** - Active development, GitHub issues, and release frequency
+
+## 1. Recharts
+
+[Recharts](https://recharts.org) has been the default React charting library for years. It is built on D3 and renders SVG, making it a natural fit for React's declarative model.
+
+**Pros:**
+- Composable API using React components (`<LineChart>`, `<XAxis>`, `<Tooltip>`)
+- Large community and extensive documentation
+- Good TypeScript types
+- SVG output works well with SSR
+- Active maintenance with regular releases
+
+**Cons:**
+- Bundle size is significant at ~45kb gzipped for a basic chart
+- Performance degrades noticeably above 5,000 data points
+- Customization can be verbose - styling individual elements often requires custom render functions
+- The animation system can cause layout shifts on initial render
+- No built-in dark mode support - you need to manage colors manually
+- Limited chart types compared to full-featured libraries (no Sankey, Sunburst, Gauge, etc.)
+
+**Bundle size:** ~45kb gzipped (core + one chart type)
+
+**Best for:** Teams that want a well-documented, battle-tested library and do not need extreme performance or unusual chart types.
+
+## 2. Chart.js (with react-chartjs-2)
+
+[Chart.js](https://www.chartjs.org/) is the most popular charting library in JavaScript, and `react-chartjs-2` provides the React wrapper. Version 4 added tree-shaking support, which significantly reduced its effective bundle size.
+
+**Pros:**
+- Massive community - more Stack Overflow answers than any other charting library
+- Good performance with Canvas rendering
+- Tree-shakeable since v4 - register only the components you need
+- Extensive plugin ecosystem
+- Handles large datasets better than SVG-based libraries
+
+**Cons:**
+- Canvas rendering means no real DOM - harder to style, no CSS, no Tailwind classes
+- The React wrapper (`react-chartjs-2`) is a thin wrapper around an imperative API - it does not feel like idiomatic React
+- SSR requires extra setup since Canvas does not exist on the server
+- Accessibility is limited - Canvas charts are invisible to screen readers without manual ARIA configuration
+- The imperative config object (options, scales, plugins) has a steep learning curve
+- TypeScript types exist but are complex and sometimes inaccurate
+
+**Bundle size:** ~25-35kb gzipped (tree-shaken for a single chart type)
+
+**Best for:** Teams that prioritize Canvas performance, need plugin support, or are already familiar with Chart.js from non-React projects.
+
+## 3. Nivo
+
+[Nivo](https://nivo.rocks/) is a D3-based library that provides a rich set of chart types with both SVG and Canvas renderers. It is well-designed and has a distinctive visual style.
+
+**Pros:**
+- Beautiful default styling out of the box
+- Wide variety of chart types including Sankey, Chord, Swarm Plot, and Calendar
+- Both SVG and Canvas renderers available per chart type
+- Server-side rendering support for SVG charts
+- Interactive documentation with a "playground" for each chart
+- Responsive by default
+
+**Cons:**
+- Bundle size is large - easily 60-80kb gzipped depending on chart types imported
+- The theming system is custom and does not integrate with Tailwind or CSS variables
+- TypeScript types are decent but some advanced customizations lose type safety
+- Performance with Canvas is acceptable but not exceptional
+- Configuration can be overwhelming - many charts have 30+ props
+- Some chart types have not been updated in a while
+
+**Bundle size:** ~60-80kb gzipped (varies significantly by chart type)
+
+**Best for:** Data-heavy dashboards where visual appeal matters and you need exotic chart types like Sankey diagrams or chord charts.
+
+## 4. Apache ECharts (with echarts-for-react)
+
+[ECharts](https://echarts.apache.org/) is a powerful, enterprise-grade library developed by Apache. It renders to Canvas by default and has one of the widest chart type selections available.
+
+**Pros:**
+- Enormous chart type library - 20+ base types with extensive variations
+- Excellent performance with large datasets (100k+ points with minimal lag)
+- Built-in animation system that is genuinely impressive
+- Geographic map support out of the box
+- Active development backed by Apache Foundation
+
+**Cons:**
+- Very large bundle - 300kb+ for the full library, 100kb+ even with aggressive tree-shaking
+- The React wrapper is thin and the API is fundamentally imperative (JSON config objects)
+- No SSR support - Canvas only, no server rendering
+- TypeScript types are auto-generated and can be difficult to work with
+- Learning curve is steep - the option object is deeply nested and documentation is partially in Chinese
+- Styling is done through the ECharts theme system, not CSS
+
+**Bundle size:** ~100-300kb gzipped (depending on imported modules)
+
+**Best for:** Enterprise dashboards with complex requirements, geographic visualizations, or applications where you need every chart type imaginable and bundle size is not a primary concern.
+
+## 5. ApexCharts (with react-apexcharts)
+
+[ApexCharts](https://apexcharts.com/) is a modern charting library that renders to SVG and has a clean API. The React wrapper provides a component-based interface.
+
+**Pros:**
+- Good-looking charts with minimal configuration
+- SVG rendering with reasonable performance
+- Built-in responsive design
+- Nice animation defaults
+- Supports mixed chart types (line + bar in one chart)
+- Decent TypeScript support
+
+**Cons:**
+- Bundle size is ~50kb gzipped - not small
+- The React wrapper is still largely imperative under the hood (config objects)
+- SSR support is problematic - the library accesses `window` on import, requiring dynamic imports in Next.js
+- Customization beyond the provided options is limited
+- Some chart types (like treemap and heatmap) have quirks
+- Community is smaller than Recharts or Chart.js
+
+**Bundle size:** ~50kb gzipped
+
+**Best for:** Quick dashboards where you want good-looking charts with minimal setup and do not need SSR or extreme customization.
+
+## 6. Victory
+
+[Victory](https://formidable.com/open-source/victory/) is built by Formidable and takes a fully compositional approach. Every chart element is a separate React component that you compose together.
+
+**Pros:**
+- Truly compositional - every element (axis, line, bar, label) is a separate component
+- Works with React Native (same API for web and mobile)
+- Good TypeScript support
+- SVG rendering works with SSR
+- Flexible enough to build highly custom visualizations
+
+**Cons:**
+- Bundle size is ~50kb gzipped for basic usage
+- The compositional API means even simple charts require many components and props
+- Performance is poor with large datasets - noticeable lag above 1,000 points
+- Documentation has gaps, especially for advanced use cases
+- The learning curve is steep because of the granular component model
+- Styling requires Victory's own theme system
+
+**Bundle size:** ~50kb gzipped
+
+**Best for:** Teams building for both React web and React Native, or those who need fine-grained control over every chart element and are willing to write more code.
+
+## 7. Visx
+
+[Visx](https://airbnb.io/visx/) (pronounced "visks") is Airbnb's collection of low-level visualization primitives for React. It is not a charting library in the traditional sense - it is a toolkit for building charts.
+
+**Pros:**
+- Maximum flexibility - you build exactly what you want
+- Small individual packages - import only what you use
+- Built on D3 primitives but with React components
+- SVG output works with SSR
+- Excellent TypeScript types
+- No opinion on styling - use whatever system you want
+
+**Cons:**
+- Not a charting library - there is no `<LineChart>` component. You build charts from primitives like `<LinePath>`, `<AxisLeft>`, `<Grid>`
+- Building a production-ready chart requires significant code (50-100+ lines for what other libraries do in 5)
+- No built-in tooltips, legends, or responsive containers - you build everything
+- The learning curve includes understanding D3 concepts (scales, shapes, etc.)
+- No Canvas or WebGL fallback - SVG only
+
+**Bundle size:** ~8-20kb gzipped (depends on which packages you import)
+
+**Best for:** Experienced developers who need fully custom visualizations and are comfortable with D3 concepts. Not suitable for teams that want quick, standard charts.
+
+## 8. Tremor
+
+[Tremor](https://tremor.so/) is a React component library specifically designed for dashboards. It includes chart components built on top of Recharts, along with KPI cards, tables, and other dashboard elements.
+
+**Pros:**
+- Beautiful, opinionated design that looks great immediately
+- Dashboard-focused - includes non-chart components (KPI cards, tables, lists)
+- Tailwind CSS native
+- Good TypeScript support
+- Simple API - minimal configuration needed
+- Built for the Next.js ecosystem
+
+**Cons:**
+- Limited chart types - only the basics (Line, Bar, Area, Donut, Scatter)
+- Built on Recharts, so inherits its performance limitations
+- Heavy total bundle because it includes Recharts as a dependency
+- Customization is limited by design - it is opinionated
+- Not suitable for complex or unusual visualizations
+- You are locked into Tremor's design language
+
+**Bundle size:** ~60kb gzipped (includes Recharts dependency)
+
+**Best for:** Internal dashboards and admin panels where speed of development matters more than customization, and you want a cohesive design system out of the box.
+
+## 9. Chart.ts (@chartts/react)
+
+[Chart.ts](https://chartts.com) is a newer library built specifically for the modern React ecosystem. It is SVG-first, TypeScript-first, and designed to work with Tailwind CSS natively.
+
+**Pros:**
+- Under 15kb gzipped for the entire library - not per chart, the whole thing
+- Every element exposes `className` props - use Tailwind classes directly on lines, bars, axes, tooltips
+- Full SSR support - works with Next.js App Router, Server Components, and streaming
+- 65+ chart types sharing a consistent API surface
+- TypeScript-first with full type inference - your editor autocompletes everything
+- Dark mode works automatically via Tailwind's `dark:` variant
+- Multi-renderer: SVG by default, automatic Canvas at 10k+ points, WebGL at 100k+
+- Built-in accessibility with ARIA attributes and keyboard navigation
+- MIT licensed
+
+**Cons:**
+- Newer library with a smaller community than established options
+- Fewer Stack Overflow answers and third-party tutorials
+- Plugin ecosystem is still growing
+- Some edge cases in exotic chart types are still being polished
+
+**Bundle size:** &lt;15kb gzipped (entire library)
+
+**Best for:** Teams using Tailwind CSS that want charts matching their design system, Next.js projects needing SSR support, and applications where bundle size is a priority.
+
+```tsx
+import { LineChart } from "@chartts/react"
+
+export function RevenueChart({ data }) {
+  return (
+    <LineChart
+      data={data}
+      x="month"
+      y="revenue"
+      className="h-64 w-full"
+      lineClassName="stroke-blue-500 dark:stroke-blue-400"
+      areaClassName="fill-blue-500/10"
+      tooltipClassName="bg-white dark:bg-zinc-900 shadow-lg rounded-lg"
+    />
+  )
+}
+```
+
+## Comparison table
+
+| Library | Bundle Size (gzip) | SSR | Tailwind | TypeScript | Chart Types | Perf (10k pts) |
+|---------|-------------------|-----|----------|------------|-------------|----------------|
+| Recharts | ~45kb | Yes (SVG) | No | Good | ~15 | Fair |
+| Chart.js | ~25-35kb | No (Canvas) | No | Fair | ~10 | Good |
+| Nivo | ~60-80kb | Yes (SVG) | No | Good | ~25 | Fair |
+| ECharts | ~100-300kb | No (Canvas) | No | Fair | ~30+ | Excellent |
+| ApexCharts | ~50kb | Partial | No | Good | ~15 | Fair |
+| Victory | ~50kb | Yes (SVG) | No | Good | ~12 | Poor |
+| Visx | ~8-20kb | Yes (SVG) | Manual | Excellent | Primitives | Fair |
+| Tremor | ~60kb | Yes (SVG) | Yes | Good | ~6 | Fair |
+| Chart.ts | &lt;15kb | Yes (SVG) | Yes | Excellent | 50+ | Excellent |
+
+## How to choose
+
+The right library depends on your specific constraints. Here is a decision framework:
+
+**If bundle size is your top priority:** Chart.ts (&lt;15kb) or Visx (8-20kb, but requires significantly more code). If you are optimizing for Core Web Vitals and Lighthouse scores, the difference between 15kb and 80kb is meaningful.
+
+**If you need the most chart types:** ECharts has the widest selection, but at a significant bundle cost. Chart.ts covers 50+ types at a fraction of the size. Nivo is a good middle ground with exotic types like Sankey and Chord.
+
+**If you are using Tailwind CSS:** Chart.ts and Tremor are your only options with native Tailwind support. Every other library requires either custom themes or inline styles that exist outside your design system.
+
+**If you need maximum performance:** ECharts handles 100k+ points well. Chart.ts automatically switches renderers (SVG to Canvas to WebGL) based on data volume. Chart.js performs well with Canvas but lacks automatic scaling.
+
+**If you are building a Next.js App Router project:** SSR compatibility matters. Chart.ts, Recharts, and Nivo work with server rendering. Chart.js, ECharts, and ApexCharts require client-only rendering with dynamic imports.
+
+**If you need React Native support:** Victory is your best option. Most other libraries are web-only.
+
+**If you want to build fully custom visualizations:** Visx gives you the most control, but demands the most code. It is a toolkit, not a library.
+
+**If speed of development is everything:** Tremor gets you a good-looking dashboard fastest, but limits your chart types and customization.
+
+## Our recommendation
+
+For most React projects starting in 2026, we recommend evaluating **Chart.ts** first if you are using Tailwind CSS and care about bundle size. The combination of native Tailwind support, SSR compatibility, and a sub-15kb bundle is hard to beat.
+
+If you need a battle-tested library with the largest community and do not mind the larger bundle, **Recharts** remains a solid default. If performance with massive datasets is critical and bundle size is not a concern, **ECharts** is the power tool.
+
+The worst thing you can do is pick a library without checking SSR compatibility and styling integration first. Those two constraints eliminate more options than any other factor in a modern React project.

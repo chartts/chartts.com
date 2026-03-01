@@ -1,0 +1,186 @@
+---
+title: "Rich Text"
+description: "Apply bold, italic, color, and size formatting to chart labels and tooltips using a simple markup syntax. Parse markup strings into styled SVG text elements."
+badge: "Feature"
+---
+
+## Overview
+
+Chart.ts includes a rich text parser that converts simple markup strings into multi-styled SVG text elements. This lets you add bold, italic, colored, and sized text to chart labels, tooltips, and annotations without building SVG by hand.
+
+The markup syntax is intentionally minimal. It supports tag-based formatting (`{b}`, `{color:red}`) and shorthand Markdown-like syntax (`**bold**`, `*italic*`).
+
+## Import
+
+```ts
+import { parseRichText, richLabel } from "@chartts/core"
+```
+
+## Markup Syntax
+
+| Syntax | Effect | Example |
+|--------|--------|---------|
+| `{b}text{/b}` | Bold (fontWeight 700) | `{b}Revenue{/b}` |
+| `**text**` | Bold (shorthand) | `**Revenue**` |
+| `{i}text{/i}` | Italic | `{i}projected{/i}` |
+| `*text*` | Italic (shorthand) | `*projected*` |
+| `{color:hex}text{/color}` | Custom color | `{color:#ef4444}danger{/color}` |
+| `{size:px}text{/size}` | Custom font size | `{size:16}heading{/size}` |
+| `{style:name}text{/style}` | Named style | `{style:highlight}text{/style}` |
+
+Tags can be nested. The parser uses a style stack, so inner tags inherit from outer tags.
+
+## parseRichText(input, options?)
+
+Parses a markup string and returns an SVG `RenderNode` containing `<tspan>` children with the appropriate styles applied.
+
+### Basic usage
+
+```ts
+import { parseRichText } from "@chartts/core"
+
+const node = parseRichText("{b}Revenue{/b}: {color:#22c55e}$4.2M{/color}")
+```
+
+This produces a text element with two styled spans: "Revenue" in bold, and "$4.2M" in green.
+
+### With position and defaults
+
+```ts
+const node = parseRichText(
+  "**Q2 Results**: {color:#3b82f6}+12%{/color} vs Q1",
+  {
+    x: 100,
+    y: 50,
+    defaults: {
+      fontSize: 14,
+      fontFamily: "Inter, sans-serif",
+      fill: "#374151",
+    },
+  }
+)
+```
+
+### With named styles
+
+Define reusable style presets and reference them with `{style:name}`:
+
+```ts
+const node = parseRichText(
+  "{style:label}Total Users{/style}: {style:value}12,847{/style}",
+  {
+    x: 200,
+    y: 30,
+    styles: {
+      label: {
+        fontWeight: 600,
+        fill: "#6b7280",
+        fontSize: 11,
+      },
+      value: {
+        fontWeight: 700,
+        fill: "#111827",
+        fontSize: 14,
+      },
+    },
+  }
+)
+```
+
+## RichTextOptions Reference
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `defaults` | `RichTextStyle` | `{}` | Default text style for unstyled text |
+| `styles` | `Record<string, RichTextStyle>` | `{}` | Named styles for `{style:name}` syntax |
+| `x` | `number` | `0` | X position of the text element |
+| `y` | `number` | `0` | Y position of the text element |
+| `attrs` | `RenderAttrs` | `{}` | Additional SVG attributes on the parent `<text>` |
+
+## RichTextStyle Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `fontWeight` | `number \| string` | Font weight (e.g. 400, 700, "bold") |
+| `fontStyle` | `string` | Font style (e.g. "italic", "normal") |
+| `fill` | `string` | Text color |
+| `fontSize` | `number \| string` | Font size in pixels |
+| `fontFamily` | `string` | Font family |
+| `textDecoration` | `string` | Text decoration (e.g. "underline") |
+
+## richLabel(label, value, opts?)
+
+A convenience function that generates a formatted markup string for a common pattern: a bold label followed by a colored value.
+
+```ts
+import { richLabel } from "@chartts/core"
+
+const markup = richLabel("Revenue", 1234, { valueColor: "#3b82f6" })
+// Returns: "{b}Revenue{/b}: {color:#3b82f6}1,234{/color}"
+
+const markup2 = richLabel("Users", 58200)
+// Returns: "{b}Users{/b}: {color:#3b82f6}58,200{/color}"
+```
+
+You can then pass the result to `parseRichText()`:
+
+```ts
+const node = parseRichText(
+  richLabel("Monthly Revenue", 142500, { valueColor: "#059669" }),
+  { x: 50, y: 20 }
+)
+```
+
+### richLabel Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `valueColor` | `string` | `#3b82f6` | Color for the value portion |
+| `valueWeight` | `string` | `""` | If set, wraps the value in bold tags |
+
+## Full Example: Dashboard Tooltip
+
+```ts
+import { parseRichText, richLabel } from "@chartts/core"
+
+// Build a multi-line tooltip with rich formatting
+function buildTooltip(month: string, revenue: number, growth: number) {
+  const growthColor = growth >= 0 ? "#22c55e" : "#ef4444"
+  const growthSign = growth >= 0 ? "+" : ""
+
+  const line1 = `{b}{size:14}${month}{/size}{/b}`
+  const line2 = richLabel("Revenue", revenue, { valueColor: "#3b82f6" })
+  const line3 = `Growth: {color:${growthColor}}{b}${growthSign}${growth}%{/b}{/color}`
+
+  return [line1, line2, line3]
+}
+
+const lines = buildTooltip("March 2025", 142500, 12.4)
+// Render each line as a separate text node at different y-offsets
+lines.forEach((line, i) => {
+  const node = parseRichText(line, {
+    x: 10,
+    y: 20 + i * 20,
+    defaults: { fontSize: 12, fill: "#374151" },
+  })
+})
+```
+
+## Nesting Example
+
+Tags nest correctly. Inner styles inherit from the current style and add their own overrides:
+
+```ts
+const markup = "{b}Total: {color:#3b82f6}{size:16}$4.2M{/size}{/color}{/b}"
+
+// "Total: " is bold
+// "$4.2M" is bold + blue + 16px
+```
+
+## Tips
+
+- The parser returns a standard `RenderNode` with `type: 'text'`. It works anywhere Chart.ts expects render nodes: custom chart plugins, graphic overlays, tooltips.
+- Numeric values passed to `richLabel()` are automatically formatted with `toLocaleString()`, adding thousand separators.
+- The `{style:name}` syntax is useful for creating consistent formatting across multiple labels. Define your styles once and reference them everywhere.
+- Unclosed tags are handled gracefully. The parser never crashes on malformed input; it just stops applying the unclosed style.
+- All generated elements get the CSS class `chartts-richtext` on the parent `<text>` element, so you can target them with custom CSS.

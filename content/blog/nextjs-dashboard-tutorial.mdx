@@ -1,0 +1,782 @@
+---
+title: "Build a Metrics Dashboard with Next.js and Chart.ts"
+description: "A step-by-step tutorial for building a responsive metrics dashboard in Next.js App Router with Chart.ts. Covers KPI cards, sparklines, revenue charts, category breakdowns, and dark mode."
+date: "2026-02-25"
+readTime: "18 min read"
+tag: "Tutorial"
+---
+
+In this tutorial, you will build a complete metrics dashboard using Next.js App Router and Chart.ts. The dashboard includes KPI cards with sparklines, a revenue trend chart, a category breakdown, and full dark mode support. Everything is styled with Tailwind CSS and optimized for performance.
+
+By the end, you will have a production-ready dashboard layout that you can adapt to your own data.
+
+## What we are building
+
+The dashboard will have:
+
+- **4 KPI cards** showing key metrics with sparkline trends
+- **Revenue chart** with area fill showing monthly revenue over the past year
+- **Category breakdown** with a horizontal bar chart
+- **Recent activity table** with inline sparklines
+- **Dark mode** that works automatically
+- **Responsive layout** that works on mobile and desktop
+
+All charts use Chart.ts with Tailwind CSS classes for styling. The data is fetched on the server.
+
+## Prerequisites
+
+- Node.js 18+
+- Basic familiarity with Next.js App Router
+- Basic familiarity with Tailwind CSS
+
+## Step 1: Create the project
+
+Start with a fresh Next.js project:
+
+```bash
+npx create-next-app@latest dashboard --typescript --tailwind --app --src-dir
+cd dashboard
+```
+
+Install Chart.ts:
+
+```bash
+npm install @chartts/react
+```
+
+Your project structure should look like this:
+
+```
+dashboard/
+  src/
+    app/
+      layout.tsx
+      page.tsx
+      globals.css
+  tailwind.config.ts
+  package.json
+```
+
+## Step 2: Set up the data layer
+
+In a real application, you would fetch data from an API or database. For this tutorial, we will create a data file that simulates realistic metrics. This keeps the tutorial focused on the dashboard UI.
+
+Create `src/lib/data.ts`:
+
+```ts
+export type MonthlyRevenue = {
+  month: string
+  revenue: number
+  expenses: number
+  profit: number
+}
+
+export type KPIMetric = {
+  label: string
+  value: string
+  change: number
+  trend: number[]
+}
+
+export type CategoryBreakdown = {
+  category: string
+  value: number
+  color: string
+}
+
+export async function getMonthlyRevenue(): Promise<MonthlyRevenue[]> {
+  // Simulate API delay
+  await new Promise((r) => setTimeout(r, 100))
+
+  return [
+    { month: "Mar", revenue: 42000, expenses: 28000, profit: 14000 },
+    { month: "Apr", revenue: 45000, expenses: 29000, profit: 16000 },
+    { month: "May", revenue: 48000, expenses: 27000, profit: 21000 },
+    { month: "Jun", revenue: 51000, expenses: 30000, profit: 21000 },
+    { month: "Jul", revenue: 46000, expenses: 31000, profit: 15000 },
+    { month: "Aug", revenue: 52000, expenses: 29000, profit: 23000 },
+    { month: "Sep", revenue: 58000, expenses: 32000, profit: 26000 },
+    { month: "Oct", revenue: 55000, expenses: 33000, profit: 22000 },
+    { month: "Nov", revenue: 62000, expenses: 34000, profit: 28000 },
+    { month: "Dec", revenue: 68000, expenses: 36000, profit: 32000 },
+    { month: "Jan", revenue: 64000, expenses: 35000, profit: 29000 },
+    { month: "Feb", revenue: 71000, expenses: 37000, profit: 34000 },
+  ]
+}
+
+export async function getKPIMetrics(): Promise<KPIMetric[]> {
+  await new Promise((r) => setTimeout(r, 80))
+
+  return [
+    {
+      label: "Total Revenue",
+      value: "$71,000",
+      change: 10.9,
+      trend: [42, 45, 48, 51, 46, 52, 58, 55, 62, 68, 64, 71],
+    },
+    {
+      label: "Active Users",
+      value: "12,847",
+      change: 23.1,
+      trend: [5200, 5800, 6100, 6900, 7400, 8200, 8900, 9600, 10200, 11100, 11800, 12847],
+    },
+    {
+      label: "Conversion Rate",
+      value: "3.24%",
+      change: -2.1,
+      trend: [3.1, 3.3, 3.5, 3.4, 3.2, 3.6, 3.5, 3.3, 3.4, 3.2, 3.1, 3.24],
+    },
+    {
+      label: "Avg. Order Value",
+      value: "$84.50",
+      change: 5.4,
+      trend: [72, 74, 76, 78, 75, 79, 80, 82, 81, 83, 82, 84.5],
+    },
+  ]
+}
+
+export async function getCategoryBreakdown(): Promise<CategoryBreakdown[]> {
+  await new Promise((r) => setTimeout(r, 90))
+
+  return [
+    { category: "Electronics", value: 28400, color: "blue" },
+    { category: "Clothing", value: 18200, color: "emerald" },
+    { category: "Home & Garden", value: 12800, color: "amber" },
+    { category: "Sports", value: 7600, color: "rose" },
+    { category: "Books", value: 4000, color: "violet" },
+  ]
+}
+```
+
+This simulates three API calls that return different types of dashboard data. In production, replace these with real `fetch` calls or database queries.
+
+## Step 3: Build the KPI cards with sparklines
+
+KPI cards are the top-level metrics that give users an instant overview. Each card shows a number, a change percentage, and a sparkline showing the recent trend.
+
+Create `src/components/kpi-card.tsx`:
+
+```tsx
+import { Sparkline } from "@chartts/react"
+import type { KPIMetric } from "@/lib/data"
+
+export function KPICard({ metric }: { metric: KPIMetric }) {
+  const isPositive = metric.change >= 0
+
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+          {metric.label}
+        </p>
+        <span
+          className={`text-sm font-medium ${
+            isPositive
+              ? "text-emerald-600 dark:text-emerald-400"
+              : "text-red-600 dark:text-red-400"
+          }`}
+        >
+          {isPositive ? "+" : ""}
+          {metric.change}%
+        </span>
+      </div>
+
+      <p className="mt-2 text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+        {metric.value}
+      </p>
+
+      <div className="mt-4">
+        <Sparkline
+          data={metric.trend}
+          className="h-10 w-full"
+          lineClassName={
+            isPositive
+              ? "stroke-emerald-500 dark:stroke-emerald-400"
+              : "stroke-red-500 dark:stroke-red-400"
+          }
+          areaClassName={
+            isPositive
+              ? "fill-emerald-500/10 dark:fill-emerald-400/10"
+              : "fill-red-500/10 dark:fill-red-400/10"
+          }
+        />
+      </div>
+    </div>
+  )
+}
+```
+
+Notice that the `KPICard` component does not have `"use client"`. The `Sparkline` component from Chart.ts renders pure SVG, so it works in a Server Component. The sparkline has no interactivity (no tooltips or hover states), so it does not need client-side JavaScript.
+
+The sparkline color changes based on whether the metric trend is positive or negative. This is done with standard Tailwind conditional classes.
+
+## Step 4: Build the revenue chart
+
+The revenue chart shows monthly revenue and expenses as a dual-series area chart. This chart needs tooltips, so it will be a client component.
+
+Create `src/components/revenue-chart.tsx`:
+
+```tsx
+"use client"
+
+import { AreaChart } from "@chartts/react"
+import type { MonthlyRevenue } from "@/lib/data"
+
+export function RevenueChart({ data }: { data: MonthlyRevenue[] }) {
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          Revenue vs Expenses
+        </h2>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          Monthly breakdown for the past 12 months
+        </p>
+      </div>
+
+      <AreaChart
+        data={data}
+        x="month"
+        y={["revenue", "expenses"]}
+        className="h-72 w-full"
+        lineClassName={[
+          "stroke-blue-500 dark:stroke-blue-400",
+          "stroke-rose-500 dark:stroke-rose-400",
+        ]}
+        areaClassName={[
+          "fill-blue-500/10 dark:fill-blue-400/10",
+          "fill-rose-500/10 dark:fill-rose-400/10",
+        ]}
+        axisClassName="text-zinc-400 dark:text-zinc-500"
+        gridClassName="stroke-zinc-100 dark:stroke-zinc-800"
+        tooltipClassName="bg-white dark:bg-zinc-900 shadow-xl rounded-lg border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+        legendClassName="text-sm text-zinc-600 dark:text-zinc-400"
+        showLegend
+        showGrid
+        formatY={(value) => `$${(value / 1000).toFixed(0)}k`}
+      />
+    </div>
+  )
+}
+```
+
+Key points:
+
+- **Multiple series:** Passing an array to `y` creates multiple lines/areas. Each series gets its own color via the corresponding index in `lineClassName` and `areaClassName`.
+- **Formatting:** `formatY` formats the axis labels to show `$42k` instead of `42000`.
+- **Tailwind dark mode:** Every className uses `dark:` variants. When the user switches to dark mode, every element in the chart updates automatically.
+- **Tooltip styling:** The tooltip matches the card design with the same border, shadow, and background colors.
+
+## Step 5: Build the category breakdown
+
+A horizontal bar chart works well for category comparison because the labels are easy to read.
+
+Create `src/components/category-chart.tsx`:
+
+```tsx
+"use client"
+
+import { BarChart } from "@chartts/react"
+import type { CategoryBreakdown } from "@/lib/data"
+
+export function CategoryChart({ data }: { data: CategoryBreakdown[] }) {
+  // Map color names to Tailwind classes
+  const colorMap: Record<string, string> = {
+    blue: "fill-blue-500 dark:fill-blue-400",
+    emerald: "fill-emerald-500 dark:fill-emerald-400",
+    amber: "fill-amber-500 dark:fill-amber-400",
+    rose: "fill-rose-500 dark:fill-rose-400",
+    violet: "fill-violet-500 dark:fill-violet-400",
+  }
+
+  const chartData = data.map((d) => ({
+    ...d,
+    barClassName: colorMap[d.color] || "fill-zinc-500",
+  }))
+
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          Revenue by Category
+        </h2>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          Top performing product categories
+        </p>
+      </div>
+
+      <BarChart
+        data={chartData}
+        x="category"
+        y="value"
+        orientation="horizontal"
+        className="h-64 w-full"
+        barClassName={(item) => item.barClassName}
+        axisClassName="text-zinc-400 dark:text-zinc-500"
+        gridClassName="stroke-zinc-100 dark:stroke-zinc-800"
+        tooltipClassName="bg-white dark:bg-zinc-900 shadow-xl rounded-lg border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+        showGrid
+        formatX={(value) => `$${(value / 1000).toFixed(0)}k`}
+        barRadius={6}
+      />
+    </div>
+  )
+}
+```
+
+The `barClassName` callback allows each bar to have a different color based on the data. This is useful for category charts where each bar represents a different entity.
+
+## Step 6: Build the dashboard layout
+
+Now we assemble everything in the main page. The data fetching happens in the Server Component, and the data is passed down to the chart components.
+
+Update `src/app/page.tsx`:
+
+```tsx
+import { Suspense } from "react"
+import { KPICard } from "@/components/kpi-card"
+import { RevenueChart } from "@/components/revenue-chart"
+import { CategoryChart } from "@/components/category-chart"
+import {
+  getMonthlyRevenue,
+  getKPIMetrics,
+  getCategoryBreakdown,
+} from "@/lib/data"
+
+function CardSkeleton() {
+  return (
+    <div className="h-36 animate-pulse rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900" />
+  )
+}
+
+function ChartSkeleton() {
+  return (
+    <div className="h-96 animate-pulse rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900" />
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      <header className="border-b border-zinc-200 bg-white px-8 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+          Dashboard
+        </h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          Overview of your key metrics
+        </p>
+      </header>
+
+      <main className="mx-auto max-w-7xl space-y-6 p-6">
+        {/* KPI Cards */}
+        <Suspense
+          fallback={
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <CardSkeleton />
+              <CardSkeleton />
+              <CardSkeleton />
+              <CardSkeleton />
+            </div>
+          }
+        >
+          <KPISection />
+        </Suspense>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <Suspense fallback={<ChartSkeleton />}>
+              <RevenueSection />
+            </Suspense>
+          </div>
+          <div>
+            <Suspense fallback={<ChartSkeleton />}>
+              <CategorySection />
+            </Suspense>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+async function KPISection() {
+  const metrics = await getKPIMetrics()
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {metrics.map((metric) => (
+        <KPICard key={metric.label} metric={metric} />
+      ))}
+    </div>
+  )
+}
+
+async function RevenueSection() {
+  const data = await getMonthlyRevenue()
+  return <RevenueChart data={data} />
+}
+
+async function CategorySection() {
+  const data = await getCategoryBreakdown()
+  return <CategoryChart data={data} />
+}
+```
+
+This is an important architectural pattern:
+
+1. **The page component is a Server Component.** It does not have `"use client"`.
+2. **Each data section is an async Server Component** that fetches its own data. `KPISection`, `RevenueSection`, and `CategorySection` all run on the server.
+3. **Each section is wrapped in `<Suspense>`** with a skeleton fallback. This enables streaming - the page shell renders immediately, and each section streams in as its data becomes available.
+4. **KPI cards with sparklines render entirely on the server.** Zero client JavaScript for those components.
+5. **Interactive charts render their SVG on the server** and hydrate on the client for tooltip interactivity.
+
+## Step 7: Add dark mode
+
+Next.js with Tailwind supports dark mode via the `class` strategy. Update your Tailwind config:
+
+```ts
+// tailwind.config.ts
+import type { Config } from "tailwindcss"
+
+const config: Config = {
+  content: [
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  darkMode: "class",
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+
+export default config
+```
+
+Add a dark mode toggle. Create `src/components/theme-toggle.tsx`:
+
+```tsx
+"use client"
+
+import { useEffect, useState } from "react"
+
+export function ThemeToggle() {
+  const [dark, setDark] = useState(false)
+
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains("dark")
+    setDark(isDark)
+  }, [])
+
+  function toggle() {
+    const next = !dark
+    setDark(next)
+    document.documentElement.classList.toggle("dark", next)
+    localStorage.setItem("theme", next ? "dark" : "light")
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+    >
+      {dark ? "Light mode" : "Dark mode"}
+    </button>
+  )
+}
+```
+
+Add it to the header in `page.tsx`:
+
+```tsx
+<header className="flex items-center justify-between border-b border-zinc-200 bg-white px-8 py-4 dark:border-zinc-800 dark:bg-zinc-900">
+  <div>
+    <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+      Dashboard
+    </h1>
+    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+      Overview of your key metrics
+    </p>
+  </div>
+  <ThemeToggle />
+</header>
+```
+
+Because every Chart.ts element uses Tailwind `dark:` variants, toggling dark mode updates every chart instantly. No re-renders, no theme providers, no JavaScript color swapping. Pure CSS.
+
+Add the theme initialization script to `src/app/layout.tsx` to prevent flash of wrong theme:
+
+```tsx
+import type { Metadata } from "next"
+import "./globals.css"
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  description: "Metrics dashboard built with Next.js and Chart.ts",
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                  document.documentElement.classList.add('dark')
+                }
+              } catch (_) {}
+            `,
+          }}
+        />
+      </head>
+      <body className="antialiased">{children}</body>
+    </html>
+  )
+}
+```
+
+## Step 8: Add a donut chart for additional context
+
+Dashboards often benefit from a supplementary visualization. Add a donut chart showing the same category data in a different format.
+
+Create `src/components/category-donut.tsx`:
+
+```tsx
+"use client"
+
+import { DonutChart } from "@chartts/react"
+import type { CategoryBreakdown } from "@/lib/data"
+
+export function CategoryDonut({ data }: { data: CategoryBreakdown[] }) {
+  const colorMap: Record<string, string> = {
+    blue: "fill-blue-500 dark:fill-blue-400",
+    emerald: "fill-emerald-500 dark:fill-emerald-400",
+    amber: "fill-amber-500 dark:fill-amber-400",
+    rose: "fill-rose-500 dark:fill-rose-400",
+    violet: "fill-violet-500 dark:fill-violet-400",
+  }
+
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        Category Split
+      </h2>
+      <p className="mb-6 text-sm text-zinc-500 dark:text-zinc-400">
+        Percentage of total revenue
+      </p>
+
+      <DonutChart
+        data={data}
+        value="value"
+        label="category"
+        className="mx-auto h-64 w-64"
+        sliceClassName={(item) =>
+          colorMap[item.color] || "fill-zinc-500"
+        }
+        tooltipClassName="bg-white dark:bg-zinc-900 shadow-xl rounded-lg border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+        innerRadius={0.6}
+        showLabels
+        labelClassName="text-xs font-medium text-zinc-600 dark:text-zinc-400"
+      />
+
+      {/* Legend */}
+      <div className="mt-6 space-y-2">
+        {data.map((item) => (
+          <div key={item.category} className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <div
+                className={`h-3 w-3 rounded-full bg-${item.color}-500`}
+              />
+              <span className="text-zinc-600 dark:text-zinc-400">
+                {item.category}
+              </span>
+            </div>
+            <span className="font-medium text-zinc-900 dark:text-zinc-50">
+              ${(item.value / 1000).toFixed(1)}k
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+```
+
+## Step 9: Make it responsive
+
+The grid layout already handles most responsive behavior, but the charts themselves need to adapt. Chart.ts charts are responsive by default when you set `className="w-full"`. The SVG viewBox scales automatically.
+
+For smaller screens, adjust the grid:
+
+```tsx
+<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+  <div className="lg:col-span-2">
+    <RevenueChart data={revenueData} />
+  </div>
+  <div className="space-y-6">
+    <CategoryChart data={categoryData} />
+    <CategoryDonut data={categoryData} />
+  </div>
+</div>
+```
+
+On mobile (`grid-cols-1`), each chart stacks vertically and takes full width. On desktop (`lg:grid-cols-3`), the revenue chart takes 2 columns and the category charts share the remaining column.
+
+## Step 10: Performance verification
+
+Let us verify the performance characteristics of our dashboard:
+
+**Bundle analysis:**
+
+```bash
+npx @next/bundle-analyzer
+```
+
+You should see Chart.ts contributing &lt;15kb to your client bundles. The KPI cards with sparklines contribute zero to client bundles since they render on the server.
+
+**Lighthouse check:**
+
+Run Lighthouse in Chrome DevTools. With the architecture described above, you should expect:
+
+- **Performance:** 95-100 (SVG charts render fast, small bundle)
+- **Accessibility:** 95-100 (Chart.ts includes ARIA attributes)
+- **Best Practices:** 100
+- **SEO:** 100 (charts are in the HTML, not Canvas)
+
+**SSR verification:**
+
+View the page source in your browser. You should see the complete SVG markup for the sparklines in the HTML. Interactive charts will have their initial SVG rendered in the HTML as well, with hydration happening on the client.
+
+## Extending the dashboard
+
+Here are some ideas for extending this dashboard:
+
+### Add real-time updates
+
+Replace the static data functions with WebSocket or Server-Sent Events:
+
+```tsx
+"use client"
+
+import { useEffect, useState } from "react"
+import { LineChart } from "@chartts/react"
+
+export function LiveMetricChart() {
+  const [data, setData] = useState([])
+
+  useEffect(() => {
+    const source = new EventSource("/api/metrics/stream")
+    source.onmessage = (event) => {
+      const point = JSON.parse(event.data)
+      setData((prev) => [...prev.slice(-59), point])
+    }
+    return () => source.close()
+  }, [])
+
+  return (
+    <LineChart
+      data={data}
+      x="timestamp"
+      y="value"
+      className="h-48 w-full"
+      lineClassName="stroke-blue-500 dark:stroke-blue-400"
+      animate
+    />
+  )
+}
+```
+
+### Add date range filtering
+
+```tsx
+"use client"
+
+import { useState } from "react"
+import { AreaChart } from "@chartts/react"
+
+type Range = "7d" | "30d" | "90d" | "1y"
+
+export function FilterableRevenueChart({ data }) {
+  const [range, setRange] = useState<Range>("1y")
+
+  const filtered = filterByRange(data, range)
+
+  return (
+    <div>
+      <div className="mb-4 flex gap-2">
+        {(["7d", "30d", "90d", "1y"] as Range[]).map((r) => (
+          <button
+            key={r}
+            onClick={() => setRange(r)}
+            className={`rounded-lg px-3 py-1 text-sm ${
+              range === r
+                ? "bg-blue-500 text-white"
+                : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+            }`}
+          >
+            {r}
+          </button>
+        ))}
+      </div>
+
+      <AreaChart
+        data={filtered}
+        x="date"
+        y="revenue"
+        className="h-72 w-full"
+        lineClassName="stroke-blue-500 dark:stroke-blue-400"
+        areaClassName="fill-blue-500/10"
+        animate
+      />
+    </div>
+  )
+}
+```
+
+### Add a comparison chart
+
+Show this month vs last month:
+
+```tsx
+<AreaChart
+  data={comparisonData}
+  x="day"
+  y={["thisMonth", "lastMonth"]}
+  className="h-64 w-full"
+  lineClassName={[
+    "stroke-blue-500 dark:stroke-blue-400",
+    "stroke-zinc-300 dark:stroke-zinc-600 stroke-dasharray-4",
+  ]}
+  areaClassName={[
+    "fill-blue-500/10",
+    "fill-transparent",
+  ]}
+  showLegend
+  legendLabels={["This month", "Last month"]}
+/>
+```
+
+## Summary
+
+Here is what we covered:
+
+1. **Project setup** with Next.js App Router, Tailwind CSS, and Chart.ts
+2. **Data layer** with typed async functions simulating API calls
+3. **KPI cards** with server-rendered sparklines (zero client JS)
+4. **Revenue chart** with dual-series area chart and Tailwind styling
+5. **Category breakdown** with horizontal bar chart and per-bar colors
+6. **Dashboard layout** using Suspense for streaming SSR
+7. **Dark mode** that works automatically via Tailwind `dark:` variants
+8. **Donut chart** for supplementary visualization
+9. **Responsive design** with Tailwind grid utilities
+10. **Performance verification** with bundle analysis and Lighthouse
+
+The key architectural insight is that Chart.ts lets you choose where the rendering boundary is. Static charts (sparklines, report charts) can render entirely on the server with zero client JavaScript. Interactive charts (tooltips, filters) use a thin `"use client"` boundary. This gives you the best of both worlds: maximum performance for static content and full interactivity where you need it.
+
+The entire charting layer adds less than 15kb to your client bundle. Combined with streaming SSR and server-side data fetching, this architecture delivers a dashboard that loads fast on any device and any connection speed.

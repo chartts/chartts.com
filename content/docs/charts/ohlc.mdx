@@ -102,15 +102,21 @@ Each bar is a vertical line from low to high with a left tick at the open price 
 
 ### Reading an OHLC bar
 
-```tsx
-// Visual structure of a single OHLC bar:
-//
-//         |         <- high
-//   ---   |         <- open (left tick)
-//         |
-//         |   ---   <- close (right tick)
-//         |         <- low
-```
+<svg viewBox="0 0 280 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-xs mx-auto my-6">
+  <line x1="140" y1="20" x2="140" y2="180" stroke="#22c55e" strokeWidth="2.5" />
+  <line x1="110" y1="70" x2="140" y2="70" stroke="#22c55e" strokeWidth="2.5" />
+  <line x1="140" y1="130" x2="170" y2="130" stroke="#22c55e" strokeWidth="2.5" />
+  <line x1="175" y1="20" x2="260" y2="20" stroke="#71717a" strokeWidth="1" strokeDasharray="4 3" />
+  <text x="264" y="24" fill="#a1a1aa" fontSize="11" fontFamily="monospace">High</text>
+  <line x1="50" y1="70" x2="107" y2="70" stroke="#71717a" strokeWidth="1" strokeDasharray="4 3" />
+  <text x="10" y="74" fill="#a1a1aa" fontSize="11" fontFamily="monospace">Open</text>
+  <line x1="175" y1="130" x2="220" y2="130" stroke="#71717a" strokeWidth="1" strokeDasharray="4 3" />
+  <text x="224" y="134" fill="#a1a1aa" fontSize="11" fontFamily="monospace">Close</text>
+  <line x1="175" y1="180" x2="260" y2="180" stroke="#71717a" strokeWidth="1" strokeDasharray="4 3" />
+  <text x="264" y="184" fill="#a1a1aa" fontSize="11" fontFamily="monospace">Low</text>
+  <text x="88" y="58" fill="#71717a" fontSize="9" fontFamily="monospace" textAnchor="end">left tick</text>
+  <text x="210" y="120" fill="#71717a" fontSize="9" fontFamily="monospace" textAnchor="start">right tick</text>
+</svg>
 
 The left tick is always the open price. The right tick is always the close price. If the right tick is higher than the left tick, the period was bullish (price went up).
 

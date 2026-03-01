@@ -1,0 +1,256 @@
+---
+title: "Chart.ts vs ECharts: 65+ Chart Types at 15kb vs 300kb"
+description: "Direct comparison of Chart.ts and Apache ECharts. Bundle size, chart types, TypeScript, Tailwind CSS, framework support, and rendering."
+date: "2026-02-28"
+readTime: "10 min read"
+tag: "Comparison"
+---
+
+Apache ECharts is one of the most popular charting libraries in the JavaScript ecosystem. It has been around since 2013, is maintained by the Apache Foundation, and powers visualizations at companies like Alibaba, Baidu, and Tencent.
+
+Chart.ts is newer. It was built for the modern JavaScript ecosystem with TypeScript, tree-shaking, Tailwind CSS, and multi-framework support as first-class concerns.
+
+This post compares the two on concrete, measurable criteria. No vague claims. Just numbers, API comparisons, and code examples.
+
+## Bundle size
+
+This is the most significant difference.
+
+| Metric | Chart.ts | ECharts |
+|--------|----------|---------|
+| Full library (gzip) | 15kb | 308kb |
+| Minimum viable (gzip) | 4kb (single chart) | 180kb (core + renderer) |
+| Tree-shakeable | Yes, per chart type | Partial, module-level |
+
+ECharts ships a monolithic core that must be loaded for any chart to render. Even a single bar chart pulls in the layout engine, the animation system, the tooltip system, the legend system, and the entire option resolver.
+
+Chart.ts is tree-shakeable at the chart-type level. Import `BarChart` and you get bar chart code. Everything else is excluded from your bundle.
+
+```ts
+// Chart.ts: ~4kb for a bar chart
+import { BarChart } from "@chartts/react"
+
+// ECharts: ~180kb minimum even for a bar chart
+import * as echarts from "echarts"
+```
+
+For applications that use 2-3 chart types (the common case for dashboards), the difference is roughly 15kb vs 250kb. That translates to measurably faster page loads on mobile networks.
+
+## Chart types
+
+| Category | Chart.ts | ECharts |
+|----------|----------|---------|
+| Standard (bar, line, pie, scatter) | Yes | Yes |
+| Statistical (box, violin, histogram) | Yes | Partial (box only) |
+| Financial (candlestick, OHLC) | @chartts/finance (40+ indicators) | Basic candlestick |
+| Hierarchical (treemap, sunburst) | Yes | Yes |
+| Network (sankey, chord) | Yes | Yes |
+| Geographic (map, globe) | @chartts/gl (3D) | echarts-gl |
+| Flow (gantt, timeline) | Yes | No |
+| Scientific (heatmap, contour) | Yes | Heatmap only |
+| Specialized (gauge, radar, funnel) | Yes | Yes |
+| 3D (scatter3d, surface, bar3d) | @chartts/gl | echarts-gl |
+| **Total chart types** | **65+** | **~20** |
+
+Chart.ts covers more visualization categories. ECharts focuses on the most common types and does them well, but gaps appear quickly in specialized domains like financial charting, Gantt timelines, and scientific visualization.
+
+## TypeScript
+
+| Feature | Chart.ts | ECharts |
+|---------|----------|---------|
+| Written in TypeScript | Yes, strict mode | JavaScript + type declarations |
+| Config type inference | Full (data shape inferred) | Manual option types |
+| Custom chart type safety | Generic constraints | No |
+| Error messages | Specific prop errors | Generic "option invalid" |
+
+Chart.ts is written in TypeScript with strict mode enabled. The type system infers your data shape from the `data` prop and validates that `x`, `y`, and `color` props reference actual fields in your data.
+
+```tsx
+// Chart.ts: TypeScript catches this at compile time
+<LineChart
+  data={[{ month: "Jan", revenue: 100 }]}
+  x="month"
+  y="revnue" // ← Type error: "revnue" is not a key of { month: string; revenue: number }
+/>
+
+// ECharts: No compile-time validation of data references
+const option = {
+  xAxis: { type: "category" },
+  yAxis: { type: "value" },
+  series: [{ type: "line", encode: { x: "month", y: "revnue" } }],
+  // ← No error. Fails silently at runtime.
+}
+```
+
+## Tailwind CSS integration
+
+Chart.ts was designed alongside the Tailwind CSS ecosystem. The `className` prop applies Tailwind classes directly to chart containers, and the theme system reads CSS custom properties.
+
+```tsx
+// Chart.ts: Tailwind-native
+<LineChart
+  data={data}
+  x="month"
+  y="revenue"
+  className="h-64 rounded-lg border shadow-sm dark:border-gray-800"
+/>
+```
+
+ECharts uses a JavaScript options object for all styling. Tailwind classes cannot target internal elements. You must manually sync colors with your Tailwind theme:
+
+```ts
+// ECharts: manual style configuration
+const option = {
+  backgroundColor: "transparent",
+  textStyle: { color: "#374151", fontFamily: "Inter" },
+  xAxis: { axisLine: { lineStyle: { color: "#d1d5db" } } },
+  yAxis: { splitLine: { lineStyle: { color: "#f3f4f6" } } },
+  series: [{ type: "line", lineStyle: { color: "#3b82f6" }, areaStyle: { color: "rgba(59,130,246,0.1)" } }],
+}
+```
+
+## Framework support
+
+| Framework | Chart.ts | ECharts |
+|-----------|----------|---------|
+| React | `@chartts/react` (native) | Community wrappers |
+| Vue | `@chartts/vue` (native) | vue-echarts |
+| Svelte | `@chartts/svelte` (native) | Community wrapper |
+| Angular | `@chartts/angular` (native) | ngx-echarts |
+| Solid | `@chartts/solid` (native) | None |
+| Vanilla JS | `@chartts/core` | echarts |
+
+Chart.ts has five official framework packages. Each one is a first-class integration, not a wrapper around an imperative API. The React package uses React's rendering model. The Vue package uses Vue's reactivity system. The Svelte package uses Svelte's compile-time approach.
+
+ECharts has one official vanilla JavaScript API. Framework integrations are community-maintained wrappers that bridge the imperative echarts API to declarative component models. They work, but the integration depth varies.
+
+## Rendering engines
+
+| Feature | Chart.ts | ECharts |
+|---------|----------|---------|
+| SVG | Yes | Yes |
+| Canvas | Yes | Yes (default) |
+| WebGL | Yes (auto-switching) | echarts-gl (separate package) |
+| Auto renderer selection | Yes, based on data size | No, manual |
+| SSR (server rendering) | Yes (SVG) | Limited |
+
+Chart.ts automatically selects the best renderer based on your dataset size. Under 5,000 points: SVG for DOM access and CSS styling. 5,000 to 50,000: Canvas for performance. Above 50,000: WebGL for GPU acceleration.
+
+ECharts defaults to Canvas and can be switched to SVG manually. WebGL is available through the separate `echarts-gl` package but does not auto-select.
+
+## Real-time streaming
+
+Chart.ts has built-in streaming support:
+
+```ts
+import { createStreamingChart } from "@chartts/core"
+
+const chart = createStreamingChart("#container", {
+  type: "line",
+  x: "time",
+  y: "value",
+  maxPoints: 500,
+})
+
+websocket.onmessage = (e) => chart.append(JSON.parse(e.data))
+```
+
+ECharts handles real-time data by calling `setOption()` with the full updated dataset:
+
+```ts
+websocket.onmessage = (e) => {
+  data.push(JSON.parse(e.data))
+  if (data.length > 500) data.shift()
+  chart.setOption({ series: [{ data: data.map((d) => [d.time, d.value]) }] })
+}
+```
+
+The Chart.ts approach is O(1) per update (append to ring buffer). The ECharts approach is O(n) per update (rebuild the full option object and diff it). At high update frequencies with large rolling windows, this difference is measurable.
+
+## Financial charting
+
+Chart.ts has a dedicated `@chartts/finance` package with 40+ technical indicators (SMA, EMA, RSI, MACD, Bollinger Bands, Ichimoku, VWAP, and more), multi-panel sync, crosshair linking, and built-in WebSocket streaming.
+
+ECharts has a single candlestick chart type. Technical indicators must be calculated externally and overlaid as additional line series. There is no multi-panel synchronization API.
+
+```tsx
+// Chart.ts: Full trading view in one component
+import { CandlestickChart, SMA, EMA, RSIChart, MACDChart, ChartGroup } from "@chartts/finance/react"
+
+<ChartGroup syncCrosshair syncZoom>
+  <CandlestickChart data={ohlcv} date="date" open="open" high="high" close="close" low="low">
+    <SMA period={20} source="close" stroke="#3b82f6" />
+    <EMA period={50} source="close" stroke="#f59e0b" />
+  </CandlestickChart>
+  <RSIChart data={ohlcv} date="date" source="close" period={14} />
+  <MACDChart data={ohlcv} date="date" source="close" fast={12} slow={26} signal={9} />
+</ChartGroup>
+```
+
+## Configuration approach
+
+ECharts uses a single nested configuration object. Every aspect of the chart (data, axes, series, tooltips, legend, animation) is defined in one large `option` object that can exceed 100 lines for complex charts.
+
+Chart.ts uses declarative props (in frameworks) or a flat configuration object (in vanilla JS). Chart types are explicit. Composition uses child components or arrays.
+
+```tsx
+// Chart.ts: explicit, composable
+<BarChart
+  data={data}
+  x="category"
+  y="value"
+  color="group"
+  stacked
+  tooltip
+  legend
+  className="h-64"
+/>
+
+// ECharts: nested configuration
+const option = {
+  tooltip: { trigger: "axis" },
+  legend: { data: ["Group A", "Group B"] },
+  xAxis: { type: "category", data: categories },
+  yAxis: { type: "value" },
+  series: [
+    { name: "Group A", type: "bar", stack: "total", data: groupAValues },
+    { name: "Group B", type: "bar", stack: "total", data: groupBValues },
+  ],
+}
+echarts.init(container).setOption(option)
+```
+
+## Developer experience
+
+| Aspect | Chart.ts | ECharts |
+|--------|----------|---------|
+| npm install to first chart | 3 lines of code | 10+ lines |
+| Documentation style | API reference + tutorials | Configuration reference |
+| Dark mode | Automatic (CSS variables) | Manual theme registration |
+| Responsive | Automatic | Manual `resize()` listener |
+| Accessibility | WCAG AA built-in | Manual ARIA attributes |
+
+## When to choose ECharts
+
+ECharts is a proven library with a decade of production use. Choose it if:
+
+- You are already using it and migration cost is not justified
+- You need specific ECharts features like the graphic component for custom drawing
+- Your team is deeply familiar with the ECharts configuration model
+- You are in an ecosystem where ECharts has stronger community support (e.g., some Chinese tech stacks)
+
+## When to choose Chart.ts
+
+Choose Chart.ts if:
+
+- Bundle size matters (15kb vs 300kb)
+- You need TypeScript with strict type inference
+- You want Tailwind CSS integration
+- You need more than 20 chart types
+- You need financial charting with technical indicators
+- You need built-in real-time streaming
+- You want native framework packages instead of wrappers
+- You need automatic renderer switching for varying data scales
+- Accessibility requirements include WCAG AA compliance
+
+Both libraries are open source (Apache 2.0 for ECharts, MIT for Chart.ts) and free to use commercially. The choice depends on your project's technical requirements and constraints.

@@ -1,0 +1,301 @@
+---
+title: "Server-Side Rendering"
+description: "Render charts to SVG, PNG, or files on the server. Works on Node.js, Bun, and Deno with zero browser dependencies."
+badge: "@chartts/ssr"
+---
+
+## Quick Start
+
+```ts
+import { renderChart } from '@chartts/ssr'
+import { lineChartType } from '@chartts/core'
+
+const svg = renderChart(lineChartType, {
+  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+  series: [{ name: 'Revenue', values: [4200, 5800, 7100, 6400, 8200, 9600] }],
+}, { width: 800, height: 400 })
+
+// svg is a complete SVG string ready for HTTP responses or file writes
+```
+
+That gives you a full SVG string. No DOM, no canvas, no browser. Pure string output from any JavaScript runtime.
+
+## Installation
+
+```bash
+npm install @chartts/ssr @chartts/core
+```
+
+For rasterization (PNG output), install the optional dependency:
+
+```bash
+npm install @resvg/resvg-js
+```
+
+## When to Use SSR
+
+**Use `@chartts/ssr` when you need to:**
+- Generate chart images in API routes or serverless functions
+- Embed charts in emails, PDFs, or reports
+- Pre-render charts for static sites or OG images
+- Create chart snapshots in CI/CD pipelines
+
+**Runtime support:**
+- Node.js 18+
+- Bun
+- Deno
+- Cloudflare Workers (SVG only, no rasterization)
+
+---
+
+## API Reference
+
+### `renderChart(type, data, options?)`
+
+Render a chart to an SVG string. This is a thin wrapper around core's `renderToString` with sensible defaults.
+
+```ts
+function renderChart(
+  type: ChartTypePlugin,
+  data: ChartData,
+  options?: RenderOptions,
+): string
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `type` | `ChartTypePlugin` | required | Chart type plugin from `@chartts/core` |
+| `data` | `ChartData` | required | Labels and series arrays |
+| `options.width` | `number` | `600` | SVG width in pixels |
+| `options.height` | `number` | `400` | SVG height in pixels |
+
+All standard `ChartOptions` are also accepted and passed through to the renderer.
+
+```ts
+import { renderChart } from '@chartts/ssr'
+import { barChartType } from '@chartts/core'
+
+const svg = renderChart(barChartType, {
+  labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+  series: [
+    { name: 'Product A', values: [120, 200, 150, 180] },
+    { name: 'Product B', values: [90, 140, 170, 130] },
+  ],
+}, {
+  width: 1200,
+  height: 600,
+})
+```
+
+---
+
+### `renderToPNG(type, data, options?)`
+
+Rasterize a chart to PNG as a `Uint8Array`. Requires `@resvg/resvg-js` as a dependency.
+
+```ts
+async function renderToPNG(
+  type: ChartTypePlugin,
+  data: ChartData,
+  options?: RasterOptions,
+): Promise<Uint8Array>
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `type` | `ChartTypePlugin` | required | Chart type plugin |
+| `data` | `ChartData` | required | Labels and series arrays |
+| `options.width` | `number` | `600` | Base SVG width |
+| `options.height` | `number` | `400` | Base SVG height |
+| `options.scale` | `number` | `2` | Resolution multiplier. `2` produces retina-quality output |
+| `options.background` | `string` | transparent | Background color (e.g. `'#ffffff'`) |
+
+The output resolution is `width * scale` by `height * scale`. At the default scale of 2, a 600x400 chart produces a 1200x800 PNG.
+
+```ts
+import { renderToPNG } from '@chartts/ssr'
+import { lineChartType } from '@chartts/core'
+
+const png = await renderToPNG(lineChartType, {
+  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+  series: [{ name: 'Requests', values: [1200, 1800, 1500, 2200, 1900] }],
+}, {
+  width: 800,
+  height: 400,
+  scale: 2,
+  background: '#ffffff',
+})
+
+// Use in an HTTP response
+new Response(png, {
+  headers: { 'Content-Type': 'image/png' },
+})
+```
+
+---
+
+### `renderToJPEG(type, data, options?)`
+
+Returns PNG bytes (same as `renderToPNG`). The `resvg` library only produces PNG natively. For true JPEG conversion, pipe the output through an image library like `sharp`.
+
+```ts
+async function renderToJPEG(
+  type: ChartTypePlugin,
+  data: ChartData,
+  options?: RasterOptions,
+): Promise<Uint8Array>
+```
+
+```ts
+import { renderToJPEG } from '@chartts/ssr'
+import sharp from 'sharp'
+import { barChartType } from '@chartts/core'
+
+const pngBytes = await renderToJPEG(barChartType, data)
+const jpegBuffer = await sharp(pngBytes).jpeg({ quality: 85 }).toBuffer()
+```
+
+---
+
+### `saveChart(type, data, filepath, options?)`
+
+Write a chart directly to a file. The format is detected from the file extension:
+
+- `.svg` writes UTF-8 SVG text
+- `.png` rasterizes via resvg and writes binary
+- Any other extension is treated as PNG
+
+```ts
+async function saveChart(
+  type: ChartTypePlugin,
+  data: ChartData,
+  filepath: string,
+  options?: RasterOptions,
+): Promise<void>
+```
+
+```ts
+import { saveChart } from '@chartts/ssr'
+import { lineChartType } from '@chartts/core'
+
+const data = {
+  labels: ['2020', '2021', '2022', '2023', '2024'],
+  series: [{ name: 'Users', values: [12000, 28000, 45000, 72000, 110000] }],
+}
+
+// Save as SVG
+await saveChart(lineChartType, data, './charts/users-growth.svg')
+
+// Save as high-res PNG
+await saveChart(lineChartType, data, './charts/users-growth.png', {
+  width: 1200,
+  height: 600,
+  scale: 3,
+  background: '#0f172a',
+})
+```
+
+---
+
+## Practical Examples
+
+### API route (Next.js)
+
+```ts
+import { renderToPNG } from '@chartts/ssr'
+import { barChartType } from '@chartts/core'
+
+export async function GET(request: Request) {
+  const url = new URL(request.url)
+  const year = url.searchParams.get('year') ?? '2024'
+
+  const data = await fetchSalesData(year)
+
+  const png = await renderToPNG(barChartType, {
+    labels: data.months,
+    series: [{ name: 'Sales', values: data.values }],
+  }, {
+    width: 1200,
+    height: 630,
+    scale: 2,
+    background: '#ffffff',
+  })
+
+  return new Response(png, {
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=3600',
+    },
+  })
+}
+```
+
+### OG image generation
+
+```ts
+import { renderToPNG } from '@chartts/ssr'
+import { areaChartType } from '@chartts/core'
+
+export async function generateOGImage(stats: number[]) {
+  const png = await renderToPNG(areaChartType, {
+    labels: stats.map((_, i) => String(i)),
+    series: [{ name: 'Trend', values: stats }],
+  }, {
+    width: 1200,
+    height: 630,
+    scale: 1,
+    background: '#1e293b',
+  })
+
+  return png
+}
+```
+
+### Batch report generation
+
+```ts
+import { saveChart } from '@chartts/ssr'
+import { lineChartType, barChartType } from '@chartts/core'
+
+const departments = ['engineering', 'marketing', 'sales']
+
+for (const dept of departments) {
+  const metrics = await fetchDepartmentMetrics(dept)
+
+  await saveChart(lineChartType, {
+    labels: metrics.months,
+    series: [
+      { name: 'Headcount', values: metrics.headcount },
+      { name: 'Budget Used', values: metrics.budgetUsed },
+    ],
+  }, `./reports/${dept}-metrics.png`, {
+    width: 800,
+    height: 400,
+    scale: 2,
+  })
+}
+```
+
+---
+
+## Types
+
+```ts
+interface RenderOptions extends ChartOptions {
+  width?: number   // default: 600
+  height?: number  // default: 400
+}
+
+interface RasterOptions extends RenderOptions {
+  scale?: number       // default: 2
+  background?: string  // default: transparent
+}
+```
+
+---
+
+## Related
+
+- [Line Chart](/docs/charts/line) for client-side interactive charts
+- [Bar Chart](/docs/charts/bar) for categorical comparisons
+- [@chartts/finance](/docs/finance-pkg) for financial data processing before rendering

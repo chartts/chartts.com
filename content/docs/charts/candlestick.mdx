@@ -88,15 +88,25 @@ Each candlestick represents one time period (a minute, hour, day, week, etc.) an
 
 A candle with a long upper wick and small body signals rejection at higher prices. A candle with almost no wicks (a "marubozu") signals strong conviction in one direction. A candle where the open and close are nearly equal (a "doji") signals indecision.
 
-```tsx
-// Each candle maps to this visual structure:
-//
-//    |       <- upper wick (high)
-//   +-+
-//   | |      <- body (open to close)
-//   +-+
-//    |       <- lower wick (low)
-```
+<svg viewBox="0 0 280 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-xs mx-auto my-6">
+  <line x1="140" y1="20" x2="140" y2="60" stroke="#22c55e" strokeWidth="2" />
+  <rect x="115" y="60" width="50" height="80" rx="4" fill="#22c55e" fillOpacity="0.15" stroke="#22c55e" strokeWidth="2" />
+  <line x1="140" y1="140" x2="140" y2="180" stroke="#22c55e" strokeWidth="2" />
+  <line x1="170" y1="40" x2="260" y2="40" stroke="#71717a" strokeWidth="1" strokeDasharray="4 3" />
+  <text x="264" y="44" fill="#a1a1aa" fontSize="11" fontFamily="monospace">High</text>
+  <line x1="170" y1="68" x2="220" y2="68" stroke="#71717a" strokeWidth="1" strokeDasharray="4 3" />
+  <text x="224" y="72" fill="#a1a1aa" fontSize="11" fontFamily="monospace">Open</text>
+  <line x1="170" y1="132" x2="220" y2="132" stroke="#71717a" strokeWidth="1" strokeDasharray="4 3" />
+  <text x="224" y="136" fill="#a1a1aa" fontSize="11" fontFamily="monospace">Close</text>
+  <line x1="170" y1="160" x2="260" y2="160" stroke="#71717a" strokeWidth="1" strokeDasharray="4 3" />
+  <text x="264" y="164" fill="#a1a1aa" fontSize="11" fontFamily="monospace">Low</text>
+  <text x="80" y="104" fill="#71717a" fontSize="10" fontFamily="monospace" textAnchor="end">Body</text>
+  <line x1="84" y1="100" x2="112" y2="100" stroke="#71717a" strokeWidth="1" strokeDasharray="4 3" />
+  <text x="80" y="36" fill="#71717a" fontSize="10" fontFamily="monospace" textAnchor="end">Wick</text>
+  <line x1="84" y1="32" x2="137" y2="32" stroke="#71717a" strokeWidth="1" strokeDasharray="4 3" />
+  <text x="80" y="170" fill="#71717a" fontSize="10" fontFamily="monospace" textAnchor="end">Wick</text>
+  <line x1="84" y1="166" x2="137" y2="166" stroke="#71717a" strokeWidth="1" strokeDasharray="4 3" />
+</svg>
 
 ---
 
@@ -408,7 +418,7 @@ When embedding in a tight layout, reduce padding and hide non-essential elements
 
 ## Accessibility
 
-Candlestick charts include accessibility support out of the box:
+Candlestick charts include accessibility support by default:
 
 - **Screen readers**: Each candle is announced with its date, open, high, low, close, and direction (bullish or bearish). A summary describes the overall price range and trend.
 - **Keyboard navigation**: Tab to focus the chart, then use left/right arrow keys to move between candles. The tooltip follows the focused candle.

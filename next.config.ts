@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
       __dirname,
       "../lib/packages/core/dist/index.js"
     );
+    config.resolve.alias["@chartts/themes"] = path.resolve(
+      __dirname,
+      "../lib/packages/themes/dist/index.js"
+    );
     return config;
   },
 };

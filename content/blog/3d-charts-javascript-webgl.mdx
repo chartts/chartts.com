@@ -1,0 +1,342 @@
+---
+title: "3D Charts in JavaScript with Chart.ts WebGL"
+description: "Create 3D scatter plots, surface charts, globe visualizations, and more with @chartts/gl. GPU-accelerated WebGL rendering."
+date: "2026-02-28"
+readTime: "11 min read"
+tag: "Tutorial"
+---
+
+3D data visualization on the web has historically required either D3 with custom WebGL code or heavyweight libraries like Three.js wrapped around a charting abstraction. Neither approach is simple. You end up writing shader code or managing a 3D scene graph when all you wanted was a scatter plot with a z-axis.
+
+`@chartts/gl` is the Chart.ts package for 3D visualization. It provides six GPU-accelerated chart types that use WebGL under the hood but expose the same declarative API as every other Chart.ts chart. No shader code. No scene management. Just data and props.
+
+## Installation
+
+```bash
+npm install @chartts/gl
+```
+
+For React:
+
+```bash
+npm install @chartts/gl @chartts/react
+```
+
+`@chartts/gl` has a single dependency: `@chartts/core`. It adds approximately 12kb gzipped to your bundle.
+
+## Scatter3D: multivariate data exploration
+
+The most common 3D chart type. Each point has x, y, and z coordinates. You can also map color and size to additional data dimensions, giving you five variables in a single view.
+
+```tsx
+import { Scatter3D } from "@chartts/gl/react"
+
+const clusterData = [
+  { x: 2.3, y: 4.1, z: 1.8, cluster: "A", weight: 0.9 },
+  { x: 5.1, y: 2.8, z: 3.4, cluster: "B", weight: 0.4 },
+  { x: 1.7, y: 6.2, z: 5.1, cluster: "A", weight: 0.7 },
+  // ... thousands of points
+]
+
+export function ClusterAnalysis() {
+  return (
+    <Scatter3D
+      data={clusterData}
+      x="x"
+      y="y"
+      z="z"
+      color="cluster"
+      size="weight"
+      className="h-[500px]"
+      orbit
+      grid
+      axisLabels={{ x: "Feature 1", y: "Feature 2", z: "Feature 3" }}
+      colorScale={["#3b82f6", "#ef4444", "#22c55e"]}
+    />
+  )
+}
+```
+
+The `orbit` prop enables click-and-drag rotation, scroll-to-zoom, and right-click panning. The `grid` prop draws reference lines on the floor, back wall, and side wall of the 3D space.
+
+Scatter3D handles up to 200,000 points at 60fps using instanced rendering. Each point is drawn as a sphere with a single GPU draw call for the entire dataset.
+
+## Surface3D: continuous surface visualization
+
+Surface charts render a continuous mesh from a grid of z-values. They are used for topographic data, mathematical functions, heatmap elevation, and response surfaces in optimization.
+
+```tsx
+import { Surface3D } from "@chartts/gl/react"
+
+// Generate a surface: z = sin(x) * cos(y)
+const surfaceData = []
+for (let xi = 0; xi < 100; xi++) {
+  for (let yi = 0; yi < 100; yi++) {
+    const x = (xi - 50) / 10
+    const y = (yi - 50) / 10
+    surfaceData.push({
+      x,
+      y,
+      z: Math.sin(x) * Math.cos(y),
+    })
+  }
+}
+
+export function MathSurface() {
+  return (
+    <Surface3D
+      data={surfaceData}
+      x="x"
+      y="y"
+      z="z"
+      className="h-[500px]"
+      orbit
+      colorScale={["#1e40af", "#3b82f6", "#93c5fd", "#fca5a5", "#ef4444", "#991b1b"]}
+      wireframe={false}
+      gridSize={100}
+    />
+  )
+}
+```
+
+The `gridSize` prop tells Chart.ts the resolution of the grid (100x100 in this case). It uses this to build the triangle mesh efficiently. The `colorScale` maps z-values to a gradient, so peaks and valleys are visually distinct.
+
+Surface3D handles grids up to 1000x1000 (1 million vertices) at interactive frame rates.
+
+## Globe3D: geographic data on a sphere
+
+Globe3D renders data on a 3D sphere with country boundaries. It is designed for geographic datasets where a flat map projection introduces too much distortion, or where the spherical context matters for understanding the data.
+
+```tsx
+import { Globe3D } from "@chartts/gl/react"
+
+const populationData = [
+  { country: "US", value: 331_000_000 },
+  { country: "CN", value: 1_412_000_000 },
+  { country: "IN", value: 1_408_000_000 },
+  { country: "BR", value: 214_000_000 },
+  { country: "NG", value: 218_000_000 },
+  // ... all countries
+]
+
+export function WorldPopulation() {
+  return (
+    <Globe3D
+      data={populationData}
+      country="country"
+      value="value"
+      className="h-[500px]"
+      orbit
+      autoRotate
+      autoRotateSpeed={0.5}
+      colorScale={["#dbeafe", "#1e40af"]}
+      oceanColor="#0f172a"
+      borderColor="#334155"
+      tooltip={(d) => `${d.country}: ${(d.value / 1_000_000).toFixed(0)}M`}
+    />
+  )
+}
+```
+
+The `autoRotate` prop spins the globe slowly, which is useful for presentations and dashboards. Country codes use ISO 3166-1 alpha-2 format. The built-in geometry includes boundaries for all 195 countries.
+
+Globe3D also supports point markers for city-level data:
+
+```tsx
+<Globe3D
+  className="h-[500px]"
+  orbit
+  oceanColor="#0f172a"
+>
+  <Globe3D.Points
+    data={cities}
+    lat="latitude"
+    lng="longitude"
+    size="population"
+    color="#ef4444"
+    tooltip={(d) => d.name}
+  />
+  <Globe3D.Arcs
+    data={flights}
+    fromLat="originLat"
+    fromLng="originLng"
+    toLat="destLat"
+    toLng="destLng"
+    stroke="#3b82f6"
+    strokeWidth={1}
+  />
+</Globe3D>
+```
+
+The `Globe3D.Arcs` component draws curved lines between pairs of coordinates, perfect for flight routes, trade flows, or network connections.
+
+## Bar3D: categorical data in three dimensions
+
+Bar3D extends the standard bar chart into 3D space. Each bar has x, y (category axes) and z (value axis) positions.
+
+```tsx
+import { Bar3D } from "@chartts/gl/react"
+
+const salesData = [
+  { region: "North", quarter: "Q1", revenue: 42_000 },
+  { region: "North", quarter: "Q2", revenue: 51_000 },
+  { region: "South", quarter: "Q1", revenue: 38_000 },
+  { region: "South", quarter: "Q2", revenue: 45_000 },
+  { region: "East", quarter: "Q1", revenue: 29_000 },
+  { region: "East", quarter: "Q2", revenue: 34_000 },
+  { region: "West", quarter: "Q1", revenue: 55_000 },
+  { region: "West", quarter: "Q2", revenue: 62_000 },
+]
+
+export function RegionalSales() {
+  return (
+    <Bar3D
+      data={salesData}
+      x="region"
+      y="quarter"
+      z="revenue"
+      className="h-[500px]"
+      orbit
+      colorScale={["#3b82f6", "#8b5cf6"]}
+      barWidth={0.6}
+      tooltip
+    />
+  )
+}
+```
+
+Bar3D is effective for two-category comparisons where you want to see the full grid at once. The orbit controls let you rotate to compare bars from different angles.
+
+## Map3D: extruded choropleth
+
+Map3D renders a flat map with extruded regions. The height of each region represents a data value, creating a physical sense of magnitude that flat choropleths lack.
+
+```tsx
+import { Map3D } from "@chartts/gl/react"
+
+const gdpData = [
+  { country: "US", gdp: 25_460 },
+  { country: "CN", gdp: 17_960 },
+  { country: "JP", gdp: 4_230 },
+  { country: "DE", gdp: 4_070 },
+  { country: "GB", gdp: 3_070 },
+  // ...
+]
+
+export function WorldGDP() {
+  return (
+    <Map3D
+      data={gdpData}
+      country="country"
+      value="gdp"
+      className="h-[500px]"
+      orbit
+      extrudeScale={0.001}
+      colorScale={["#dbeafe", "#1e40af"]}
+      tooltip={(d) => `${d.country}: $${d.gdp}B`}
+    />
+  )
+}
+```
+
+The `extrudeScale` prop controls how much height per unit of value. Adjust this based on your data range to get visually balanced extrusions.
+
+## Orbit controls and interaction
+
+All 3D chart types share the same interaction model when `orbit` is enabled:
+
+- **Left click + drag**: Rotate around the center
+- **Scroll wheel**: Zoom in/out
+- **Right click + drag**: Pan the camera
+- **Double click**: Reset to default camera position
+
+You can also set the initial camera position programmatically:
+
+```tsx
+<Scatter3D
+  data={data}
+  x="x"
+  y="y"
+  z="z"
+  orbit
+  camera={{
+    position: [5, 3, 5],   // x, y, z position
+    target: [0, 0, 0],      // Look-at point
+    fov: 45,                 // Field of view in degrees
+  }}
+/>
+```
+
+For animated camera transitions (useful for guided storytelling), use the imperative API:
+
+```tsx
+import { useChartRef } from "@chartts/react"
+
+function AnimatedView() {
+  const chartRef = useChartRef()
+
+  const focusCluster = () => {
+    chartRef.current?.animateCamera({
+      position: [2, 1, 2],
+      target: [2.3, 4.1, 1.8],
+      duration: 800,
+      easing: "easeInOut",
+    })
+  }
+
+  return (
+    <>
+      <button onClick={focusCluster}>Focus Cluster A</button>
+      <Scatter3D ref={chartRef} data={data} x="x" y="y" z="z" orbit />
+    </>
+  )
+}
+```
+
+## Combining 2D and 3D
+
+A common pattern is using 3D for the main visualization and 2D charts for supporting panels. Since `@chartts/gl` and the standard Chart.ts components share the same theme system, they look consistent side by side:
+
+```tsx
+import { Scatter3D } from "@chartts/gl/react"
+import { BarChart, Histogram } from "@chartts/react"
+
+export function DataExplorer({ data }) {
+  return (
+    <div className="grid grid-cols-3 gap-4">
+      <div className="col-span-2">
+        <Scatter3D data={data} x="x" y="y" z="z" color="cluster" orbit className="h-96" />
+      </div>
+      <div className="flex flex-col gap-4">
+        <BarChart data={clusterCounts} x="cluster" y="count" className="h-44" />
+        <Histogram data={data} value="z" bins={20} className="h-44" />
+      </div>
+    </div>
+  )
+}
+```
+
+## Performance characteristics
+
+All `@chartts/gl` chart types use WebGL exclusively. Here are the performance characteristics on a 2024 MacBook Pro (M3 Pro), Chrome 125:
+
+| Chart type | Max data points | Render time | Interaction FPS |
+|-----------|----------------|-------------|-----------------|
+| Scatter3D | 200,000 | 45ms | 60fps |
+| Surface3D | 1,000,000 vertices | 120ms | 55fps |
+| Globe3D | 195 countries + 10,000 points | 60ms | 60fps |
+| Bar3D | 10,000 bars | 25ms | 60fps |
+| Map3D | 195 countries | 35ms | 60fps |
+
+These numbers include full orbit interaction (rotation, zoom, pan). The GPU does the heavy work, leaving the main thread free for your application logic.
+
+## When to use 3D
+
+3D charts are not always the right choice. They add visual complexity and can make exact value comparison harder than 2D alternatives. Use 3D when:
+
+- Your data has three or more continuous dimensions
+- Spatial relationships matter (geographic data, molecular structures)
+- You need to show the shape of a surface or distribution
+- The presentation context benefits from visual impact
+
+For most business dashboards, 2D charts are clearer. For scientific analysis, engineering, and geographic applications, 3D can reveal patterns that flat projections hide. Chart.ts gives you both options with a consistent API.

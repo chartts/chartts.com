@@ -1,0 +1,327 @@
+---
+title: "Regression and Trend Lines"
+description: "Fit linear, polynomial, exponential, logarithmic, and power regressions to data. Generate trend line series and forecasts."
+badge: "@chartts/regression"
+---
+
+## Quick Start
+
+```ts
+import { linearRegression, trendLine, forecast } from '@chartts/regression'
+
+const x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+const y = [2.1, 4.0, 5.8, 8.2, 9.9, 12.1, 14.0, 15.8, 18.1, 20.0]
+
+const result = linearRegression(x, y)
+console.log(result.r2)           // 0.999 (goodness of fit)
+console.log(result.predict(15))  // predicted y at x=15
+```
+
+All regression functions return a `RegressionResult` with coefficients, R-squared, and a `predict()` function. The `trendLine()` helper generates a `Series` object you can drop directly into a chart.
+
+## Installation
+
+```bash
+npm install @chartts/regression @chartts/core
+```
+
+---
+
+## Types
+
+```ts
+interface RegressionResult {
+  coefficients: number[]           // Model coefficients
+  r2: number                       // R-squared (0 to 1)
+  predict: (x: number) => number   // Predict y for any x
+}
+```
+
+The `coefficients` array depends on the regression type:
+- **Linear**: `[intercept, slope]` for `y = intercept + slope * x`
+- **Polynomial**: `[a0, a1, a2, ...]` for `y = a0 + a1*x + a2*x^2 + ...`
+- **Exponential**: `[a, b]` for `y = a * e^(b*x)`
+- **Logarithmic**: `[a, b]` for `y = a + b * ln(x)`
+- **Power**: `[a, b]` for `y = a * x^b`
+
+---
+
+## API Reference
+
+### `linearRegression(x, y)`
+
+Fit a straight line `y = mx + b` using least squares. O(n) computation.
+
+```ts
+function linearRegression(x: number[], y: number[]): RegressionResult
+```
+
+```ts
+import { linearRegression } from '@chartts/regression'
+
+const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+const revenue = [12, 15, 18, 22, 25, 30, 28, 35, 38, 42, 45, 50]
+
+const fit = linearRegression(months, revenue)
+console.log(`Slope: ${fit.coefficients[1].toFixed(2)} per month`)
+console.log(`R²: ${fit.r2.toFixed(4)}`)
+console.log(`Month 18 forecast: ${fit.predict(18).toFixed(0)}`)
+```
+
+---
+
+### `polynomialRegression(x, y, degree?)`
+
+Fit a polynomial of specified degree using normal equations solved via Gaussian elimination. Default degree: 2 (quadratic). Supports any degree, though high degrees may be numerically unstable.
+
+```ts
+function polynomialRegression(
+  x: number[],
+  y: number[],
+  degree?: number,
+): RegressionResult
+```
+
+```ts
+import { polynomialRegression } from '@chartts/regression'
+
+const x = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+const y = [1, 4, 10, 22, 38, 55, 80, 108, 140, 180, 225]
+
+const quadratic = polynomialRegression(x, y, 2)
+const cubic = polynomialRegression(x, y, 3)
+
+console.log(`Quadratic R²: ${quadratic.r2.toFixed(4)}`)
+console.log(`Cubic R²: ${cubic.r2.toFixed(4)}`)
+```
+
+---
+
+### `exponentialRegression(x, y)`
+
+Fit `y = a * e^(b*x)` by applying linear regression to `ln(y)`. Requires positive y-values (non-positive values are filtered out automatically).
+
+```ts
+function exponentialRegression(x: number[], y: number[]): RegressionResult
+```
+
+```ts
+import { exponentialRegression } from '@chartts/regression'
+
+const days = [0, 1, 2, 3, 4, 5, 6, 7]
+const users = [100, 150, 220, 340, 500, 750, 1100, 1650]
+
+const fit = exponentialRegression(days, users)
+console.log(`Growth rate: ${(fit.coefficients[1] * 100).toFixed(1)}% per day`)
+console.log(`Day 14 projection: ${fit.predict(14).toFixed(0)} users`)
+```
+
+---
+
+### `logarithmicRegression(x, y)`
+
+Fit `y = a + b * ln(x)` by applying linear regression to `ln(x)`. Requires positive x-values (non-positive values are filtered out automatically).
+
+```ts
+function logarithmicRegression(x: number[], y: number[]): RegressionResult
+```
+
+```ts
+import { logarithmicRegression } from '@chartts/regression'
+
+const adSpend = [100, 200, 500, 1000, 2000, 5000, 10000]
+const conversions = [10, 18, 28, 35, 42, 50, 55]
+
+const fit = logarithmicRegression(adSpend, conversions)
+// Diminishing returns pattern: conversions grow logarithmically with spend
+console.log(`At $20,000 spend: ~${fit.predict(20000).toFixed(0)} conversions`)
+```
+
+---
+
+### `powerRegression(x, y)`
+
+Fit `y = a * x^b` by applying linear regression to `ln(x)` vs `ln(y)`. Requires positive x and y values (non-positive values are filtered out).
+
+```ts
+function powerRegression(x: number[], y: number[]): RegressionResult
+```
+
+```ts
+import { powerRegression } from '@chartts/regression'
+
+const bodyMass = [0.01, 0.1, 1, 10, 100, 1000]
+const metabolicRate = [0.05, 0.35, 2.5, 18, 125, 900]
+
+const fit = powerRegression(bodyMass, metabolicRate)
+console.log(`Exponent: ${fit.coefficients[1].toFixed(3)}`)
+// Kleiber's law: metabolic rate ~ mass^0.75
+```
+
+---
+
+### `trendLine(values, type?, options?)`
+
+Generate a `Series` object from index-based data. Internally runs the specified regression using array indices as x-values, then maps each index through the model. The result can be added directly to a chart's series array.
+
+```ts
+function trendLine(
+  values: number[],
+  type?: 'linear' | 'polynomial' | 'exponential' | 'logarithmic' | 'power',
+  options?: {
+    degree?: number
+    name?: string
+    color?: string
+    style?: 'dashed' | 'dotted' | 'solid'
+  },
+): Series
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `type` | regression type | `'linear'` | Which regression model to use |
+| `degree` | `number` | `2` | Polynomial degree (only for `'polynomial'`) |
+| `name` | `string` | `'{type} trend'` | Series name shown in legend |
+| `color` | `string` | auto | Line color |
+| `style` | `'dashed' \| 'dotted' \| 'solid'` | `'dashed'` | Line style |
+
+```ts
+import { trendLine } from '@chartts/regression'
+
+const revenue = [12, 15, 18, 22, 25, 30, 28, 35, 38, 42, 45, 50]
+
+// Add a linear trend line to your chart
+const trend = trendLine(revenue, 'linear', {
+  name: 'Growth Trend',
+  color: '#6366f1',
+  style: 'dashed',
+})
+
+// Use in a chart
+const chartData = {
+  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  series: [
+    { name: 'Revenue', values: revenue },
+    trend,
+  ],
+}
+```
+
+For logarithmic and power types, `trendLine` automatically shifts x-values by +1 to avoid `ln(0)` and `0^b` edge cases.
+
+---
+
+### `forecast(regression, fromX, steps, stepSize?)`
+
+Generate future data points from a fitted regression model. Returns arrays of x and y values.
+
+```ts
+function forecast(
+  regression: RegressionResult,
+  fromX: number,
+  steps: number,
+  stepSize?: number,
+): { x: number[]; y: number[] }
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `regression` | `RegressionResult` | required | A fitted regression model |
+| `fromX` | `number` | required | Starting x-value for predictions |
+| `steps` | `number` | required | Number of forecast points |
+| `stepSize` | `number` | `1` | Increment between x-values |
+
+```ts
+import { linearRegression, forecast } from '@chartts/regression'
+
+const x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+const y = [4200, 5800, 7100, 6400, 8200, 9600, 8800, 10500, 11200, 12800, 13500, 15000]
+
+const model = linearRegression(x, y)
+
+// Forecast 6 months ahead
+const future = forecast(model, 13, 6)
+// future.x = [13, 14, 15, 16, 17, 18]
+// future.y = [predicted values for each month]
+
+console.log('Next 6 months:', future.y.map(v => `$${v.toFixed(0)}`))
+```
+
+---
+
+## Practical Examples
+
+### Compare regression models
+
+```ts
+import {
+  linearRegression,
+  polynomialRegression,
+  exponentialRegression,
+  trendLine,
+} from '@chartts/regression'
+
+const values = [5, 8, 15, 28, 45, 72, 110, 168]
+const x = values.map((_, i) => i)
+
+const linear = linearRegression(x, values)
+const poly = polynomialRegression(x, values, 2)
+const expo = exponentialRegression(x, values)
+
+console.log(`Linear R²:      ${linear.r2.toFixed(4)}`)
+console.log(`Polynomial R²:  ${poly.r2.toFixed(4)}`)
+console.log(`Exponential R²: ${expo.r2.toFixed(4)}`)
+
+// The highest R² indicates the best fit
+// Add all three as overlay trend lines
+const chartData = {
+  labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7', 'Week 8'],
+  series: [
+    { name: 'Signups', values },
+    trendLine(values, 'linear', { name: 'Linear', color: '#6366f1' }),
+    trendLine(values, 'polynomial', { name: 'Quadratic', color: '#f59e0b', degree: 2 }),
+    trendLine(values, 'exponential', { name: 'Exponential', color: '#ef4444' }),
+  ],
+}
+```
+
+### Revenue forecast with confidence
+
+```ts
+import { linearRegression, forecast } from '@chartts/regression'
+
+const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+const revenue = [42, 58, 71, 64, 82, 96, 88, 105, 112, 128, 135, 150]
+
+const model = linearRegression(months, revenue)
+const nextYear = forecast(model, 13, 12)
+
+// Combine historical and forecast data
+const allLabels = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  'Jan+1', 'Feb+1', 'Mar+1', 'Apr+1', 'May+1', 'Jun+1',
+  'Jul+1', 'Aug+1', 'Sep+1', 'Oct+1', 'Nov+1', 'Dec+1',
+]
+
+const historicalSeries = {
+  name: 'Actual',
+  values: [...revenue, ...new Array(12).fill(NaN)],
+}
+
+const forecastSeries = {
+  name: 'Forecast',
+  values: [...new Array(12).fill(NaN), ...nextYear.y],
+  style: 'dashed' as const,
+  color: '#8b5cf6',
+}
+```
+
+---
+
+## Related
+
+- [@chartts/finance](/docs/finance-pkg) for financial indicators (SMA, EMA, Bollinger Bands)
+- [@chartts/statistics](/docs/statistics-pkg) for descriptive statistics and distributions
+- [Line Chart](/docs/charts/line) for rendering regression overlays

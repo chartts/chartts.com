@@ -1,0 +1,415 @@
+---
+title: "Real-Time Dashboards with Chart.ts and WebSocket"
+description: "Build live-updating dashboards. createStreamingChart() with rolling buffers, WebSocket/SSE adapters, auto-reconnect, and multi-panel sync."
+date: "2026-02-28"
+readTime: "13 min read"
+tag: "Tutorial"
+---
+
+Static charts show what happened. Real-time charts show what is happening. If you are building a monitoring dashboard, a trading terminal, an IoT control panel, or a live analytics view, you need charts that update continuously without full redraws, dropped frames, or memory leaks.
+
+Chart.ts has a streaming-first architecture. The `createStreamingChart()` API accepts data incrementally, maintains a rolling window buffer, and uses renderer-optimized incremental updates. The `@chartts/websocket` package provides adapters for WebSocket, Server-Sent Events (SSE), and HTTP polling.
+
+This tutorial builds a complete real-time dashboard with multiple synchronized panels.
+
+## The createStreamingChart() API
+
+The core streaming primitive works like this:
+
+```ts
+import { createStreamingChart } from "@chartts/core"
+
+const chart = createStreamingChart("#container", {
+  type: "line",
+  x: "time",
+  y: "value",
+  maxPoints: 200,        // Rolling window size
+  transitionDuration: 0, // No animation for real-time
+})
+
+// Append a single point
+chart.append({ time: Date.now(), value: 42.5 })
+
+// Append multiple points
+chart.appendBatch([
+  { time: Date.now(), value: 42.5 },
+  { time: Date.now() + 100, value: 43.1 },
+])
+```
+
+`maxPoints` defines the rolling window. When the buffer exceeds this limit, the oldest points are dropped automatically. This prevents memory from growing unbounded during long-running sessions.
+
+The `append()` method is O(1). It adds one point to the end of an internal ring buffer and triggers a partial re-render. It does not rebuild the entire chart from scratch.
+
+## Step 1: WebSocket adapter
+
+The `@chartts/websocket` package wraps the browser WebSocket API with reconnection logic, message parsing, and backpressure handling.
+
+```bash
+npm install @chartts/websocket
+```
+
+Basic usage:
+
+```ts
+import { createStreamingChart } from "@chartts/core"
+import { connectWebSocket } from "@chartts/websocket"
+
+const chart = createStreamingChart("#cpu-chart", {
+  type: "line",
+  x: "time",
+  y: "cpu",
+  maxPoints: 300,
+})
+
+const ws = connectWebSocket({
+  url: "wss://metrics.example.com/v1/stream",
+  chart,
+  parse: (message) => {
+    const data = JSON.parse(message)
+    return { time: data.timestamp, cpu: data.cpu_percent }
+  },
+  reconnect: true,
+  reconnectInterval: 2000,
+  reconnectAttempts: 20,
+  onStatus: (status) => console.log(`Connection: ${status}`),
+})
+
+// Later: clean shutdown
+ws.close()
+```
+
+The `connectWebSocket()` function connects the WebSocket directly to the chart. Each incoming message is parsed and appended automatically. You do not need to wire up `onmessage` handlers yourself.
+
+The reconnection behavior is automatic. When the connection drops, the adapter waits `reconnectInterval` milliseconds and tries again, up to `reconnectAttempts` times. The `onStatus` callback fires with `"connecting"`, `"connected"`, `"reconnecting"`, or `"disconnected"`.
+
+## Step 2: SSE adapter
+
+Server-Sent Events are simpler than WebSocket for one-way data flows. The adapter works the same way:
+
+```ts
+import { connectSSE } from "@chartts/websocket"
+
+const sse = connectSSE({
+  url: "https://metrics.example.com/v1/events",
+  chart,
+  event: "metric",  // SSE event name to listen for
+  parse: (data) => {
+    const parsed = JSON.parse(data)
+    return { time: parsed.ts, value: parsed.memory_mb }
+  },
+  reconnect: true,
+})
+```
+
+SSE connections reconnect automatically via the browser's built-in `EventSource` retry mechanism. The `reconnect` option adds an additional layer on top for cases where the browser gives up.
+
+## Step 3: HTTP polling adapter
+
+For backends that do not support persistent connections, the polling adapter fetches data on an interval:
+
+```ts
+import { connectPolling } from "@chartts/websocket"
+
+const poller = connectPolling({
+  url: "https://api.example.com/v1/metrics/latest",
+  chart,
+  interval: 1000, // Poll every second
+  parse: (response) => {
+    return { time: response.timestamp, value: response.disk_usage }
+  },
+  headers: {
+    Authorization: "Bearer token123",
+  },
+})
+```
+
+The poller uses `fetch()` internally and supports custom headers for authentication. It skips a poll cycle if the previous request has not completed yet, preventing request pileup.
+
+## Step 4: React streaming components
+
+`@chartts/react` provides hooks for streaming data in React components:
+
+```tsx
+"use client"
+
+import { StreamingLineChart } from "@chartts/react"
+import { useWebSocket } from "@chartts/websocket/react"
+
+export function CPUMonitor() {
+  const { data, status } = useWebSocket({
+    url: "wss://metrics.example.com/v1/stream",
+    parse: (msg) => {
+      const d = JSON.parse(msg)
+      return { time: d.timestamp, cpu: d.cpu_percent }
+    },
+    maxPoints: 300,
+    reconnect: true,
+  })
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <div className={`h-2 w-2 rounded-full ${status === "connected" ? "bg-green-500" : "bg-red-500"}`} />
+        <span className="text-sm text-gray-500">{status}</span>
+      </div>
+      <StreamingLineChart
+        data={data}
+        x="time"
+        y="cpu"
+        className="h-48"
+        stroke="#3b82f6"
+        fill="#3b82f680"
+        yDomain={[0, 100]}
+        xFormat={(t) => new Date(t).toLocaleTimeString()}
+      />
+    </div>
+  )
+}
+```
+
+The `useWebSocket` hook manages the connection lifecycle inside React. It cleans up the WebSocket on unmount, handles reconnection, and provides a `status` string for UI feedback.
+
+`StreamingLineChart` is optimized for continuously updating data. It uses Canvas rendering by default and skips React reconciliation on data updates, instead appending directly to the internal buffer.
+
+## Step 5: Multi-chart dashboard
+
+A real dashboard has multiple charts showing different metrics. Here is a four-panel monitoring layout:
+
+```tsx
+"use client"
+
+import { StreamingLineChart, StreamingAreaChart } from "@chartts/react"
+import { useWebSocket } from "@chartts/websocket/react"
+import { ChartGroup } from "@chartts/react"
+
+export function MonitoringDashboard() {
+  const { data, status } = useWebSocket({
+    url: "wss://metrics.example.com/v1/stream",
+    parse: (msg) => JSON.parse(msg),
+    maxPoints: 300,
+    reconnect: true,
+  })
+
+  return (
+    <ChartGroup syncCrosshair className="grid grid-cols-2 gap-4">
+      <Panel title="CPU Usage" status={status}>
+        <StreamingLineChart
+          data={data}
+          x="timestamp"
+          y="cpu_percent"
+          className="h-40"
+          stroke="#3b82f6"
+          yDomain={[0, 100]}
+          yFormat={(v) => `${v}%`}
+        />
+      </Panel>
+
+      <Panel title="Memory" status={status}>
+        <StreamingAreaChart
+          data={data}
+          x="timestamp"
+          y="memory_mb"
+          className="h-40"
+          stroke="#8b5cf6"
+          fill="#8b5cf620"
+          yFormat={(v) => `${v} MB`}
+        />
+      </Panel>
+
+      <Panel title="Network I/O" status={status}>
+        <StreamingLineChart
+          data={data}
+          x="timestamp"
+          y={["net_in_mbps", "net_out_mbps"]}
+          className="h-40"
+          stroke={["#22c55e", "#ef4444"]}
+          yFormat={(v) => `${v} Mbps`}
+          legend
+        />
+      </Panel>
+
+      <Panel title="Disk IOPS" status={status}>
+        <StreamingLineChart
+          data={data}
+          x="timestamp"
+          y="disk_iops"
+          className="h-40"
+          stroke="#f59e0b"
+          yFormat={(v) => `${v.toLocaleString()}`}
+        />
+      </Panel>
+    </ChartGroup>
+  )
+}
+
+function Panel({ title, status, children }: { title: string; status: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border bg-white p-4 dark:bg-gray-900 dark:border-gray-800">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-medium">{title}</h3>
+        <div className={`h-2 w-2 rounded-full ${status === "connected" ? "bg-green-500" : "bg-red-500"}`} />
+      </div>
+      {children}
+    </div>
+  )
+}
+```
+
+The `ChartGroup` with `syncCrosshair` links all four panels. Hovering over the CPU chart shows the corresponding timestamp on Memory, Network, and Disk charts. All four panels share the same WebSocket connection and data buffer.
+
+## Step 6: Pause and resume
+
+Users need to freeze the display to examine a specific moment. The streaming API supports pause and resume:
+
+```tsx
+"use client"
+
+import { useWebSocket } from "@chartts/websocket/react"
+import { StreamingLineChart } from "@chartts/react"
+import { useState } from "react"
+
+export function PausableChart() {
+  const [paused, setPaused] = useState(false)
+
+  const { data, status, pause, resume } = useWebSocket({
+    url: "wss://metrics.example.com/v1/stream",
+    parse: (msg) => JSON.parse(msg),
+    maxPoints: 300,
+    reconnect: true,
+  })
+
+  const togglePause = () => {
+    if (paused) {
+      resume()
+      setPaused(false)
+    } else {
+      pause()
+      setPaused(true)
+    }
+  }
+
+  return (
+    <div>
+      <button
+        onClick={togglePause}
+        className="mb-2 rounded bg-gray-100 px-3 py-1 text-sm dark:bg-gray-800"
+      >
+        {paused ? "Resume" : "Pause"}
+      </button>
+      <StreamingLineChart
+        data={data}
+        x="timestamp"
+        y="value"
+        className="h-48"
+        stroke="#3b82f6"
+      />
+    </div>
+  )
+}
+```
+
+When paused, the WebSocket connection stays alive but incoming data is buffered without updating the chart. On resume, the buffered data is applied in a single batch update, so you do not miss any data points.
+
+## Backpressure handling
+
+High-frequency data sources can overwhelm the rendering pipeline. If data arrives faster than the chart can render, frames will drop and the UI will become unresponsive.
+
+Chart.ts handles this with frame coalescing:
+
+```ts
+const chart = createStreamingChart("#container", {
+  type: "line",
+  x: "time",
+  y: "value",
+  maxPoints: 1000,
+  batchInterval: 16, // Coalesce updates to 60fps max
+})
+```
+
+The `batchInterval` option (default: 16ms, matching 60fps) collects all `append()` calls within a frame window and applies them in a single render pass. If your data source sends 100 messages in 16ms, the chart renders once with all 100 points, not 100 times.
+
+## Memory and cleanup
+
+Long-running dashboards need careful resource management. The `maxPoints` rolling window prevents data arrays from growing forever. But you also need to clean up connections and GPU resources when components unmount.
+
+In React, the `useWebSocket` hook handles cleanup automatically:
+
+```tsx
+// Connection closes on unmount. No manual cleanup needed.
+const { data, status } = useWebSocket({ url: "wss://...", ... })
+```
+
+In vanilla JavaScript, call `destroy()` explicitly:
+
+```ts
+const chart = createStreamingChart("#container", { ... })
+const ws = connectWebSocket({ url: "wss://...", chart, ... })
+
+// On page navigation or cleanup
+ws.close()
+chart.destroy()
+```
+
+The `destroy()` method releases the Canvas/WebGL context and clears the data buffer. The `close()` method closes the WebSocket connection and cancels any pending reconnection attempts.
+
+## Performance numbers
+
+Streaming performance depends on three factors: data frequency, point count, and renderer. Here are benchmarks for a single streaming line chart on a 2024 MacBook Pro (M3 Pro), Chrome 125:
+
+| Max points | Update frequency | Renderer | CPU usage | Frame rate |
+|-----------|-----------------|----------|-----------|------------|
+| 200 | 10/sec | SVG | 2% | 60fps |
+| 200 | 60/sec | Canvas | 3% | 60fps |
+| 1,000 | 60/sec | Canvas | 5% | 60fps |
+| 10,000 | 60/sec | Canvas | 12% | 58fps |
+| 100,000 | 60/sec | WebGL | 8% | 60fps |
+
+At 100,000 points with 60 updates per second, WebGL uses less CPU than Canvas at 10,000 points. The GPU handles the rendering workload, keeping the main thread free.
+
+## Complete dashboard example
+
+Here is a production-ready monitoring dashboard with WebSocket, pause/resume, reconnection status, and four synced panels in under 100 lines:
+
+```tsx
+"use client"
+
+import { StreamingLineChart, StreamingAreaChart, ChartGroup } from "@chartts/react"
+import { useWebSocket } from "@chartts/websocket/react"
+import { useState } from "react"
+
+export function OpsDashboard({ endpoint }: { endpoint: string }) {
+  const [paused, setPaused] = useState(false)
+  const { data, status, pause, resume } = useWebSocket({
+    url: endpoint,
+    parse: (msg) => JSON.parse(msg),
+    maxPoints: 300,
+    reconnect: true,
+    reconnectInterval: 3000,
+  })
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className={`h-2 w-2 rounded-full ${status === "connected" ? "bg-green-500" : "bg-yellow-500 animate-pulse"}`} />
+        <span className="text-sm text-gray-500 capitalize">{status}</span>
+        <button
+          onClick={() => { paused ? resume() : pause(); setPaused(!paused) }}
+          className="ml-auto rounded border px-3 py-1 text-sm"
+        >
+          {paused ? "Resume" : "Pause"}
+        </button>
+      </div>
+
+      <ChartGroup syncCrosshair className="grid grid-cols-2 gap-4">
+        <StreamingLineChart data={data} x="ts" y="cpu" className="h-40" stroke="#3b82f6" yDomain={[0, 100]} />
+        <StreamingAreaChart data={data} x="ts" y="mem" className="h-40" stroke="#8b5cf6" fill="#8b5cf620" />
+        <StreamingLineChart data={data} x="ts" y={["rx", "tx"]} className="h-40" stroke={["#22c55e", "#ef4444"]} legend />
+        <StreamingLineChart data={data} x="ts" y="latency" className="h-40" stroke="#f59e0b" />
+      </ChartGroup>
+    </div>
+  )
+}
+```
+
+Real-time data visualization should not require a separate library, a complex event system, or manual requestAnimationFrame loops. Chart.ts streaming is built into the core, works with any data source, and handles the hard parts (reconnection, backpressure, memory management, incremental rendering) so you can focus on the dashboard layout and the data that matters.

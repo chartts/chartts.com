@@ -1,0 +1,215 @@
+---
+title: "CLI Tool"
+description: "Render charts from the command line. Convert CSV and JSON data files into SVG or PNG images with a single command."
+badge: "@chartts/cli"
+---
+
+## Installation
+
+```bash
+npm install -g @chartts/cli
+```
+
+Or use it without installing via `npx`:
+
+```bash
+npx @chartts/cli render --type line --data sales.csv -o chart.svg
+```
+
+---
+
+## chartts render
+
+The `render` command reads a data file (CSV or JSON), renders a chart, and writes the result to an SVG or PNG file.
+
+```bash
+chartts render --type <chart-type> --data <file> -o <output> [options]
+```
+
+### Required Flags
+
+| Flag | Description |
+|------|-------------|
+| `--type <type>` | Chart type: `line`, `bar`, `area`, `pie`, `scatter`, `candlestick`, `stacked-bar`, and all other registered chart types |
+| `--data <file>` | Path to input data file (`.csv`, `.tsv`, or `.json`) |
+| `-o, --output <file>` | Output file path (`.svg` or `.png`) |
+
+### Optional Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--width <n>` | `600` | Chart width in pixels |
+| `--height <n>` | `400` | Chart height in pixels |
+| `--theme <name>` | `light` | Chart theme (`light` or `dark`) |
+| `--title <text>` | none | Chart title, used as the aria label |
+| `--x <field>` | auto-detected | Field name for x-axis labels |
+| `--y <field>` | auto-detected | Field name for y-axis values |
+| `--scale <n>` | `2` | PNG scale factor for high-DPI output |
+
+---
+
+## CSV Input
+
+The CLI auto-detects CSV and TSV files by extension. The first column is used as labels by default. All other numeric columns become series.
+
+**sales.csv:**
+```csv
+month,revenue,expenses
+Jan,12000,8000
+Feb,15000,9200
+Mar,18000,10500
+Apr,16500,9800
+May,21000,11200
+Jun,24000,12800
+```
+
+```bash
+chartts render --type bar --data sales.csv -o sales.svg
+```
+
+Use `--x` and `--y` to pick specific columns:
+
+```bash
+chartts render --type line --data sales.csv --x month --y revenue -o revenue.svg
+```
+
+---
+
+## JSON Input
+
+JSON files can be arrays of objects or the native `ChartData` format.
+
+**Array of objects:**
+```json
+[
+  { "date": "2024-01", "users": 1200, "sessions": 3400 },
+  { "date": "2024-02", "users": 1800, "sessions": 4100 },
+  { "date": "2024-03", "users": 2400, "sessions": 5600 },
+  { "date": "2024-04", "users": 2100, "sessions": 4800 },
+  { "date": "2024-05", "users": 3200, "sessions": 7200 }
+]
+```
+
+```bash
+chartts render --type area --data analytics.json --x date -o analytics.svg
+```
+
+**Native ChartData format:**
+```json
+{
+  "labels": ["Q1", "Q2", "Q3", "Q4"],
+  "series": [
+    { "name": "2023", "values": [40, 55, 70, 62] },
+    { "name": "2024", "values": [52, 68, 85, 91] }
+  ]
+}
+```
+
+```bash
+chartts render --type line --data quarterly.json -o quarterly.png --width 800 --height 500
+```
+
+---
+
+## PNG Output
+
+When the output file ends in `.png`, the CLI renders to PNG using `@chartts/ssr`. The `--scale` flag controls the DPI multiplier.
+
+```bash
+# Standard resolution (600x400)
+chartts render --type pie --data market.json -o share.png
+
+# Retina resolution (1200x800 pixels, displayed as 600x400)
+chartts render --type pie --data market.json -o share.png --scale 2
+
+# Print quality (1800x1200 pixels)
+chartts render --type pie --data market.json -o share.png --scale 3
+```
+
+---
+
+## Listing Chart Types
+
+Use the `types` command to see all available chart types:
+
+```bash
+chartts types
+```
+
+Output:
+```
+Available chart types:
+
+  line                 Line
+  bar                  Bar
+  area                 Area
+  pie                  Pie
+  scatter              Scatter
+  ...
+
+Total: 48 chart types
+```
+
+---
+
+## Chart Type Resolution
+
+The `--type` flag is case-insensitive and accepts kebab-case:
+
+```bash
+# All of these work
+chartts render --type line ...
+chartts render --type Line ...
+chartts render --type stacked-bar ...
+chartts render --type StackedBar ...
+```
+
+---
+
+## CI/CD Integration
+
+Generate charts in your build pipeline for reports, dashboards, or documentation.
+
+```yaml
+# GitHub Actions example
+- name: Generate charts
+  run: |
+    npx @chartts/cli render \
+      --type line \
+      --data ./data/metrics.csv \
+      -o ./reports/metrics.svg \
+      --width 800 --height 400 \
+      --theme dark \
+      --title "Build Metrics"
+```
+
+---
+
+## Programmatic API
+
+The CLI re-exports core rendering functions for use in Node.js scripts:
+
+```ts
+import { renderChart, renderToPNG, saveChart } from '@chartts/cli'
+import { fromCSV } from '@chartts/cli'
+import { fromJSON } from '@chartts/cli'
+import { readFileSync, writeFileSync } from 'fs'
+
+const csv = readFileSync('data.csv', 'utf-8')
+const data = fromCSV(csv)
+
+const svg = renderChart('line', data, { width: 800, height: 400 })
+writeFileSync('output.svg', svg)
+```
+
+---
+
+## Error Handling
+
+The CLI exits with code 1 and prints an error message for common issues:
+
+- Unknown chart type: lists all available types
+- Missing or unreadable data file
+- Invalid width, height, or scale values
+- No data series found in the input
+- Unrecognized file extension (falls back to JSON, then CSV parsing)

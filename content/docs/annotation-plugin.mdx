@@ -1,0 +1,355 @@
+---
+title: "Annotation Plugin"
+description: "Add reference lines, shaded areas, thresholds, and data labels to any chart. Declarative or imperative API."
+badge: "@chartts/annotation"
+---
+
+## Quick Start
+
+```ts
+import { referenceLine, referenceArea, threshold } from '@chartts/annotation'
+
+// Add a horizontal reference line at y=75
+const lineNodes = referenceLine('y', 75, chartArea, xScale, yScale, {
+  label: 'Target',
+  color: '#22c55e',
+  dash: true,
+})
+
+// Shade a region between y=60 and y=80
+const areaNodes = referenceArea('y', 60, 80, chartArea, xScale, yScale, {
+  color: '#3b82f6',
+  opacity: 0.15,
+  label: 'Optimal Range',
+})
+```
+
+All functions return `RenderNode[]` arrays that plug directly into Chart.ts render pipelines.
+
+## Installation
+
+```bash
+npm install @chartts/annotation @chartts/core
+```
+
+---
+
+## API Reference
+
+### `referenceLine(axis, value, area, xScale, yScale, opts?)`
+
+Create a horizontal or vertical reference line. For `axis='y'`, the value is mapped through `yScale` to produce a horizontal line across the chart. For `axis='x'`, the value is mapped through `xScale` to produce a vertical line.
+
+```ts
+function referenceLine(
+  axis: 'x' | 'y',
+  value: number | string,
+  area: ChartArea,
+  xScale: Scale,
+  yScale: Scale,
+  opts?: LineOpts,
+): RenderNode[]
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `label` | `string` | none | Text label next to the line |
+| `color` | `string` | `'#888888'` | Line and label color |
+| `dash` | `boolean` | `true` | Use dashed stroke (`6 4` pattern) |
+| `lineWidth` | `number` | `1.5` | Stroke width |
+
+```ts
+// Horizontal line at a specific y-value
+const targetLine = referenceLine('y', 500, area, xScale, yScale, {
+  label: 'Goal: 500',
+  color: '#f59e0b',
+  dash: true,
+  lineWidth: 2,
+})
+
+// Vertical line at a specific x-value
+const eventLine = referenceLine('x', 'Mar', area, xScale, yScale, {
+  label: 'Launch Date',
+  color: '#8b5cf6',
+  dash: false,
+})
+```
+
+---
+
+### `referenceArea(axis, from, to, area, xScale, yScale, opts?)`
+
+Create a shaded rectangular band. For `axis='y'`, draws a horizontal band between two y-values. For `axis='x'`, draws a vertical band between two x-values. Useful for marking acceptable ranges, time windows, or zones.
+
+```ts
+function referenceArea(
+  axis: 'x' | 'y',
+  from: number | string,
+  to: number | string,
+  area: ChartArea,
+  xScale: Scale,
+  yScale: Scale,
+  opts?: AreaOpts,
+): RenderNode[]
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `color` | `string` | `'#3b82f6'` | Fill color |
+| `opacity` | `number` | `0.12` | Fill opacity |
+| `label` | `string` | none | Centered text label |
+
+```ts
+// Highlight acceptable range on y-axis
+const normalRange = referenceArea('y', 36.1, 37.2, area, xScale, yScale, {
+  color: '#22c55e',
+  opacity: 0.1,
+  label: 'Normal',
+})
+
+// Highlight a time window on x-axis
+const weekend = referenceArea('x', 'Sat', 'Sun', area, xScale, yScale, {
+  color: '#94a3b8',
+  opacity: 0.08,
+})
+```
+
+---
+
+### `threshold(value, area, yScale, opts?)`
+
+Create a threshold line with optional color zones above and below. Always renders as a horizontal line. When `aboveColor` or `belowColor` is set, semi-transparent rectangles fill the region above or below the threshold.
+
+```ts
+function threshold(
+  value: number,
+  area: ChartArea,
+  yScale: Scale,
+  opts?: ThresholdOpts,
+): RenderNode[]
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `label` | `string` | none | Label placed to the right of the line |
+| `color` | `string` | `'#ef4444'` | Line color |
+| `aboveColor` | `string` | none | Fill color for the region above the threshold |
+| `belowColor` | `string` | none | Fill color for the region below the threshold |
+| `lineWidth` | `number` | `1.5` | Stroke width |
+| `dash` | `boolean` | `true` | Dashed line style |
+
+```ts
+// Red threshold at 90 with green below and red above
+const cpuLimit = threshold(90, area, yScale, {
+  label: 'Critical',
+  color: '#ef4444',
+  aboveColor: '#ef4444',
+  belowColor: '#22c55e',
+})
+```
+
+---
+
+### `dataLabel(x, y, text, area, xScale, yScale, opts?)`
+
+Place a text label at a specific data coordinate. Both `x` and `y` are mapped through their respective scales to get pixel positions.
+
+```ts
+function dataLabel(
+  x: number | string,
+  y: number,
+  text: string,
+  area: ChartArea,
+  xScale: Scale,
+  yScale: Scale,
+  opts?: LabelOpts,
+): RenderNode
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `color` | `string` | `'#374151'` | Text color |
+| `fontSize` | `number` | `12` | Font size in pixels |
+| `anchor` | `'start' \| 'middle' \| 'end'` | `'middle'` | Text anchor alignment |
+
+```ts
+const peakLabel = dataLabel('Jul', 9800, 'Peak: $9,800', area, xScale, yScale, {
+  color: '#059669',
+  fontSize: 13,
+  anchor: 'start',
+})
+```
+
+---
+
+### `createAnnotations(annotations, area, xScale, yScale)`
+
+Batch convert an array of annotation config objects into `RenderNode[]`. This is the declarative API: describe your annotations as data, and this function produces the render tree. All nodes are wrapped in a group with class `chartts-annotations`.
+
+```ts
+function createAnnotations(
+  annotations: Annotation[],
+  area: ChartArea,
+  xScale: Scale,
+  yScale: Scale,
+): RenderNode[]
+```
+
+**Annotation types:**
+
+```ts
+type Annotation = LineAnnotation | AreaAnnotation | LabelAnnotation | ThresholdAnnotation
+
+interface LineAnnotation {
+  type: 'line'
+  axis: 'x' | 'y'
+  value: number | string
+  label?: string
+  color?: string
+  dash?: boolean
+  lineWidth?: number
+}
+
+interface AreaAnnotation {
+  type: 'area'
+  axis: 'x' | 'y'
+  from: number | string
+  to: number | string
+  color?: string
+  opacity?: number
+  label?: string
+}
+
+interface LabelAnnotation {
+  type: 'label'
+  x: number | string
+  y: number
+  text: string
+  color?: string
+  fontSize?: number
+  anchor?: 'start' | 'middle' | 'end'
+}
+
+interface ThresholdAnnotation {
+  type: 'threshold'
+  value: number
+  label?: string
+  color?: string
+  aboveColor?: string
+  belowColor?: string
+}
+```
+
+```ts
+import { createAnnotations } from '@chartts/annotation'
+
+const nodes = createAnnotations([
+  {
+    type: 'area',
+    axis: 'y',
+    from: 60,
+    to: 80,
+    color: '#22c55e',
+    opacity: 0.1,
+    label: 'Target Zone',
+  },
+  {
+    type: 'line',
+    axis: 'y',
+    value: 95,
+    label: 'Upper Limit',
+    color: '#ef4444',
+    dash: true,
+  },
+  {
+    type: 'line',
+    axis: 'x',
+    value: 'Q3',
+    label: 'Review',
+    color: '#8b5cf6',
+  },
+  {
+    type: 'label',
+    x: 'Q2',
+    y: 85,
+    text: 'Record Quarter',
+    color: '#0ea5e9',
+    fontSize: 14,
+  },
+  {
+    type: 'threshold',
+    value: 30,
+    label: 'Minimum',
+    color: '#f97316',
+    belowColor: '#f97316',
+  },
+], chartArea, xScale, yScale)
+```
+
+---
+
+## Practical Examples
+
+### Server health dashboard
+
+```ts
+import { threshold, referenceArea } from '@chartts/annotation'
+
+// CPU usage chart annotations
+const annotations = [
+  ...threshold(80, area, yScale, {
+    label: 'Warning',
+    color: '#f59e0b',
+    aboveColor: '#f59e0b',
+  }),
+  ...threshold(95, area, yScale, {
+    label: 'Critical',
+    color: '#ef4444',
+    aboveColor: '#ef4444',
+  }),
+  ...referenceArea('y', 0, 50, area, xScale, yScale, {
+    color: '#22c55e',
+    opacity: 0.05,
+    label: 'Healthy',
+  }),
+]
+```
+
+### Sales with quarterly targets
+
+```ts
+import { referenceLine, referenceArea, dataLabel } from '@chartts/annotation'
+
+const annotations = [
+  ...referenceLine('y', 100000, area, xScale, yScale, {
+    label: 'Annual Target',
+    color: '#6366f1',
+    lineWidth: 2,
+  }),
+  ...referenceArea('x', 'Oct', 'Dec', area, xScale, yScale, {
+    color: '#f59e0b',
+    opacity: 0.08,
+    label: 'Q4 Push',
+  }),
+  dataLabel('Nov', 125000, 'Record!', area, xScale, yScale, {
+    color: '#059669',
+    fontSize: 14,
+  }),
+]
+```
+
+---
+
+## Related
+
+- [@chartts/datalabels](/docs/datalabels) for automatic per-point labels on bar, line, and pie charts
+- [Line Chart](/docs/charts/line) for time series visualization
+- [@chartts/ssr](/docs/ssr) for rendering annotated charts on the server

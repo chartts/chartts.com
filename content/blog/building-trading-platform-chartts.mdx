@@ -1,0 +1,357 @@
+---
+title: "Building a Trading Platform with Chart.ts"
+description: "Full tutorial: candlestick charts, technical indicators, volume analysis, and real-time WebSocket data with Chart.ts and @chartts/finance."
+date: "2026-02-28"
+readTime: "14 min read"
+tag: "Tutorial"
+---
+
+Most charting libraries treat financial data as an afterthought. You get a basic candlestick chart and nothing else. No indicators, no multi-panel layouts, no streaming price feeds. Building anything resembling a real trading view means stitching together three or four libraries and writing thousands of lines of glue code.
+
+Chart.ts ships a dedicated `@chartts/finance` package with 40+ technical indicators, multi-panel sync, crosshair linking, and native WebSocket streaming. This tutorial walks through building a complete trading view from scratch.
+
+## What we are building
+
+A four-panel trading interface:
+
+- **Candlestick chart** with SMA and EMA overlays
+- **Volume bars** colored by price direction
+- **RSI oscillator** panel
+- **MACD signal** panel
+- All panels linked with synchronized crosshairs
+- Live data via WebSocket
+
+## Setup
+
+```bash
+npm install @chartts/react @chartts/finance @chartts/websocket
+```
+
+`@chartts/finance` provides the chart types and indicator calculations. `@chartts/websocket` handles the real-time data connection.
+
+## Step 1: Candlestick chart with moving averages
+
+Start with the core price chart. The `CandlestickChart` component from `@chartts/finance` accepts OHLCV data directly.
+
+```tsx
+import { CandlestickChart } from "@chartts/finance/react"
+
+const priceData = [
+  { date: "2026-01-02", open: 185.2, high: 187.4, close: 186.8, low: 184.1, volume: 52_340_000 },
+  { date: "2026-01-03", open: 186.8, high: 189.1, close: 188.5, low: 186.0, volume: 48_120_000 },
+  { date: "2026-01-06", open: 188.5, high: 190.3, close: 187.2, low: 186.5, volume: 61_890_000 },
+  // ... hundreds of data points
+]
+
+export function PriceChart({ data }: { data: OHLCVData[] }) {
+  return (
+    <CandlestickChart
+      data={data}
+      date="date"
+      open="open"
+      high="high"
+      close="close"
+      low="low"
+      className="h-96"
+      bullColor="#22c55e"
+      bearColor="#ef4444"
+      zoom
+      pan
+    />
+  )
+}
+```
+
+The `bullColor` and `bearColor` props control the candle fill. Green for up days, red for down days. Zoom and pan are enabled with boolean props.
+
+Now add moving average overlays. `@chartts/finance` calculates indicators from your raw data.
+
+```tsx
+import { CandlestickChart, SMA, EMA } from "@chartts/finance/react"
+
+export function PriceChart({ data }: { data: OHLCVData[] }) {
+  return (
+    <CandlestickChart
+      data={data}
+      date="date"
+      open="open"
+      high="high"
+      close="close"
+      low="low"
+      className="h-96"
+      bullColor="#22c55e"
+      bearColor="#ef4444"
+      zoom
+      pan
+    >
+      <SMA period={20} source="close" stroke="#3b82f6" strokeWidth={1.5} />
+      <EMA period={50} source="close" stroke="#f59e0b" strokeWidth={1.5} />
+    </CandlestickChart>
+  )
+}
+```
+
+The `SMA` and `EMA` components are declarative overlays. They compute the indicator values internally and render as line series on top of the candlestick chart. The `source` prop tells them which price field to use for the calculation.
+
+## Step 2: Volume bars with direction coloring
+
+Volume bars belong in their own panel below the price chart. Each bar should be colored based on whether the candle closed up or down.
+
+```tsx
+import { VolumeChart } from "@chartts/finance/react"
+
+export function VolumePanel({ data }: { data: OHLCVData[] }) {
+  return (
+    <VolumeChart
+      data={data}
+      date="date"
+      volume="volume"
+      open="open"
+      close="close"
+      className="h-24"
+      bullColor="#22c55e80"
+      bearColor="#ef444480"
+    />
+  )
+}
+```
+
+The volume chart reads both `open` and `close` to determine direction. The colors include alpha values for a softer appearance that does not compete visually with the price chart.
+
+## Step 3: RSI oscillator panel
+
+The Relative Strength Index is a momentum oscillator bounded between 0 and 100. Standard practice draws horizontal lines at 30 (oversold) and 70 (overbought).
+
+```tsx
+import { RSIChart } from "@chartts/finance/react"
+
+export function RSIPanel({ data }: { data: OHLCVData[] }) {
+  return (
+    <RSIChart
+      data={data}
+      date="date"
+      source="close"
+      period={14}
+      className="h-32"
+      stroke="#8b5cf6"
+      overbought={70}
+      oversold={30}
+      fillOverbought="#ef444420"
+      fillOversold="#22c55e20"
+    />
+  )
+}
+```
+
+The RSI calculation uses a 14-period default. The `fillOverbought` and `fillOversold` props shade the regions above 70 and below 30, making it easy to spot extremes at a glance.
+
+## Step 4: MACD signal panel
+
+MACD (Moving Average Convergence Divergence) shows the relationship between two EMAs. It produces three data series: the MACD line, the signal line, and the histogram.
+
+```tsx
+import { MACDChart } from "@chartts/finance/react"
+
+export function MACDPanel({ data }: { data: OHLCVData[] }) {
+  return (
+    <MACDChart
+      data={data}
+      date="date"
+      source="close"
+      fast={12}
+      slow={26}
+      signal={9}
+      className="h-32"
+      macdStroke="#3b82f6"
+      signalStroke="#ef4444"
+      histogramBullColor="#22c55e"
+      histogramBearColor="#ef4444"
+    />
+  )
+}
+```
+
+The histogram bars show the difference between MACD and signal lines. Positive bars (MACD above signal) are green, negative bars are red. This makes crossover signals immediately visible.
+
+## Step 5: Linking panels with crosshair sync
+
+Four independent charts are not useful unless they share a synchronized crosshair and time axis. The `ChartGroup` component handles this.
+
+```tsx
+import { ChartGroup } from "@chartts/finance/react"
+
+export function TradingView({ data }: { data: OHLCVData[] }) {
+  return (
+    <ChartGroup syncCrosshair syncZoom syncPan className="flex flex-col gap-1">
+      <PriceChart data={data} />
+      <VolumePanel data={data} />
+      <RSIPanel data={data} />
+      <MACDPanel data={data} />
+    </ChartGroup>
+  )
+}
+```
+
+`ChartGroup` wraps any number of chart panels and synchronizes their interactions. Moving the crosshair on one chart moves it on all charts. Zooming on the price chart zooms all panels to the same time range. Panning works the same way.
+
+The `syncCrosshair`, `syncZoom`, and `syncPan` props are each independent. You can sync crosshairs without syncing zoom, for example.
+
+## Step 6: Real-time WebSocket feed
+
+Static data is only half the story. A real trading view needs live price updates. The `@chartts/websocket` package provides a streaming adapter that connects to any WebSocket endpoint.
+
+```tsx
+import { useStreamingData } from "@chartts/websocket/react"
+
+function useLivePriceData(symbol: string) {
+  const { data, status, error } = useStreamingData({
+    url: `wss://feed.example.com/v1/ohlcv/${symbol}`,
+    parse: (message) => {
+      const raw = JSON.parse(message)
+      return {
+        date: raw.t,
+        open: raw.o,
+        high: raw.h,
+        low: raw.l,
+        close: raw.c,
+        volume: raw.v,
+      }
+    },
+    maxPoints: 500,
+    reconnect: true,
+    reconnectInterval: 3000,
+    reconnectAttempts: 10,
+  })
+
+  return { data, status, error }
+}
+```
+
+The `useStreamingData` hook manages the WebSocket connection lifecycle. It handles reconnection automatically when the connection drops. The `maxPoints` option keeps the buffer at 500 data points, dropping the oldest entries as new ones arrive.
+
+The `parse` function maps your WebSocket message format to the OHLCV shape that `@chartts/finance` expects. This works with any data provider, whether that is Binance, Alpaca, Polygon.io, or your own backend.
+
+## Putting it all together
+
+Here is the complete trading view component:
+
+```tsx
+"use client"
+
+import { ChartGroup } from "@chartts/finance/react"
+import { CandlestickChart, SMA, EMA } from "@chartts/finance/react"
+import { VolumeChart, RSIChart, MACDChart } from "@chartts/finance/react"
+import { useStreamingData } from "@chartts/websocket/react"
+
+export function TradingView({ symbol }: { symbol: string }) {
+  const { data, status } = useStreamingData({
+    url: `wss://feed.example.com/v1/ohlcv/${symbol}`,
+    parse: (msg) => {
+      const raw = JSON.parse(msg)
+      return { date: raw.t, open: raw.o, high: raw.h, low: raw.l, close: raw.c, volume: raw.v }
+    },
+    maxPoints: 500,
+    reconnect: true,
+  })
+
+  if (status === "connecting") return <div className="text-gray-400">Connecting...</div>
+
+  return (
+    <ChartGroup syncCrosshair syncZoom syncPan className="flex flex-col gap-1">
+      <CandlestickChart
+        data={data}
+        date="date"
+        open="open"
+        high="high"
+        close="close"
+        low="low"
+        className="h-96"
+        bullColor="#22c55e"
+        bearColor="#ef4444"
+        zoom
+        pan
+      >
+        <SMA period={20} source="close" stroke="#3b82f6" strokeWidth={1.5} />
+        <EMA period={50} source="close" stroke="#f59e0b" strokeWidth={1.5} />
+      </CandlestickChart>
+
+      <VolumeChart
+        data={data}
+        date="date"
+        volume="volume"
+        open="open"
+        close="close"
+        className="h-24"
+        bullColor="#22c55e80"
+        bearColor="#ef444480"
+      />
+
+      <RSIChart
+        data={data}
+        date="date"
+        source="close"
+        period={14}
+        className="h-32"
+        stroke="#8b5cf6"
+        overbought={70}
+        oversold={30}
+      />
+
+      <MACDChart
+        data={data}
+        date="date"
+        source="close"
+        fast={12}
+        slow={26}
+        signal={9}
+        className="h-32"
+        macdStroke="#3b82f6"
+        signalStroke="#ef4444"
+      />
+    </ChartGroup>
+  )
+}
+```
+
+That is 60 lines of JSX for a complete, multi-panel, real-time trading interface. Every panel syncs automatically. The WebSocket connection reconnects on failure. Indicators recalculate as new data arrives.
+
+## Additional indicators
+
+`@chartts/finance` ships 40+ indicators out of the box. A few examples beyond what we used above:
+
+```tsx
+import { BollingerBands, VWAP, Ichimoku, StochasticOscillator } from "@chartts/finance/react"
+
+// Bollinger Bands overlay on price chart
+<BollingerBands period={20} stdDev={2} source="close" />
+
+// Volume-weighted average price
+<VWAP source="close" volume="volume" />
+
+// Ichimoku cloud
+<Ichimoku tenkan={9} kijun={26} senkou={52} />
+
+// Stochastic oscillator in its own panel
+<StochasticOscillator kPeriod={14} dPeriod={3} smooth={3} />
+```
+
+Each indicator is a declarative component. Drop it inside a chart and it computes the values from the parent chart's data.
+
+## Performance notes
+
+Financial charts are demanding. A year of minute-level OHLCV data is 100,000+ candles. Chart.ts handles this through automatic renderer switching. Under 5,000 candles, it uses SVG for crisp rendering and CSS styling. Above 10,000, it switches to Canvas. Above 50,000, it activates WebGL.
+
+You do not need to configure this. The chart measures the data size and picks the best renderer automatically. The API stays identical regardless of which renderer is active.
+
+## What comes next
+
+This tutorial covered the core trading view. For a production application, you would also want:
+
+- **Time interval switching** (1m, 5m, 15m, 1h, 1D)
+- **Drawing tools** (trend lines, Fibonacci retracements)
+- **Alerts** based on indicator values
+- **Multiple symbols** in a watchlist layout
+
+`@chartts/finance` provides APIs for all of these. The drawing tools use the same plugin system described in our [plugin tutorial](/blog/chartts-plugin-system-custom-chart-types). Time interval switching is a matter of changing the WebSocket subscription and resetting the data buffer.
+
+Financial charting should not require a $500/year license or a 2MB library. Chart.ts gives you everything you need in 15kb.

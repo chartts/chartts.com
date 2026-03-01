@@ -1,0 +1,490 @@
+---
+title: "Canvas vs SVG vs WebGL for Data Visualization: A Technical Comparison"
+description: "When to use Canvas, SVG, or WebGL for charts and data visualization. Rendering models, performance, accessibility, SSR, and CSS styling compared."
+date: "2026-02-16"
+readTime: "14 min read"
+tag: "Architecture"
+---
+
+Every charting library makes a foundational choice: how to put pixels on the screen. Canvas, SVG, and WebGL are the three rendering technologies available in the browser. Each one has different performance characteristics, different capabilities, and different tradeoffs.
+
+This choice is usually invisible to the developer. You install a library, pass it data, and a chart appears. But the rendering technology underneath determines whether your chart can be server-rendered, whether it works with screen readers, whether it handles 100,000 data points, and whether you can style it with your existing CSS.
+
+This article is a technical comparison of Canvas, SVG, and WebGL for data visualization. It covers how each technology works, where each excels, and why Chart.ts defaults to SVG while supporting all three.
+
+## How each rendering technology works
+
+### SVG: Retained-mode vector graphics
+
+SVG (Scalable Vector Graphics) is a declarative, XML-based format for describing two-dimensional graphics. An SVG chart is a tree of elements in the DOM:
+
+```html
+<svg viewBox="0 0 600 400">
+  <g class="grid">
+    <line x1="50" y1="0" x2="50" y2="400" stroke="#e5e7eb" />
+    <line x1="150" y1="0" x2="150" y2="400" stroke="#e5e7eb" />
+  </g>
+  <g class="bars">
+    <rect x="60" y="100" width="80" height="200" fill="#3b82f6" />
+    <rect x="160" y="150" width="80" height="150" fill="#3b82f6" />
+    <rect x="260" y="50" width="80" height="250" fill="#3b82f6" />
+  </g>
+  <g class="labels">
+    <text x="100" y="320" text-anchor="middle">Jan</text>
+    <text x="200" y="320" text-anchor="middle">Feb</text>
+    <text x="300" y="320" text-anchor="middle">Mar</text>
+  </g>
+</svg>
+```
+
+SVG is a **retained-mode** rendering system. The browser maintains an internal representation of every element. When you change an attribute (move a bar, change a color), the browser knows exactly which element changed and only repaints that element. You do not need to redraw anything manually.
+
+Because SVG elements are DOM nodes, they participate in the browser's standard rendering pipeline. They can have CSS classes. They can be targeted by `querySelector`. They can receive mouse events. They can carry ARIA attributes. They can be inspected in DevTools.
+
+### Canvas: Immediate-mode raster graphics
+
+The Canvas API provides a 2D drawing context on a pixel buffer. You issue drawing commands, and pixels appear:
+
+```javascript
+const canvas = document.getElementById("chart");
+const ctx = canvas.getContext("2d");
+
+// Clear the canvas
+ctx.clearRect(0, 0, 600, 400);
+
+// Draw a bar
+ctx.fillStyle = "#3b82f6";
+ctx.fillRect(60, 100, 80, 200);
+
+// Draw text
+ctx.fillStyle = "#374151";
+ctx.font = "14px sans-serif";
+ctx.textAlign = "center";
+ctx.fillText("Jan", 100, 320);
+```
+
+Canvas is an **immediate-mode** rendering system. There is no scene graph. There is no retained representation of what you drew. Once pixels are written to the buffer, the context does not remember what they represent. If you need to move a bar, you clear the entire canvas and redraw everything.
+
+This means Canvas has no concept of individual elements. A bar chart with 100 bars is a single `<canvas>` element containing colored pixels. The browser does not know that some of those pixels are bars and some are labels. There are no DOM nodes to style, inspect, or navigate.
+
+### WebGL: GPU-accelerated rendering
+
+WebGL provides access to the GPU through a JavaScript API based on OpenGL ES. It renders using vertex and fragment shaders that execute in parallel on the graphics hardware:
+
+```javascript
+const gl = canvas.getContext("webgl2");
+
+// Vertex shader: positions geometry on screen
+const vertexShader = `
+  attribute vec2 position;
+  uniform mat3 transform;
+  void main() {
+    vec3 pos = transform * vec3(position, 1.0);
+    gl_Position = vec4(pos.xy, 0.0, 1.0);
+  }
+`;
+
+// Fragment shader: colors each pixel
+const fragmentShader = `
+  precision mediump float;
+  uniform vec4 color;
+  void main() {
+    gl_FragColor = color;
+  }
+`;
+```
+
+WebGL renders by sending geometry (vertices) and instructions (shaders) to the GPU, which processes thousands of elements in parallel. This is orders of magnitude faster than CPU-based rendering for large datasets.
+
+Like Canvas, WebGL is immediate-mode. There is no scene graph. The output is pixels in a buffer. There are no DOM elements, no CSS styling, and no accessibility.
+
+## Performance comparison
+
+Performance is the most common reason developers consider switching between rendering technologies. Here is how they compare across different scenarios.
+
+### Rendering speed by dataset size
+
+| Data Points | SVG | Canvas | WebGL |
+|---|---|---|---|
+| 100 | 0.5ms | 0.3ms | 0.5ms |
+| 1,000 | 3ms | 1ms | 0.5ms |
+| 5,000 | 15ms | 3ms | 0.6ms |
+| 10,000 | 40ms | 6ms | 0.8ms |
+| 50,000 | 200ms+ | 15ms | 1.2ms |
+| 100,000 | unusable | 30ms | 2ms |
+| 1,000,000 | unusable | 200ms+ | 8ms |
+
+These are approximate initial render times on a modern desktop browser. The pattern is clear:
+
+- **SVG is fastest up to ~1,000 elements**, because creating a few hundred DOM nodes is cheap and the browser's native rendering pipeline is highly optimized.
+- **Canvas overtakes SVG around 2,000-5,000 elements**, because DOM node overhead accumulates while pixel drawing stays linear.
+- **WebGL is fastest above ~10,000 elements**, because GPU parallelism makes element count nearly irrelevant.
+
+### Interaction performance
+
+Interaction performance tells a different story. When the user hovers over a chart, the library needs to detect which element is under the cursor and update the display (show a tooltip, highlight a bar).
+
+**SVG** handles this natively. Each element is a DOM node that receives its own mouse events. Hovering over a bar triggers that bar's `mouseover` event. No hit detection code is needed. The browser does it all. Highlighting the bar means changing a CSS class or attribute on a single DOM node. The rest of the chart is untouched.
+
+**Canvas** has no built-in hit detection. The library must manually test the mouse position against every element's bounding box. For a chart with 1,000 elements, this means 1,000 coordinate comparisons on every mouse move. After finding the hovered element, the library must clear and redraw the entire canvas to show the highlight. This full redraw happens on every frame during mouse movement.
+
+**WebGL** also lacks hit detection. GPU-based picking (rendering element IDs to an offscreen buffer and reading back the pixel under the cursor) adds complexity and latency. Most WebGL charting implementations fall back to CPU-based hit testing, which has the same overhead as Canvas.
+
+For interactive charts with moderate data sizes (under 5,000 points), SVG provides the best interaction performance because the browser handles hit detection and partial updates natively.
+
+### Memory usage
+
+**SVG** uses more memory per element because each element is a full DOM node with properties, event handlers, and layout information. A single SVG `<rect>` element uses roughly 500 bytes to 1KB of memory. A chart with 10,000 elements might use 5-10MB.
+
+**Canvas** uses fixed memory for the pixel buffer (width * height * 4 bytes for RGBA). A 600x400 Canvas uses 960KB regardless of how many elements are drawn on it. However, the library still needs to store the data and geometry in JavaScript objects for hit detection and redrawing.
+
+**WebGL** uses GPU memory for vertex buffers and textures. Memory usage scales with the number of vertices, but GPU memory is separate from the main JavaScript heap and does not cause garbage collection pauses.
+
+### Animation performance
+
+**SVG** animations can use CSS transitions, which run on the compositor thread and are hardware-accelerated. This is the most efficient way to animate chart elements because it does not block the main thread:
+
+```css
+rect {
+  transition: height 0.3s ease-out, y 0.3s ease-out;
+}
+```
+
+For complex animations that CSS cannot express, SMIL or JavaScript-driven attribute changes work but are less efficient.
+
+**Canvas** animations require JavaScript `requestAnimationFrame` loops that clear and redraw the entire chart every frame. This blocks the main thread during animation.
+
+**WebGL** animations update uniform or buffer values and issue draw calls at 60fps. Because rendering happens on the GPU, the main thread impact is minimal. WebGL is the best choice for continuous, complex animations like particle systems or 3D chart rotations.
+
+## Accessibility
+
+This is where the three technologies diverge most dramatically.
+
+### SVG: Full accessibility
+
+SVG elements are DOM nodes. They can carry ARIA attributes, role attributes, and tabindex for keyboard navigation:
+
+```html
+<svg role="img" aria-label="Monthly revenue bar chart">
+  <title>Monthly Revenue</title>
+  <desc>Bar chart showing revenue from January to June 2026</desc>
+  <g role="list" aria-label="Data series">
+    <rect
+      role="listitem"
+      aria-label="January: $45,000"
+      tabindex="0"
+      x="60" y="100" width="80" height="200"
+      fill="#3b82f6"
+    />
+    <rect
+      role="listitem"
+      aria-label="February: $52,000"
+      tabindex="0"
+      x="160" y="80" width="80" height="220"
+      fill="#3b82f6"
+    />
+  </g>
+</svg>
+```
+
+Screen readers can navigate individual bars and announce their values. Keyboard users can tab between elements. The chart is semantically meaningful to assistive technology.
+
+### Canvas: Minimal accessibility
+
+A Canvas chart is a single `<canvas>` element. It is a black box to assistive technology. The pixels inside it are meaningless to a screen reader:
+
+```html
+<!-- Screen reader sees: "chart" with no further detail -->
+<canvas
+  role="img"
+  aria-label="Monthly revenue bar chart"
+  width="600"
+  height="400"
+></canvas>
+```
+
+You can add a fallback description with `aria-label` or a hidden table that mirrors the chart data, but this is a workaround, not real accessibility. The user cannot navigate individual data points, identify patterns, or interact with specific elements.
+
+Some Canvas libraries add an invisible DOM overlay with positioned elements for accessibility. This is better than nothing but creates a maintenance burden (the overlay must stay synchronized with the canvas) and does not cover all use cases.
+
+### WebGL: No accessibility
+
+WebGL has the same accessibility limitations as Canvas, compounded by the fact that the rendering happens on the GPU with no DOM representation at all. The same fallback strategies (hidden tables, ARIA labels) apply.
+
+### WCAG compliance
+
+If your application must meet WCAG 2.1 AA compliance (which is a legal requirement in many jurisdictions), SVG is the only rendering technology that can provide compliant charts without extensive workarounds. Charts need to be:
+
+- Perceivable (screen readers can read the data)
+- Operable (keyboard users can navigate)
+- Understandable (data relationships are clear)
+- Robust (works with different assistive technologies)
+
+SVG meets all four criteria natively. Canvas and WebGL require additional implementation to meet any of them.
+
+## CSS styling
+
+### SVG: Full CSS support
+
+SVG elements support the full range of CSS properties, including Tailwind classes:
+
+```tsx
+<BarChart
+  data={data}
+  x="month"
+  y="revenue"
+  className="h-80 w-full"
+  barClassName="fill-blue-500 hover:fill-blue-600 dark:fill-blue-400
+                transition-colors duration-200"
+  axisClassName="text-xs text-gray-500 dark:text-gray-400"
+  gridClassName="stroke-gray-200 dark:stroke-gray-700"
+/>
+```
+
+This means:
+
+- **Dark mode** works with Tailwind's `dark:` variant. No theme configuration needed.
+- **Hover states** work with CSS `:hover` pseudo-class.
+- **Transitions** work with CSS `transition` property.
+- **Design tokens** from your Tailwind config apply directly.
+- **Media queries** work for responsive styling.
+- **Custom properties** (CSS variables) work for dynamic theming.
+
+Charts styled with CSS match your application's design system automatically. When you change your Tailwind theme, your charts update with it.
+
+### Canvas: No CSS support
+
+Canvas ignores CSS entirely (except for the canvas element's own dimensions). All visual properties must be set through the JavaScript API:
+
+```javascript
+ctx.fillStyle = "#3b82f6"; // Hard-coded color
+ctx.font = "14px Inter";   // Hard-coded font
+ctx.strokeStyle = "#e5e7eb"; // Hard-coded grid color
+```
+
+Canvas-based charting libraries implement their own theming systems to work around this. You configure colors, fonts, and sizes through JavaScript objects:
+
+```javascript
+const chart = new Chart(canvas, {
+  options: {
+    scales: {
+      y: {
+        ticks: {
+          color: "#6b7280",
+          font: { size: 12, family: "Inter" },
+        },
+        grid: {
+          color: "#e5e7eb",
+        },
+      },
+    },
+  },
+});
+```
+
+These theming systems do not integrate with Tailwind CSS. They do not respond to `dark:` variants. They require separate dark mode configuration. They create a parallel styling system that must be maintained alongside your application's design tokens.
+
+### WebGL: No CSS support
+
+WebGL has even less CSS integration than Canvas. Colors are specified as RGBA float vectors in shader uniforms. Fonts require texture atlas generation. There is no concept of CSS classes, hover states, or media queries.
+
+## Server-side rendering
+
+### SVG: Full SSR support
+
+SVG is a text-based format. It can be generated on the server as a string and sent in the initial HTML response:
+
+```tsx
+// Next.js Server Component - no "use client" needed
+import { BarChart } from "@chartts/react";
+
+export default async function Page() {
+  const data = await fetchData();
+
+  return (
+    <BarChart
+      data={data}
+      x="month"
+      y="revenue"
+      className="h-80 w-full"
+    />
+  );
+}
+```
+
+The chart appears in the initial HTML. No JavaScript needs to load for the chart to be visible. There is no layout shift. The chart is part of the server-streamed response.
+
+### Canvas: No SSR without server-side Canvas
+
+Canvas requires a browser API (`getContext('2d')`) that does not exist in Node.js. Server-rendering a Canvas chart requires a Node.js Canvas implementation like `node-canvas`, which:
+
+- Adds a native binary dependency (Cairo graphics library)
+- Produces a raster image (PNG/JPEG), not interactive elements
+- Cannot be streamed progressively
+- Adds significant complexity to the build pipeline
+
+Most Canvas-based charting libraries do not support SSR. They require `"use client"` in Next.js.
+
+### WebGL: No SSR
+
+WebGL requires GPU access and OpenGL drivers. It cannot run on a server without specialized GPU hardware and headless rendering pipelines. No mainstream charting library supports WebGL SSR.
+
+## The comparison table
+
+| Feature | SVG | Canvas | WebGL |
+|---|---|---|---|
+| **Rendering model** | Retained (DOM) | Immediate (pixels) | Immediate (GPU) |
+| **Best for** | &lt;5,000 elements | 5,000-100,000 | 100,000+ |
+| **Interaction** | Native (DOM events) | Manual hit testing | Manual or GPU picking |
+| **Accessibility** | Full (ARIA, keyboard) | Minimal (fallbacks) | Minimal (fallbacks) |
+| **CSS styling** | Full support | Not supported | Not supported |
+| **Tailwind CSS** | Native integration | Not possible | Not possible |
+| **Dark mode** | CSS `dark:` variant | JavaScript theming | JavaScript theming |
+| **SSR** | Full support | Requires node-canvas | Not supported |
+| **Streaming (Suspense)** | Full support | Not supported | Not supported |
+| **Memory per element** | ~500B-1KB | Fixed buffer | GPU memory |
+| **Animation** | CSS transitions | JS requestAnimationFrame | GPU shaders |
+| **Text rendering** | Native (browser fonts) | Approximated | Texture atlas |
+| **Resolution independence** | Vector (infinite) | Raster (pixel density) | Raster (pixel density) |
+| **Print quality** | Perfect | Depends on resolution | Depends on resolution |
+| **DevTools inspection** | Element inspector | Pixel buffer only | Pixel buffer only |
+| **File export** | Native SVG | PNG/JPEG | PNG/JPEG |
+
+## Why Chart.ts defaults to SVG
+
+Chart.ts defaults to SVG because of a simple observation: **most charts have fewer than 1,000 data points**.
+
+A dashboard with 6 charts showing monthly data over 2 years has 144 data points total. A line chart with daily data over a year has 365 points. A bar chart comparing 20 products across 4 metrics has 80 bars.
+
+For these typical use cases, SVG provides:
+
+- **Better interaction performance** than Canvas (native DOM events vs. manual hit testing)
+- **Full accessibility** without workarounds
+- **CSS styling** that integrates with Tailwind and design systems
+- **Server-side rendering** that works with Next.js App Router, streaming, and static export
+- **DevTools inspection** for debugging
+- **Vector export** for print and PDF generation
+- **Dark mode** that works with a single CSS class
+
+The scenarios where SVG becomes a bottleneck, dense scatter plots with 10,000+ points, real-time streaming of thousands of data points, 3D visualizations, are the exception, not the rule.
+
+## When to use Canvas
+
+Canvas is the right choice when:
+
+**You have 5,000-100,000 data points.** A scatter plot with 50,000 points cannot be rendered as 50,000 SVG circles. The DOM would consume too much memory and layout calculations would block the main thread. Canvas renders all 50,000 points in a single pixel buffer with constant memory overhead.
+
+**You need continuous animation.** A real-time chart that redraws at 60fps (financial tick data, sensor streams, game analytics) benefits from Canvas's fast full-redraw model. SVG transitions work well for discrete updates but cannot sustain continuous 60fps animation with complex geometry.
+
+**You are rendering heatmaps or density plots.** These chart types produce thousands of colored cells. Each cell in SVG is a DOM element. In Canvas, each cell is a fillRect call that writes directly to the pixel buffer.
+
+Chart.ts supports Canvas as an alternative renderer:
+
+```tsx
+<ScatterChart
+  data={largeDataset}
+  x="x"
+  y="y"
+  renderer="canvas"
+  className="h-96 w-full"
+/>
+```
+
+## When to use WebGL
+
+WebGL is the right choice when:
+
+**You have 100,000+ data points.** At this scale, even Canvas struggles. WebGL renders millions of points in milliseconds using GPU parallelism. Financial trading platforms visualizing tick-by-tick data across hundreds of securities need this level of throughput.
+
+**You need 3D visualizations.** 3D bar charts, surface plots, globe visualizations, and point clouds require perspective projection and depth sorting that are native to WebGL but impossible in SVG and impractical in 2D Canvas.
+
+**You need GPU-computed analytics.** Some advanced visualizations compute statistics (density estimation, clustering, force-directed layout) on the GPU using compute shaders or transform feedback. This keeps the data on the GPU and avoids the CPU-GPU transfer bottleneck.
+
+Chart.ts supports WebGL through the `@chartts/gl` package:
+
+```tsx
+import { ScatterChart3D } from "@chartts/gl";
+
+<ScatterChart3D
+  data={massiveDataset}
+  x="x"
+  y="y"
+  z="z"
+  className="h-[600px] w-full"
+  pointSize={2}
+  cameraPosition={[0, 0, 5]}
+/>
+```
+
+## The multi-renderer approach
+
+The ideal solution is not to pick one renderer and use it everywhere. It is to pick the right renderer for each chart based on its data characteristics.
+
+Chart.ts does this automatically with its `renderer="auto"` mode (the default):
+
+```tsx
+// Renders as SVG (200 points, well within SVG's sweet spot)
+<BarChart data={monthlyRevenue} x="month" y="revenue" />
+
+// Renders as Canvas (15,000 points, too many for SVG)
+<ScatterChart data={sensorReadings} x="timestamp" y="temperature" />
+
+// Renders as WebGL (500,000 points, needs GPU acceleration)
+<ScatterChart data={particleData} x="x" y="y" />
+```
+
+The thresholds are configurable:
+
+```tsx
+<ScatterChart
+  data={data}
+  x="x"
+  y="y"
+  rendererThresholds={{
+    svg: 2000,     // Use SVG up to 2,000 points
+    canvas: 50000, // Use Canvas up to 50,000 points
+    webgl: Infinity // Use WebGL above 50,000
+  }}
+/>
+```
+
+This approach gives you the best of all three technologies:
+
+- Small charts get SVG's accessibility, CSS styling, and SSR
+- Medium charts get Canvas's performance without DOM overhead
+- Large charts get WebGL's GPU acceleration
+
+The API is identical regardless of renderer. You do not need to learn three different APIs or change your component code when your data grows.
+
+## Making the choice for your application
+
+Here is a decision framework:
+
+**Start with SVG** if:
+- Your charts have fewer than 5,000 data points
+- You need accessible, WCAG-compliant charts
+- You use Tailwind CSS or design tokens
+- You use Next.js with Server Components
+- You need print-quality export
+
+**Add Canvas** when:
+- A specific chart exceeds 5,000 data points
+- You need continuous 60fps animation
+- You render heatmaps or density plots
+
+**Add WebGL** when:
+- A specific chart exceeds 100,000 data points
+- You need 3D visualization
+- You need GPU-computed analytics
+
+For most web applications, SVG covers 90%+ of charting needs. The remaining 10% are specific visualizations with specific data scale requirements. A library that defaults to SVG and escalates to Canvas and WebGL when needed gives you the optimal tradeoff at every scale.
+
+## Conclusion
+
+Canvas, SVG, and WebGL are not competing technologies. They are complementary tools for different scales of data visualization.
+
+SVG excels at accessibility, styling, server rendering, and developer experience for the chart sizes that cover the vast majority of real-world use cases. Canvas excels at medium-scale data where DOM overhead becomes a bottleneck. WebGL excels at massive datasets and 3D visualization where even Canvas cannot keep up.
+
+Chart.ts defaults to SVG because it provides the best combination of features for typical charts. It supports Canvas and WebGL for the cases where they are needed. And it switches between them automatically based on your data, so you do not have to think about rendering technology unless you want to.
+
+The best chart is one that renders correctly, performs smoothly, is accessible to all users, and matches your application's design. For most charts, SVG delivers all four. For the exceptions, Canvas and WebGL are one prop away.

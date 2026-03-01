@@ -1,0 +1,492 @@
+---
+title: "Best Chart Library for Next.js in 2026"
+description: "A practical guide to choosing a charting library for Next.js App Router. Covers RSC compatibility, SSR, streaming, static export, and Tailwind integration for Chart.ts, Recharts, Nivo, Tremor, and Chart.js."
+date: "2026-02-24"
+readTime: "13 min read"
+tag: "Guide"
+---
+
+Next.js App Router changed how we think about charting libraries. Server Components, streaming SSR, partial prerendering, and the `"use client"` boundary all impose constraints that did not exist in Pages Router. A charting library that worked perfectly in Next.js 12 might require workarounds, dynamic imports, and `"use client"` wrappers in Next.js 15.
+
+This guide evaluates the most popular charting libraries specifically through the lens of Next.js App Router compatibility. We cover what works natively, what requires workarounds, and what to avoid.
+
+## What Next.js App Router demands from a charting library
+
+Before comparing libraries, you need to understand the constraints:
+
+### 1. Server Components are the default
+
+In App Router, every component is a Server Component unless you add `"use client"`. Server Components render on the server and send HTML to the client. They cannot use hooks, browser APIs, or event handlers.
+
+**For charting libraries, this means:**
+- Libraries that access `window`, `document`, or `canvas` on import will break in Server Components
+- Libraries that render SVG can work in Server Components (SVG is just HTML)
+- Libraries that need interactivity (tooltips, hover, zoom) need a `"use client"` boundary somewhere
+
+### 2. SSR must work without polyfills
+
+App Router renders on the server by default. If a charting library throws an error during server rendering, your page breaks. Canvas-based libraries are particularly problematic because the Canvas API does not exist on the server.
+
+### 3. Streaming and Suspense
+
+App Router supports streaming SSR with `<Suspense>`. A good charting library should work with Suspense boundaries - either rendering synchronously (so it streams with the page) or supporting lazy loading with a loading fallback.
+
+### 4. Static export
+
+If you use `output: "export"` for static site generation, your charting library needs to render to HTML during the build. Canvas-based libraries produce nothing at build time because there is no Canvas in Node.js.
+
+### 5. Tailwind CSS integration
+
+Next.js projects in 2026 overwhelmingly use Tailwind CSS. A charting library that uses its own theming system creates a visual disconnect. Dark mode, design tokens, and responsive utilities should work consistently between your charts and the rest of your UI.
+
+## Library comparison
+
+### Chart.ts (@chartts/react)
+
+**App Router compatibility: Excellent**
+
+Chart.ts was designed for this architecture. Its SVG-first rendering means charts produce real DOM elements that work in both server and client environments.
+
+**Server Component support:**
+
+Chart.ts renders SVG by default. For static charts without interactivity, you can render directly in a Server Component with zero client JavaScript:
+
+```tsx
+// app/dashboard/page.tsx — this is a Server Component
+import { BarChart } from "@chartts/react"
+
+async function getMetrics() {
+  const res = await fetch("https://api.example.com/metrics", {
+    next: { revalidate: 3600 }
+  })
+  return res.json()
+}
+
+export default async function DashboardPage() {
+  const metrics = await getMetrics()
+
+  return (
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-6">Monthly Revenue</h1>
+      <BarChart
+        data={metrics}
+        x="month"
+        y="revenue"
+        className="h-64"
+        barClassName="fill-blue-500 dark:fill-blue-400"
+        axisClassName="text-zinc-500 dark:text-zinc-400"
+      />
+    </div>
+  )
+}
+```
+
+This chart renders entirely on the server. Zero JavaScript is sent to the client. The user sees the chart as part of the initial HTML stream.
+
+**Interactive charts:**
+
+For charts that need tooltips, hover effects, or click handlers, add a `"use client"` boundary:
+
+```tsx
+// components/interactive-chart.tsx
+"use client"
+
+import { LineChart } from "@chartts/react"
+
+export function RevenueChart({ data }) {
+  return (
+    <LineChart
+      data={data}
+      x="month"
+      y="revenue"
+      className="h-64"
+      lineClassName="stroke-cyan-500 dark:stroke-cyan-400"
+      areaClassName="fill-cyan-500/10"
+      tooltipClassName="bg-white dark:bg-zinc-900 shadow-lg rounded-lg border border-zinc-200 dark:border-zinc-800"
+      onPointClick={(point) => console.log(point)}
+    />
+  )
+}
+```
+
+```tsx
+// app/dashboard/page.tsx — Server Component
+import { RevenueChart } from "@/components/interactive-chart"
+
+export default async function DashboardPage() {
+  const data = await getMetrics()
+  return <RevenueChart data={data} />
+}
+```
+
+The data fetching happens on the server. Only the interactive chart component ships to the client.
+
+**Tailwind integration:** Native. Every element accepts `className` props. Dark mode works via `dark:` variants. Your charts match your app automatically.
+
+**Static export:** Works perfectly. SVG output is included in the static HTML.
+
+**Streaming:** Works with Suspense. The chart's SVG renders as part of the streamed HTML.
+
+**Bundle impact:** &lt;15kb gzipped total. This is the smallest full-featured option.
+
+### Recharts
+
+**App Router compatibility: Good with caveats**
+
+Recharts is the most popular React charting library and works with App Router, but requires `"use client"` for all chart components.
+
+**Server Component support:**
+
+Recharts components use hooks internally (`useState`, `useEffect`), so they cannot be used directly in Server Components. Every chart needs a `"use client"` wrapper:
+
+```tsx
+// components/revenue-chart.tsx
+"use client"
+
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts"
+
+export function RevenueChart({ data }) {
+  return (
+    <ResponsiveContainer width="100%" height={256}>
+      <LineChart data={data}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="month" />
+        <YAxis />
+        <Tooltip />
+        <Line
+          type="monotone"
+          dataKey="revenue"
+          stroke="#3b82f6"
+          strokeWidth={2}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  )
+}
+```
+
+This works, but the entire Recharts library (~45kb) must be sent to the client even if the chart could have been static.
+
+**Tailwind integration:** None. Colors and styles are passed as props with string values (`stroke="#3b82f6"`). Dark mode requires manually swapping color values, usually with a theme context or CSS variables.
+
+**Static export:** Works. Recharts renders SVG, which is included in static HTML. But the JavaScript bundle is still required for hydration.
+
+**Streaming:** Compatible with Suspense boundaries but always requires client hydration.
+
+**Bundle impact:** ~45kb gzipped.
+
+### Nivo
+
+**App Router compatibility: Good**
+
+Nivo offers both SVG and Canvas renderers. The SVG versions work with SSR; the Canvas versions do not.
+
+**Server Component support:**
+
+Like Recharts, Nivo components use hooks and need `"use client"`. However, the SVG renderers produce valid SSR output:
+
+```tsx
+// components/bar-chart.tsx
+"use client"
+
+import { ResponsiveBar } from "@nivo/bar"
+
+export function CategoryChart({ data }) {
+  return (
+    <div style={{ height: 400 }}>
+      <ResponsiveBar
+        data={data}
+        keys={["value"]}
+        indexBy="category"
+        margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
+        colors={{ scheme: "category10" }}
+        axisBottom={{ tickRotation: -45 }}
+      />
+    </div>
+  )
+}
+```
+
+**Tailwind integration:** None. Nivo uses its own theming system with JavaScript objects. You can approximate your Tailwind palette by manually copying color values, but there is no direct integration.
+
+**Static export:** SVG charts work. Canvas charts (`@nivo/bar/canvas`, etc.) do not render during static export.
+
+**Streaming:** Works with Suspense, but requires client hydration.
+
+**Bundle impact:** ~60-80kb gzipped depending on chart types.
+
+**Unique strength:** Nivo has some chart types that are rare in other libraries (Chord, Swarm Plot, Waffle, Calendar). If you need one of these, Nivo may be your best option regardless of other tradeoffs.
+
+### Tremor
+
+**App Router compatibility: Very good**
+
+Tremor was built specifically for the Next.js and Tailwind ecosystem. It uses Recharts internally but provides a higher-level API with Tailwind styling.
+
+**Server Component support:**
+
+Tremor components require `"use client"` because they use Recharts internally. But the API is cleaner:
+
+```tsx
+// components/revenue-chart.tsx
+"use client"
+
+import { AreaChart } from "@tremor/react"
+
+export function RevenueChart({ data }) {
+  return (
+    <AreaChart
+      className="h-64"
+      data={data}
+      index="month"
+      categories={["revenue"]}
+      colors={["blue"]}
+      showLegend={false}
+    />
+  )
+}
+```
+
+**Tailwind integration:** Tremor is built with Tailwind and accepts `className` for the container. However, individual chart elements (lines, bars, axes) use Tremor's own color system (`colors={["blue"]}`) rather than Tailwind classes. Dark mode works through Tremor's theme provider.
+
+**Static export:** Works through Recharts' SVG rendering.
+
+**Streaming:** Compatible with Suspense.
+
+**Bundle impact:** ~60kb gzipped (Tremor + Recharts + Headless UI dependencies).
+
+**Unique strength:** Tremor is not just a charting library - it includes KPI cards, tables, lists, and other dashboard components. If you are building a dashboard and want consistent components, the all-in-one approach saves time.
+
+**Limitation:** Only basic chart types are available: Line, Bar, Area, Donut, and Scatter. No Candlestick, Sankey, Treemap, Gauge, or other advanced types.
+
+### Chart.js (with react-chartjs-2)
+
+**App Router compatibility: Poor**
+
+Chart.js renders to Canvas, which fundamentally conflicts with server rendering. Making it work in App Router requires workarounds.
+
+**Server Component support:**
+
+Chart.js cannot render in Server Components. Canvas does not exist on the server. You must use `"use client"` and, in many cases, `next/dynamic` with `ssr: false`:
+
+```tsx
+// components/chart-wrapper.tsx
+"use client"
+
+import dynamic from "next/dynamic"
+
+const LineChart = dynamic(
+  () => import("./line-chart").then((mod) => mod.LineChart),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-64 w-full animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800" />
+    ),
+  }
+)
+
+export function ChartWrapper({ data }) {
+  return <LineChart data={data} />
+}
+```
+
+```tsx
+// components/line-chart.tsx
+"use client"
+
+import { Line } from "react-chartjs-2"
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+} from "chart.js"
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip)
+
+export function LineChart({ data }) {
+  return (
+    <Line
+      data={{
+        labels: data.map((d) => d.month),
+        datasets: [
+          {
+            label: "Revenue",
+            data: data.map((d) => d.revenue),
+            borderColor: "rgb(59, 130, 246)",
+            tension: 0.3,
+          },
+        ],
+      }}
+      options={{
+        responsive: true,
+        maintainAspectRatio: false,
+      }}
+    />
+  )
+}
+```
+
+This is a lot of boilerplate for a line chart. And it gets worse:
+- The chart is invisible during SSR (no HTML is rendered on the server)
+- There is a flash of loading state while Chart.js initializes on the client
+- The loading placeholder causes layout shift if not sized correctly
+- The chart is invisible to Google's crawler if it relies on client-side rendering
+
+**Tailwind integration:** None. Canvas charts cannot be styled with CSS or Tailwind. Colors are JavaScript values.
+
+**Static export:** Charts are blank in the exported HTML. They only appear after JavaScript executes.
+
+**Streaming:** Cannot participate in streaming because Canvas rendering is client-only.
+
+**Bundle impact:** ~25-35kb gzipped (tree-shaken).
+
+## Side-by-side comparison
+
+| Feature | Chart.ts | Recharts | Nivo | Tremor | Chart.js |
+|---------|----------|----------|------|--------|----------|
+| Server Component (static) | Yes | No | No | No | No |
+| SSR HTML output | SVG | SVG | SVG | SVG | None |
+| Requires `"use client"` | Interactive only | Always | Always | Always | Always |
+| Requires `ssr: false` | No | No | Canvas only | No | Yes |
+| Tailwind `className` | Every element | No | No | Container | No |
+| Dark mode | `dark:` variant | Manual | Theme object | Theme provider | Manual |
+| Static export | Full chart in HTML | Full chart in HTML | SVG types only | Full chart in HTML | Blank |
+| Streaming SSR | Yes | Yes | Yes | Yes | No |
+| Bundle size | &lt;15kb | ~45kb | ~60-80kb | ~60kb | ~25-35kb |
+| Chart types | 50+ | ~15 | ~25 | ~6 | ~10 |
+
+## Patterns for Next.js App Router
+
+Regardless of which library you choose, these patterns will help:
+
+### Pattern 1: Server-fetched data, client-rendered chart
+
+The most common pattern. Fetch data in a Server Component, pass it to a client chart component:
+
+```tsx
+// app/dashboard/page.tsx (Server Component)
+import { RevenueChart } from "@/components/revenue-chart"
+
+export default async function Dashboard() {
+  const data = await fetch("https://api.example.com/revenue", {
+    next: { revalidate: 3600 }
+  }).then(r => r.json())
+
+  return (
+    <div className="p-8">
+      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <RevenueChart data={data} />
+    </div>
+  )
+}
+```
+
+This works with every library. The data fetching happens on the server, and only serializable data crosses the server/client boundary.
+
+### Pattern 2: Suspense with parallel data loading
+
+Load multiple charts in parallel with independent Suspense boundaries:
+
+```tsx
+import { Suspense } from "react"
+
+function ChartSkeleton() {
+  return <div className="h-64 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800" />
+}
+
+export default function Dashboard() {
+  return (
+    <div className="grid grid-cols-2 gap-6 p-8">
+      <Suspense fallback={<ChartSkeleton />}>
+        <RevenueSection />
+      </Suspense>
+      <Suspense fallback={<ChartSkeleton />}>
+        <UsersSection />
+      </Suspense>
+    </div>
+  )
+}
+
+async function RevenueSection() {
+  const data = await getRevenueData()
+  return <RevenueChart data={data} />
+}
+
+async function UsersSection() {
+  const data = await getUserData()
+  return <UsersChart data={data} />
+}
+```
+
+Each section fetches data independently and streams to the client as it becomes available.
+
+### Pattern 3: Static charts in Server Components (Chart.ts only)
+
+If your chart does not need interactivity, you can render it entirely on the server:
+
+```tsx
+// app/reports/page.tsx (Server Component - no "use client")
+import { BarChart } from "@chartts/react"
+
+export default async function ReportsPage() {
+  const data = await getQuarterlyReport()
+
+  return (
+    <div className="p-8 space-y-8">
+      <BarChart
+        data={data}
+        x="quarter"
+        y="revenue"
+        className="h-64"
+        barClassName="fill-emerald-500"
+        axisClassName="text-zinc-500"
+      />
+    </div>
+  )
+}
+```
+
+Zero client JavaScript. The chart is pure SVG in the HTML. This is the most performant option and only possible with SVG-based libraries that do not require hooks.
+
+### Pattern 4: ISR with revalidation
+
+For dashboards showing near-real-time data:
+
+```tsx
+// app/metrics/page.tsx
+export const revalidate = 60 // Revalidate every 60 seconds
+
+export default async function MetricsPage() {
+  const data = await getMetrics()
+  return <MetricsDashboard data={data} />
+}
+```
+
+The chart re-renders with fresh data every 60 seconds via ISR. With SVG-based libraries, the updated chart HTML is cached at the CDN edge.
+
+## Recommendation
+
+For Next.js App Router projects in 2026:
+
+**Choose Chart.ts if** you want the best Next.js integration. Native SSR, optional client-side rendering, Tailwind styling, and the smallest bundle. The ability to render static charts in Server Components with zero client JavaScript is a significant architectural advantage.
+
+**Choose Recharts if** you want the largest community and most documentation. It works with App Router via `"use client"` wrappers and produces SSR-compatible SVG.
+
+**Choose Tremor if** you are building an internal dashboard and want chart + non-chart components (KPI cards, tables) in a cohesive design system. Accept the limited chart types and larger bundle.
+
+**Choose Nivo if** you need exotic chart types (Chord, Waffle, Swarm Plot) that no other library offers.
+
+**Avoid Chart.js for new Next.js projects** unless you have a strong reason. Canvas rendering creates SSR problems, requires `ssr: false` workarounds, produces no HTML during static export, and cannot be styled with Tailwind. The community size is its main advantage, but in a Next.js context, it creates more friction than it solves.
+
+The fundamental question is: do your charts render as HTML or as pixels? In Next.js App Router, HTML-based rendering (SVG) integrates naturally with the architecture. Pixel-based rendering (Canvas) fights it at every step.

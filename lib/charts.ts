@@ -221,7 +221,7 @@ export const sampleData: Record<string, ChartData> = {
   },
   treemap: {
     labels: ["Tech", "Finance", "Health", "Energy", "Consumer", "Industrial"],
-    series: [{ name: "Market Cap", values: [45, 25, 15, 8, 5, 2] }],
+    series: [{ name: "Market Cap", values: [35, 25, 18, 12, 6, 4] }],
   },
   polar: {
     labels: ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
@@ -249,15 +249,28 @@ export const sampleData: Record<string, ChartData> = {
       { name: "End", values: [45, 60, 80] },
     ],
   },
-  calendar: {
-    labels: [
-      "2025-01-06", "2025-01-07", "2025-01-08", "2025-01-09", "2025-01-10",
-      "2025-01-13", "2025-01-14", "2025-01-15", "2025-01-16", "2025-01-17",
-      "2025-01-20", "2025-01-21", "2025-01-22", "2025-01-23", "2025-01-24",
-      "2025-01-27", "2025-01-28", "2025-01-29", "2025-01-30", "2025-01-31",
-    ],
-    series: [{ name: "Commits", values: [5, 12, 3, 8, 15, 2, 9, 14, 6, 11, 7, 1, 10, 13, 4, 8, 3, 16, 5, 9] }],
-  },
+  calendar: (() => {
+    // Generate a full year of dates and contribution-style values
+    const labels: string[] = [];
+    const values: number[] = [];
+    const start = new Date(2025, 0, 1);
+    // Seed a simple deterministic pseudo-random sequence
+    let seed = 42;
+    const rand = () => { seed = (seed * 16807 + 0) % 2147483647; return (seed - 1) / 2147483646; };
+    for (let d = 0; d < 364; d++) {
+      const date = new Date(start.getTime() + d * 86400000);
+      const mm = String(date.getMonth() + 1).padStart(2, "0");
+      const dd = String(date.getDate()).padStart(2, "0");
+      labels.push(`2025-${mm}-${dd}`);
+      const dow = date.getDay();
+      const isWeekend = dow === 0 || dow === 6;
+      const base = isWeekend ? 2 : 7;
+      const noise = Math.floor(rand() * 12);
+      const gap = rand() < 0.15 ? 0 : 1;
+      values.push(Math.max(0, base + noise) * gap);
+    }
+    return { labels, series: [{ name: "Contributions", values }] };
+  })(),
   combo: {
     labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
     series: [
@@ -317,15 +330,18 @@ export const sampleData: Record<string, ChartData> = {
     ],
   },
   geo: {
-    labels: ["US", "UK", "DE", "JP", "BR"],
+    labels: ["United States", "United Kingdom", "Germany", "Japan", "Brazil"],
     series: [{ name: "Users", values: [45000, 12000, 8000, 15000, 6000] }],
   },
   lines: {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    labels: ["flow"],
     series: [
-      { name: "Series A", values: [10, 25, 18, 32, 28, 40] },
-      { name: "Series B", values: [5, 15, 22, 18, 35, 30] },
-      { name: "Series C", values: [20, 12, 30, 25, 15, 35] },
+      { name: "New York → London", values: [45] },
+      { name: "London → Tokyo", values: [30] },
+      { name: "Tokyo → Sydney", values: [25] },
+      { name: "New York → Berlin", values: [35] },
+      { name: "Berlin → Tokyo", values: [20] },
+      { name: "Sydney → New York", values: [15] },
     ],
   },
   matrix: {

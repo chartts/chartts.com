@@ -1,0 +1,172 @@
+---
+title: "date-fns Adapter"
+description: "Format and parse dates on chart axes using date-fns. Auto-detect the best format based on your data range."
+badge: "@chartts/date-fns"
+---
+
+## Installation
+
+```bash
+npm install @chartts/date-fns date-fns
+```
+
+This adapter connects [date-fns](https://date-fns.org/) to Chart.ts axis formatting. It provides three functions: a manual formatter, an auto-detecting formatter, and a parser.
+
+---
+
+## dateFnsFormatter()
+
+Creates a formatter function that converts date values to strings using a date-fns format pattern. The returned function is compatible with `ChartOptions.xFormat`.
+
+```ts
+import { dateFnsFormatter } from '@chartts/date-fns'
+import { createChart, Line } from '@chartts/core'
+
+const chart = createChart('#chart', Line, data, {
+  xFormat: dateFnsFormatter('MMM d, yyyy'),
+})
+
+// Axis labels: "Jan 1, 2024", "Feb 1, 2024", ...
+```
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `formatStr` | `string` | `'MMM d, yyyy'` | A [date-fns format string](https://date-fns.org/docs/format) |
+
+The formatter accepts `string`, `number` (timestamps), and `Date` values. Invalid dates fall back to `String(value)`.
+
+### Common Format Patterns
+
+| Pattern | Example Output |
+|---------|---------------|
+| `'yyyy-MM-dd'` | 2024-03-15 |
+| `'MMM d, yyyy'` | Mar 15, 2024 |
+| `'MMM d'` | Mar 15 |
+| `'MMM yyyy'` | Mar 2024 |
+| `'HH:mm'` | 14:30 |
+| `'MMM d HH:mm'` | Mar 15 14:30 |
+| `'EEEE'` | Friday |
+| `'yyyy'` | 2024 |
+
+---
+
+## autoDateFormatter()
+
+Analyzes an array of date values and picks the best format based on the time range. This prevents labels from being too verbose (full timestamps for yearly data) or too vague (year-only for hourly data).
+
+```ts
+import { autoDateFormatter } from '@chartts/date-fns'
+import { createChart, Line } from '@chartts/core'
+
+const dates = [
+  '2024-01-01', '2024-01-15', '2024-02-01',
+  '2024-02-15', '2024-03-01', '2024-03-15',
+]
+
+const chart = createChart('#chart', Line, data, {
+  xFormat: autoDateFormatter(dates),
+})
+
+// Range is ~75 days, so format is 'MMM d'
+// Labels: "Jan 1", "Jan 15", "Feb 1", ...
+```
+
+**Auto-detection rules:**
+
+| Data Range | Format | Example |
+|------------|--------|---------|
+| 60 minutes or less | `'HH:mm'` | 14:30 |
+| 48 hours or less | `'MMM d HH:mm'` | Mar 15 14:30 |
+| 30 days or less | `'MMM d'` | Mar 15 |
+| 365 days or less | `'MMM yyyy'` | Mar 2024 |
+| More than 365 days | `'yyyy'` | 2024 |
+
+### With React
+
+```tsx
+import { LineChart } from '@chartts/react'
+import { autoDateFormatter } from '@chartts/date-fns'
+
+const timestamps = data.map(d => d.date)
+
+function TimeSeriesChart() {
+  return (
+    <LineChart
+      data={data}
+      x="date"
+      y="value"
+      xFormat={autoDateFormatter(timestamps)}
+    />
+  )
+}
+```
+
+---
+
+## parseDateFns()
+
+Parses a date string into a `Date` object. Returns `null` for invalid input. When no format string is provided, it uses `parseISO` (ISO 8601 parsing).
+
+```ts
+import { parseDateFns } from '@chartts/date-fns'
+
+// ISO string parsing (no format needed)
+const d1 = parseDateFns('2024-03-15')
+// Date: 2024-03-15T00:00:00.000Z
+
+// Custom format parsing
+const d2 = parseDateFns('15/03/2024', 'dd/MM/yyyy')
+// Date: 2024-03-15T00:00:00.000Z
+
+// Invalid input
+const d3 = parseDateFns('not-a-date')
+// null
+```
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `value` | `string` | required | The date string to parse |
+| `formatStr` | `string` | `undefined` | Optional date-fns parse format. When omitted, `parseISO` is used. |
+
+---
+
+## Full Example
+
+```ts
+import { createChart, Line } from '@chartts/core'
+import { autoDateFormatter, parseDateFns } from '@chartts/date-fns'
+
+// Parse raw strings into dates
+const rawDates = ['2024-01-01', '2024-04-01', '2024-07-01', '2024-10-01']
+const parsed = rawDates.map(d => parseDateFns(d)).filter(Boolean)
+
+const data = {
+  labels: rawDates,
+  series: [
+    { name: 'Revenue', values: [42000, 51000, 48000, 63000], color: '#6366f1' },
+    { name: 'Costs', values: [38000, 42000, 45000, 47000], color: '#f59e0b' },
+  ],
+}
+
+createChart('#quarterly', Line, data, {
+  xFormat: autoDateFormatter(rawDates),
+  yFormat: (v) => `$${(v / 1000).toFixed(0)}k`,
+})
+```
+
+---
+
+## Comparison with Day.js Adapter
+
+Both `@chartts/date-fns` and `@chartts/dayjs` provide the same API surface: `formatter()`, `autoDateFormatter()`, and `parse()`. Choose based on which library you already use in your project.
+
+| Feature | @chartts/date-fns | @chartts/dayjs |
+|---------|-------------------|----------------|
+| Format syntax | date-fns (`MMM d`) | Day.js (`MMM D`) |
+| Tree-shakeable | Yes | Plugin-based |
+| Bundle size | Depends on imports | ~2kb core |
+| Locale support | Via date-fns locales | Via dayjs plugins |

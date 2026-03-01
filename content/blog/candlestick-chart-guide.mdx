@@ -1,0 +1,619 @@
+---
+title: "How to Build Candlestick Charts with JavaScript: The Complete Guide"
+description: "Build interactive candlestick charts for financial data. OHLC data, volume bars, moving averages, zoom/pan, and real-time updates with Chart.ts."
+date: "2026-02-21"
+readTime: "12 min read"
+tag: "Tutorial"
+---
+
+The **candlestick chart** is the default visualization for financial markets. Every trading platform, every stock analysis tool, every cryptocurrency dashboard uses them. They pack four data points into a single visual element and reveal price patterns that line charts hide.
+
+Building one from scratch is surprisingly difficult. The geometry is finicky. The color logic is conditional. Adding volume bars requires a synchronized secondary axis. Real-time updates need efficient DOM diffing. And the whole thing needs to zoom and pan smoothly across thousands of data points.
+
+This guide covers everything: what candlestick charts are, how to read them, and how to build production-quality implementations with JavaScript using Chart.ts.
+
+## What is a candlestick chart?
+
+A candlestick chart represents price movement over time. Each candlestick shows four values for a single time period:
+
+- **Open** - the price at the start of the period
+- **High** - the highest price during the period
+- **Close** - the price at the end of the period
+- **Low** - the lowest price during the period
+
+These four values are collectively called **OHLC data**.
+
+The visual structure of a candlestick has two parts:
+
+**The body** is a rectangle spanning from the open price to the close price. If the close is higher than the open (the price went up), the body is typically green or hollow. If the close is lower than the open (the price went down), the body is red or filled.
+
+**The wicks** (also called shadows) are thin lines extending above and below the body. The upper wick extends from the top of the body to the high price. The lower wick extends from the bottom of the body to the low price.
+
+A single candlestick tells you: where the price started, where it ended, how high it went, and how low it dropped, all in one glance.
+
+## How to read candlestick patterns
+
+Before building the chart, it helps to understand what traders look for in candlestick data.
+
+### Single candlestick patterns
+
+**Doji** - The open and close are nearly identical, creating a very thin body with long wicks. This signals indecision in the market. The price moved up and down during the period but ended roughly where it started.
+
+**Hammer** - A small body at the top of the candlestick with a long lower wick and little or no upper wick. This appears at the bottom of a downtrend and suggests a potential reversal. The market sold off during the period but buyers pushed the price back up.
+
+**Shooting Star** - The inverse of a hammer. A small body at the bottom with a long upper wick. This appears at the top of an uptrend and suggests the price tried to go higher but was pushed back down.
+
+**Marubozu** - A long body with no wicks (or very short ones). This indicates strong directional movement. A green marubozu means buyers dominated the entire period. A red marubozu means sellers dominated.
+
+### Multi-candlestick patterns
+
+**Engulfing** - A small candlestick followed by a larger candlestick that completely "engulfs" the first one's body. A bullish engulfing (red followed by green) at the bottom of a downtrend signals a potential reversal upward.
+
+**Three White Soldiers** - Three consecutive green candlesticks with progressively higher closes. Each candle opens within the previous candle's body and closes above its high. This is a strong bullish signal.
+
+**Evening Star** - A three-candle pattern: a long green candle, followed by a small-bodied candle that gaps up, followed by a long red candle that closes below the midpoint of the first green candle. This signals a bearish reversal.
+
+Understanding these patterns is useful because it informs design decisions. The chart needs to render bodies and wicks clearly enough for traders to identify these shapes at a glance.
+
+## OHLC data format
+
+Candlestick charts consume OHLC data. Here is the standard format:
+
+```typescript
+interface OHLCDataPoint {
+  date: string | Date;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume?: number;
+}
+
+const data: OHLCDataPoint[] = [
+  { date: "2026-01-02", open: 152.50, high: 155.20, low: 151.80, close: 154.30, volume: 82400000 },
+  { date: "2026-01-03", open: 154.30, high: 156.10, low: 153.90, close: 155.80, volume: 71200000 },
+  { date: "2026-01-06", open: 155.80, high: 157.40, low: 154.60, close: 153.20, volume: 93100000 },
+  { date: "2026-01-07", open: 153.20, high: 154.90, low: 151.10, close: 152.40, volume: 88500000 },
+  { date: "2026-01-08", open: 152.40, high: 155.70, low: 152.00, close: 155.50, volume: 67800000 },
+];
+```
+
+Note that dates skip weekends and holidays since markets are closed. Your time axis needs to handle irregular intervals, not assume uniform spacing. This is a common source of bugs in candlestick chart implementations: if you treat the x-axis as linear time, you get gaps on weekends.
+
+## Building a basic candlestick chart
+
+With Chart.ts, a basic candlestick chart requires minimal code:
+
+```tsx
+import { CandlestickChart } from "@chartts/react";
+
+const stockData = [
+  { date: "2026-01-02", open: 152.50, high: 155.20, low: 151.80, close: 154.30 },
+  { date: "2026-01-03", open: 154.30, high: 156.10, low: 153.90, close: 155.80 },
+  { date: "2026-01-06", open: 155.80, high: 157.40, low: 154.60, close: 153.20 },
+  { date: "2026-01-07", open: 153.20, high: 154.90, low: 151.10, close: 152.40 },
+  { date: "2026-01-08", open: 152.40, high: 155.70, low: 152.00, close: 155.50 },
+  // ... more data
+];
+
+export function StockChart() {
+  return (
+    <CandlestickChart
+      data={stockData}
+      x="date"
+      open="open"
+      high="high"
+      low="low"
+      close="close"
+      className="h-96 w-full"
+      upClassName="fill-emerald-500 stroke-emerald-600"
+      downClassName="fill-red-500 stroke-red-600"
+    />
+  );
+}
+```
+
+The `upClassName` applies to candlesticks where close > open (bullish). The `downClassName` applies where close < open (bearish). Because these are standard Tailwind classes, you can customize colors, opacity, stroke width, and dark mode variants without learning a custom theming API.
+
+## Adding volume bars
+
+Volume is the number of shares or contracts traded during each period. It is almost always displayed below the price chart as a bar chart that shares the same time axis.
+
+The height of each volume bar corresponds to the trading volume, and the color matches the candlestick direction: green for up periods, red for down periods.
+
+```tsx
+import { CandlestickChart, BarChart, ChartGroup } from "@chartts/react";
+
+export function StockChartWithVolume({ data }) {
+  return (
+    <ChartGroup className="flex flex-col gap-0">
+      <CandlestickChart
+        data={data}
+        x="date"
+        open="open"
+        high="high"
+        low="low"
+        close="close"
+        className="h-72 w-full"
+        upClassName="fill-emerald-500 stroke-emerald-600"
+        downClassName="fill-red-500 stroke-red-600"
+        axisClassName="text-xs text-gray-500"
+        gridClassName="stroke-gray-200 dark:stroke-gray-700"
+      />
+      <BarChart
+        data={data}
+        x="date"
+        y="volume"
+        className="h-24 w-full"
+        barClassName={(d) =>
+          d.close >= d.open
+            ? "fill-emerald-500/50"
+            : "fill-red-500/50"
+        }
+        axisClassName="text-xs text-gray-500"
+        hideXAxis
+        syncX
+      />
+    </ChartGroup>
+  );
+}
+```
+
+The `ChartGroup` component synchronizes the x-axis between the two charts. When the user zooms or pans the candlestick chart, the volume chart moves in sync. The `hideXAxis` prop on the volume chart prevents duplicate axis labels. The `syncX` flag ensures both charts share identical horizontal scaling.
+
+The `barClassName` prop accepts a function, allowing you to conditionally color each bar based on the data point. Green bars for up candles, red bars for down candles.
+
+## Adding moving average overlays
+
+Moving averages are the most common technical indicator overlaid on candlestick charts. A **simple moving average (SMA)** calculates the average closing price over a rolling window. A 20-day SMA shows the average of the last 20 closing prices at each point.
+
+Traders use moving averages to identify trends. When the price is above the moving average, the trend is up. When the price crosses below the moving average, it may signal a trend change.
+
+First, calculate the moving average from your data:
+
+```typescript
+function calculateSMA(data: OHLCDataPoint[], period: number): (number | null)[] {
+  return data.map((_, index) => {
+    if (index < period - 1) return null;
+    const slice = data.slice(index - period + 1, index + 1);
+    const sum = slice.reduce((acc, d) => acc + d.close, 0);
+    return sum / period;
+  });
+}
+
+function calculateEMA(data: OHLCDataPoint[], period: number): (number | null)[] {
+  const multiplier = 2 / (period + 1);
+  const ema: (number | null)[] = [];
+
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      ema.push(null);
+    } else if (i === period - 1) {
+      const sum = data.slice(0, period).reduce((acc, d) => acc + d.close, 0);
+      ema.push(sum / period);
+    } else {
+      const prev = ema[i - 1] as number;
+      ema.push((data[i].close - prev) * multiplier + prev);
+    }
+  }
+
+  return ema;
+}
+```
+
+Then overlay the moving averages on the candlestick chart:
+
+```tsx
+import { CandlestickChart, LineOverlay } from "@chartts/react";
+
+export function ChartWithIndicators({ data }) {
+  const sma20 = calculateSMA(data, 20);
+  const sma50 = calculateSMA(data, 50);
+  const ema12 = calculateEMA(data, 12);
+
+  const enrichedData = data.map((d, i) => ({
+    ...d,
+    sma20: sma20[i],
+    sma50: sma50[i],
+    ema12: ema12[i],
+  }));
+
+  return (
+    <CandlestickChart
+      data={enrichedData}
+      x="date"
+      open="open"
+      high="high"
+      low="low"
+      close="close"
+      className="h-[500px] w-full"
+      upClassName="fill-emerald-500 stroke-emerald-600"
+      downClassName="fill-red-500 stroke-red-600"
+    >
+      <LineOverlay
+        y="sma20"
+        className="stroke-blue-400 stroke-[1.5]"
+        label="SMA 20"
+      />
+      <LineOverlay
+        y="sma50"
+        className="stroke-orange-400 stroke-[1.5]"
+        label="SMA 50"
+      />
+      <LineOverlay
+        y="ema12"
+        className="stroke-purple-400 stroke-[1.5] stroke-dasharray-[4,2]"
+        label="EMA 12"
+      />
+    </CandlestickChart>
+  );
+}
+```
+
+Each `LineOverlay` renders a line on the same y-axis as the candlesticks. The `label` prop adds a legend entry. Null values in the moving average arrays (from the initial periods where there is not enough data) create natural gaps in the line.
+
+## Implementing zoom and pan
+
+Financial charts often display months or years of data. The user needs to zoom into specific date ranges and pan across the timeline. Chart.ts provides built-in zoom and pan support:
+
+```tsx
+import { CandlestickChart } from "@chartts/react";
+
+export function ZoomableStockChart({ data }) {
+  return (
+    <CandlestickChart
+      data={data}
+      x="date"
+      open="open"
+      high="high"
+      low="low"
+      close="close"
+      className="h-[500px] w-full"
+      upClassName="fill-emerald-500 stroke-emerald-600"
+      downClassName="fill-red-500 stroke-red-600"
+      zoom={{
+        enabled: true,
+        mode: "x",
+        wheel: true,
+        pinch: true,
+      }}
+      pan={{
+        enabled: true,
+        mode: "x",
+      }}
+    />
+  );
+}
+```
+
+Mouse wheel zooms in and out along the x-axis. Click and drag pans left and right. On touch devices, pinch-to-zoom and drag-to-pan work natively.
+
+For a more polished experience, add a range selector below the chart:
+
+```tsx
+import { CandlestickChart, RangeSelector } from "@chartts/react";
+import { useState } from "react";
+
+export function StockChartWithRangeSelector({ data }) {
+  const [range, setRange] = useState({
+    start: data.length - 90,
+    end: data.length,
+  });
+
+  const visibleData = data.slice(range.start, range.end);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <CandlestickChart
+        data={visibleData}
+        x="date"
+        open="open"
+        high="high"
+        low="low"
+        close="close"
+        className="h-[400px] w-full"
+        upClassName="fill-emerald-500 stroke-emerald-600"
+        downClassName="fill-red-500 stroke-red-600"
+      />
+      <RangeSelector
+        data={data}
+        x="date"
+        y="close"
+        range={range}
+        onChange={setRange}
+        className="h-16 w-full"
+        lineClassName="stroke-gray-400"
+        handleClassName="fill-blue-500"
+        selectionClassName="fill-blue-500/10"
+      />
+      <div className="flex gap-2">
+        {["1W", "1M", "3M", "6M", "1Y", "ALL"].map((label) => (
+          <button
+            key={label}
+            className="rounded px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            onClick={() => {
+              const periods = { "1W": 5, "1M": 22, "3M": 66, "6M": 132, "1Y": 252, "ALL": data.length };
+              const count = periods[label];
+              setRange({ start: Math.max(0, data.length - count), end: data.length });
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+The range selector shows a miniature line chart of the closing prices across the entire dataset. The user drags handles to select a date range. Quick-select buttons jump to common periods (1 week, 1 month, etc.).
+
+## Real-time updates
+
+Trading dashboards need live price updates. As new trades execute, the latest candlestick should update its high, low, and close values. When a new time period starts, a new candlestick should appear.
+
+```tsx
+"use client";
+
+import { CandlestickChart } from "@chartts/react";
+import { useState, useEffect, useRef } from "react";
+
+interface OHLCDataPoint {
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+export function RealTimeCandlestickChart({ symbol }: { symbol: string }) {
+  const [data, setData] = useState<OHLCDataPoint[]>([]);
+  const wsRef = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    // Load historical data
+    fetch(`/api/ohlc/${symbol}?period=1D&count=200`)
+      .then((res) => res.json())
+      .then(setData);
+
+    // Connect to live feed
+    const ws = new WebSocket(`wss://stream.example.com/${symbol}`);
+    wsRef.current = ws;
+
+    ws.onmessage = (event) => {
+      const trade = JSON.parse(event.data);
+
+      setData((prev) => {
+        const updated = [...prev];
+        const lastCandle = updated[updated.length - 1];
+
+        if (isSamePeriod(lastCandle.date, trade.timestamp)) {
+          // Update current candlestick
+          updated[updated.length - 1] = {
+            ...lastCandle,
+            high: Math.max(lastCandle.high, trade.price),
+            low: Math.min(lastCandle.low, trade.price),
+            close: trade.price,
+            volume: lastCandle.volume + trade.size,
+          };
+        } else {
+          // Start new candlestick
+          updated.push({
+            date: formatPeriod(trade.timestamp),
+            open: trade.price,
+            high: trade.price,
+            low: trade.price,
+            close: trade.price,
+            volume: trade.size,
+          });
+        }
+
+        return updated;
+      });
+    };
+
+    return () => ws.close();
+  }, [symbol]);
+
+  return (
+    <CandlestickChart
+      data={data}
+      x="date"
+      open="open"
+      high="high"
+      low="low"
+      close="close"
+      className="h-[500px] w-full"
+      upClassName="fill-emerald-500 stroke-emerald-600"
+      downClassName="fill-red-500 stroke-red-600"
+      transition={{ duration: 100 }}
+    />
+  );
+}
+
+function isSamePeriod(date: string, timestamp: number): boolean {
+  const d = new Date(date);
+  const t = new Date(timestamp);
+  return d.toDateString() === t.toDateString();
+}
+
+function formatPeriod(timestamp: number): string {
+  return new Date(timestamp).toISOString().split("T")[0];
+}
+```
+
+The `transition` prop with a short duration creates smooth updates as the latest candlestick's shape changes. Because Chart.ts uses SVG, updating a candlestick means changing a few `rect` and `line` attributes rather than redrawing an entire Canvas. React's DOM diffing handles this efficiently.
+
+## Crosshair and tooltip
+
+A crosshair that follows the mouse cursor is essential for reading exact values on a candlestick chart. Here is how to add one:
+
+```tsx
+import { CandlestickChart, Crosshair, Tooltip } from "@chartts/react";
+
+export function ChartWithCrosshair({ data }) {
+  return (
+    <CandlestickChart
+      data={data}
+      x="date"
+      open="open"
+      high="high"
+      low="low"
+      close="close"
+      className="h-[500px] w-full"
+      upClassName="fill-emerald-500 stroke-emerald-600"
+      downClassName="fill-red-500 stroke-red-600"
+    >
+      <Crosshair
+        lineClassName="stroke-gray-400 stroke-[0.5] stroke-dasharray-[4,4]"
+        labelClassName="bg-gray-800 text-white text-xs px-2 py-1 rounded"
+      />
+      <Tooltip>
+        {(d) => (
+          <div className="rounded-lg bg-white p-3 text-sm shadow-xl ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
+            <p className="font-medium text-gray-900 dark:text-gray-100">
+              {new Date(d.date).toLocaleDateString()}
+            </p>
+            <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-gray-600 dark:text-gray-400">
+              <span>Open</span>
+              <span className="text-right font-mono">${d.open.toFixed(2)}</span>
+              <span>High</span>
+              <span className="text-right font-mono">${d.high.toFixed(2)}</span>
+              <span>Low</span>
+              <span className="text-right font-mono">${d.low.toFixed(2)}</span>
+              <span>Close</span>
+              <span className={`text-right font-mono ${
+                d.close >= d.open ? "text-emerald-500" : "text-red-500"
+              }`}>
+                ${d.close.toFixed(2)}
+              </span>
+            </div>
+            {d.volume && (
+              <p className="mt-2 border-t border-gray-200 pt-2 dark:border-gray-700">
+                <span className="text-gray-500">Vol: </span>
+                <span className="font-mono">{(d.volume / 1_000_000).toFixed(1)}M</span>
+              </p>
+            )}
+          </div>
+        )}
+      </Tooltip>
+    </CandlestickChart>
+  );
+}
+```
+
+The `Crosshair` component renders horizontal and vertical lines that follow the mouse. Axis labels snap to the nearest data point. The `Tooltip` component receives the nearest data point as a render prop, giving you full control over the tooltip's content and styling.
+
+## Fetching real OHLC data
+
+For a complete example, here is how to fetch OHLC data from a public API and render it:
+
+```tsx
+"use client";
+
+import { CandlestickChart } from "@chartts/react";
+import { useEffect, useState } from "react";
+
+interface StockData {
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+export function LiveStockChart({ ticker }: { ticker: string }) {
+  const [data, setData] = useState<StockData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      const res = await fetch(`/api/stock/${ticker}/ohlc`);
+      const json = await res.json();
+      setData(json);
+      setLoading(false);
+    }
+    fetchData();
+  }, [ticker]);
+
+  if (loading) {
+    return (
+      <div className="flex h-[500px] w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="mb-4 flex items-baseline gap-4">
+        <h2 className="text-2xl font-bold">{ticker}</h2>
+        <span className={`text-lg font-medium ${
+          data[data.length - 1].close >= data[data.length - 2].close
+            ? "text-emerald-500"
+            : "text-red-500"
+        }`}>
+          ${data[data.length - 1].close.toFixed(2)}
+        </span>
+      </div>
+      <CandlestickChart
+        data={data}
+        x="date"
+        open="open"
+        high="high"
+        low="low"
+        close="close"
+        className="h-[500px] w-full"
+        upClassName="fill-emerald-500 stroke-emerald-600"
+        downClassName="fill-red-500 stroke-red-600"
+        gridClassName="stroke-gray-100 dark:stroke-gray-800"
+        axisClassName="text-xs text-gray-500"
+        zoom={{ enabled: true, mode: "x", wheel: true }}
+        pan={{ enabled: true, mode: "x" }}
+      />
+    </div>
+  );
+}
+```
+
+## Accessibility considerations
+
+Candlestick charts are inherently visual, but SVG rendering enables accessibility features that Canvas-based charts cannot offer.
+
+Chart.ts adds ARIA labels to each candlestick element:
+
+```html
+<rect
+  role="img"
+  aria-label="January 2, 2026: opened at $152.50, closed at $154.30, high $155.20, low $151.80"
+  ...
+/>
+```
+
+Screen readers can navigate individual candlesticks and read the OHLC values. This is impossible with Canvas-based charting libraries because the entire chart is a single opaque pixel buffer.
+
+For keyboard navigation, users can tab between candlesticks and use arrow keys to move through the time series. The focused candlestick is highlighted with a ring:
+
+```tsx
+<CandlestickChart
+  data={data}
+  x="date"
+  open="open"
+  high="high"
+  low="low"
+  close="close"
+  className="h-[500px] w-full"
+  focusClassName="ring-2 ring-blue-500 ring-offset-2"
+  aria-label="Stock price chart for AAPL, January to March 2026"
+/>
+```
+
+## Conclusion
+
+Candlestick charts are dense, information-rich visualizations that serve a critical function in financial applications. Building them well requires handling OHLC geometry, volume synchronization, technical indicators, zoom/pan interaction, and real-time updates.
+
+Chart.ts provides all of these features in an SVG-first architecture that weighs under 15kb. The SVG output means charts are accessible, server-renderable, and styleable with Tailwind CSS. The component API means you compose charts declaratively rather than wrestling with imperative drawing commands.
+
+Whether you are building a trading platform, a portfolio tracker, or a financial research tool, the patterns in this guide give you a foundation to build on.

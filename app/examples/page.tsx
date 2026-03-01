@@ -3,92 +3,89 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Examples | Chart.ts",
   description:
-    "Real-world Chart.ts examples. Copy-paste ready code for dashboards, analytics, financial charts, and more.",
+    "Real-world Chart.ts examples. Full dashboards, financial views, analytics platforms, and production-ready components.",
 };
 
-const examples = [
+const featured = [
+  {
+    title: "Stock Trading Dashboard",
+    description:
+      "Full trading view with candlestick, volume, OHLC, sparkline KPIs, moving averages, and Kagi reversal chart.",
+    tags: ["Candlestick", "Volume", "Kagi", "Sparkline", "Line"],
+    href: "/examples/stock-tracker",
+    badge: "Finance",
+  },
+  {
+    title: "Analytics Platform",
+    description:
+      "Traffic area chart, activity heatmap, conversion funnel, traffic source donut, and top pages breakdown.",
+    tags: ["Area", "Heatmap", "Donut", "Funnel", "Bar"],
+    href: "/examples/analytics",
+    badge: "Analytics",
+  },
   {
     title: "Sales Dashboard",
     description:
-      "Revenue line chart with area fill, monthly bar chart, and KPI sparklines in a responsive grid.",
-    tags: ["LineChart", "BarChart", "Sparkline"],
+      "Revenue trends, quarterly comparisons, P&L waterfall, pipeline funnel, team radar, and regional bar charts.",
+    tags: ["Area", "Waterfall", "Funnel", "Radar", "Gauge"],
     href: "/examples/sales-dashboard",
+    badge: "Business",
   },
+];
+
+const examples = [
   {
-    title: "Stock Tracker",
-    description:
-      "Candlestick chart with volume bars, moving average overlay, and real-time price updates.",
-    tags: ["CandlestickChart", "BarChart"],
-    href: "/examples/stock-tracker",
-  },
-  {
-    title: "Analytics Overview",
-    description:
-      "Page views area chart, traffic sources pie chart, and bounce rate gauge in a dashboard layout.",
-    tags: ["AreaChart", "PieChart", "GaugeChart"],
-    href: "/examples/analytics",
-  },
-  {
-    title: "Conversion Funnel",
-    description:
-      "Multi-step funnel chart showing visitor-to-customer pipeline with conversion rates.",
-    tags: ["FunnelChart"],
-    href: "/examples/conversion-funnel",
-  },
-  {
-    title: "Financial Waterfall",
-    description:
-      "Revenue breakdown waterfall showing income, costs, taxes, and net profit.",
-    tags: ["WaterfallChart"],
+    title: "Financial P&L Dashboard",
+    description: "Profit & loss waterfall with quarterly revenue comparison, margin trends, and expense breakdown.",
+    tags: ["Waterfall", "Bar", "Line"],
     href: "/examples/financial-waterfall",
   },
   {
+    title: "Conversion Funnel",
+    description: "Multi-step funnel with source breakdown donut, weekly conversion trends, and stage analysis.",
+    tags: ["Funnel", "Donut", "Line"],
+    href: "/examples/conversion-funnel",
+  },
+  {
     title: "Team Performance",
-    description:
-      "Radar chart comparing team members across speed, quality, reliability, and communication.",
-    tags: ["RadarChart"],
+    description: "Multi-dimensional team analysis with radar comparisons, individual scores, and performance trends.",
+    tags: ["Radar", "Horizontal Bar", "Line"],
     href: "/examples/team-performance",
   },
   {
-    title: "Real-time Monitor",
-    description:
-      "Live-updating line chart with streaming data, auto-scrolling x-axis, and threshold alerts.",
-    tags: ["LineChart"],
+    title: "Infrastructure Monitor",
+    description: "Real-time server monitoring with CPU/memory charts, request distribution, response latency, and gauges.",
+    tags: ["Line", "Gauge", "Bar", "Area"],
     href: "/examples/realtime-monitor",
   },
   {
-    title: "Dark Mode Toggle",
-    description:
-      "Charts that respond to Tailwind dark mode. Same data, different aesthetic. Toggle and see.",
-    tags: ["LineChart", "BarChart", "PieChart"],
+    title: "Dark Mode Charts",
+    description: "Charts that respond to Tailwind dark mode. Line, bar, pie, and scatter with automatic theme adaptation.",
+    tags: ["Line", "Bar", "Pie", "Scatter"],
     href: "/examples/dark-mode",
   },
   {
     title: "Responsive Grid",
-    description:
-      "Charts that scale from mobile to desktop. Breakpoint-aware layouts with Tailwind responsive utilities.",
-    tags: ["LineChart", "BarChart"],
+    description: "Charts that scale from mobile to desktop with Tailwind responsive utilities and SVG viewBox scaling.",
+    tags: ["Line", "Bar", "Donut"],
     href: "/examples/responsive",
   },
   {
-    title: "Scatter + Regression",
-    description:
-      "Scatter plot with trend line, R-squared value, and confidence interval overlay.",
-    tags: ["ScatterChart"],
-    href: "/examples/scatter-regression",
-  },
-  {
     title: "Multi-Series Comparison",
-    description:
-      "Compare up to 6 data series on a single line chart with interactive legend toggling.",
-    tags: ["LineChart"],
+    description: "Compare 4 product lines with line charts, stacked bars, and revenue share pie chart.",
+    tags: ["Line", "Stacked Bar", "Pie"],
     href: "/examples/multi-series",
   },
   {
-    title: "KPI Cards",
-    description:
-      "Dashboard KPI cards with sparklines, percentage change, and trend indicators.",
-    tags: ["Sparkline", "GaugeChart"],
+    title: "Scatter Analysis",
+    description: "Scatter plots and bubble charts showing correlations and market segment analysis.",
+    tags: ["Scatter", "Bubble"],
+    href: "/examples/scatter-regression",
+  },
+  {
+    title: "KPI Cards Dashboard",
+    description: "Executive KPI cards with sparklines, gauges, trend indicators, and mini charts.",
+    tags: ["Sparkline", "Gauge"],
     href: "/examples/kpi-cards",
   },
 ];
@@ -96,44 +93,88 @@ const examples = [
 export default function ExamplesPage() {
   return (
     <>
-<div className="pt-32 pb-24 px-6">
+      <div className="pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <p className="section-label text-cyan-400 mb-4">Examples</p>
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight heading">
-              Real-world examples.
+              Production-ready dashboards.
             </h1>
             <p className="mt-4 text-lg body-text max-w-2xl mx-auto">
-              Copy-paste ready code for common chart patterns. Each example
-              is a complete, working component.
+              Full multi-chart dashboards with KPIs, real data, and
+              copy-paste code. Styled, responsive, ready to ship.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {examples.map((example) => (
-              <Link
-                key={example.title}
-                href={example.href}
-                className="group p-6 rounded-xl card hover:border-cyan-500/20 transition-all cursor-pointer"
-              >
-                <h3 className="text-base font-semibold heading group-hover:text-cyan-400 transition-colors mb-2">
-                  {example.title}
-                </h3>
-                <p className="text-sm muted-text leading-relaxed mb-4">
-                  {example.description}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {example.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-2 py-0.5 rounded text-[11px] font-mono muted-text" style={{ background: 'var(--c-card-bg)', border: '1px solid var(--c-border)' }}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </Link>
-            ))}
+          {/* Featured */}
+          <div className="mb-12">
+            <p className="text-xs font-mono muted-text uppercase tracking-wider mb-4">
+              Featured Dashboards
+            </p>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {featured.map((example) => (
+                <Link
+                  key={example.title}
+                  href={example.href}
+                  className="group p-6 rounded-xl card hover:border-cyan-500/20 transition-all cursor-pointer relative overflow-hidden"
+                >
+                  <span className="absolute top-4 right-4 px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    {example.badge}
+                  </span>
+                  <h3 className="text-lg font-semibold heading group-hover:text-cyan-400 transition-colors mb-2 pr-16">
+                    {example.title}
+                  </h3>
+                  <p className="text-sm muted-text leading-relaxed mb-4">
+                    {example.description}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {example.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2 py-0.5 rounded text-[11px] font-mono muted-text"
+                        style={{ background: "var(--c-card-bg)", border: "1px solid var(--c-border)" }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* All */}
+          <div>
+            <p className="text-xs font-mono muted-text uppercase tracking-wider mb-4">
+              All Examples
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {examples.map((example) => (
+                <Link
+                  key={example.title}
+                  href={example.href}
+                  className="group p-6 rounded-xl card hover:border-cyan-500/20 transition-all cursor-pointer"
+                >
+                  <h3 className="text-base font-semibold heading group-hover:text-cyan-400 transition-colors mb-2">
+                    {example.title}
+                  </h3>
+                  <p className="text-sm muted-text leading-relaxed mb-4">
+                    {example.description}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {example.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2 py-0.5 rounded text-[11px] font-mono muted-text"
+                        style={{ background: "var(--c-card-bg)", border: "1px solid var(--c-border)" }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </div>

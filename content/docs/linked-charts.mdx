@@ -1,0 +1,196 @@
+---
+title: "Linked Charts"
+description: "Synchronize crosshair position across multiple chart instances with linkCharts(). Hover one chart, all linked charts follow."
+badge: "Feature"
+---
+
+## Overview
+
+`linkCharts()` connects two or more chart instances so that crosshair movement on one chart is mirrored on all the others. When the user hovers over a data point on chart A, charts B and C display their crosshairs at the same label position.
+
+This is useful for dashboards where multiple metrics share the same x-axis (time, categories) and the user needs to compare values across charts at the same point.
+
+---
+
+## Quick Start
+
+```ts
+import { createChart } from "@chartts/core"
+import { linkCharts } from "@chartts/core/interaction"
+
+const chart1 = createChart(container1, { type: "line", crosshair: true })
+const chart2 = createChart(container2, { type: "bar", crosshair: true })
+const chart3 = createChart(container3, { type: "area", crosshair: true })
+
+// Link all three
+const unlink = linkCharts(chart1, chart2, chart3)
+
+// Later, disconnect them
+unlink()
+```
+
+---
+
+## React Example
+
+```tsx
+import { useEffect, useRef } from "react"
+import { LineChart, BarChart, useChartRef } from "@chartts/react"
+import { linkCharts } from "@chartts/core/interaction"
+
+const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+const revenueData = months.map((m, i) => ({
+  month: m,
+  revenue: 40000 + Math.round(Math.sin(i / 2) * 15000 + Math.random() * 5000),
+}))
+
+const usersData = months.map((m, i) => ({
+  month: m,
+  users: 1200 + Math.round(i * 150 + Math.random() * 200),
+}))
+
+const costsData = months.map((m, i) => ({
+  month: m,
+  costs: 25000 + Math.round(Math.cos(i / 3) * 8000 + Math.random() * 3000),
+}))
+
+export function LinkedDashboard() {
+  const revenueRef = useChartRef()
+  const usersRef = useChartRef()
+  const costsRef = useChartRef()
+
+  useEffect(() => {
+    const r = revenueRef.current
+    const u = usersRef.current
+    const c = costsRef.current
+    if (!r || !u || !c) return
+
+    const unlink = linkCharts(r, u, c)
+    return () => unlink()
+  }, [])
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-sm font-medium mb-1">Revenue</h3>
+        <LineChart
+          ref={revenueRef}
+          data={revenueData}
+          x="month"
+          y="revenue"
+          crosshair
+          className="h-40 w-full"
+        />
+      </div>
+      <div>
+        <h3 className="text-sm font-medium mb-1">Active Users</h3>
+        <BarChart
+          ref={usersRef}
+          data={usersData}
+          x="month"
+          y="users"
+          crosshair
+          className="h-40 w-full"
+        />
+      </div>
+      <div>
+        <h3 className="text-sm font-medium mb-1">Operating Costs</h3>
+        <LineChart
+          ref={costsRef}
+          data={costsData}
+          x="month"
+          y="costs"
+          crosshair
+          className="h-40 w-full"
+        />
+      </div>
+    </div>
+  )
+}
+```
+
+Hovering over any of the three charts moves the crosshair on the other two to the same month.
+
+---
+
+## API Reference
+
+### `linkCharts(...charts)`
+
+```ts
+function linkCharts(...charts: ChartInstance[]): () => void
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `charts` | `ChartInstance[]` | Two or more chart instances to link |
+
+**Returns** an `unlink` function. Call it to disconnect all charts.
+
+If fewer than 2 charts are passed, the function returns a no-op.
+
+---
+
+## How It Works
+
+1. Each chart's `crosshair:move` event is subscribed.
+2. When chart A emits `crosshair:move` with `{ x, label }`, the handler broadcasts that event to the event buses of charts B and C.
+3. Charts B and C receive the event and update their crosshair position to match.
+4. The `crosshair:hide` event (when the cursor leaves a chart) is also broadcast, so all crosshairs hide together.
+5. A `broadcasting` flag prevents infinite loops: while one broadcast is in progress, incoming events from other charts are ignored.
+
+---
+
+## Events
+
+Linked charts use the standard crosshair events:
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `crosshair:move` | `{ x: number, label: string \| number \| Date }` | Crosshair moved to a position |
+| `crosshair:hide` | `void` | Crosshair left the chart area |
+
+You can listen to these events on any linked chart:
+
+```ts
+chart1.on("crosshair:move", ({ label }) => {
+  document.getElementById("status")!.textContent = `Viewing: ${label}`
+})
+```
+
+---
+
+## Requirements
+
+- All linked charts must have `crosshair` enabled (either `crosshair: true` or `crosshair: { enabled: true }`)
+- Charts work best when they share the same x-axis labels. If labels differ, the crosshair position is based on the pixel x-coordinate, which may not align with the expected data point
+- Linking works across different chart types: you can link a line chart with a bar chart and an area chart
+
+---
+
+## Dynamic Linking
+
+You can add or remove charts from a linked group by unlinking and re-linking:
+
+```ts
+let unlink = linkCharts(chart1, chart2)
+
+// Add chart3 to the group
+unlink()
+unlink = linkCharts(chart1, chart2, chart3)
+
+// Remove chart2 from the group
+unlink()
+unlink = linkCharts(chart1, chart3)
+```
+
+---
+
+## Tips
+
+- Always call the `unlink()` function during cleanup (component unmount, page navigation) to remove event listeners
+- Crosshair must be enabled on each chart for linking to have any visible effect
+- Linked charts do not need to be the same type. A line chart, bar chart, and scatter chart can all be linked
+- For best visual alignment, use the same `width`, `padding`, and x-axis labels across all linked charts
+- Linking syncs crosshair position only. Zoom, pan, and brush selection are independent per chart

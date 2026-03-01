@@ -1,0 +1,204 @@
+---
+title: "Zoom & Pan"
+description: "Interactive zoom and pan for charts. Wheel zoom, drag pan, touch pinch. Works with all renderers by modifying scale domains."
+badge: "Feature"
+---
+
+## Overview
+
+`createZoomPan()` adds interactive zoom and pan to any chart. It works by modifying scale domains (not DOM transforms), so it is compatible with SVG, Canvas, and WebGL renderers.
+
+Supported interactions:
+- **Wheel**: scroll to zoom in/out on the x-axis (or y-axis if enabled)
+- **Drag**: click and drag to pan
+- **Pinch**: two-finger pinch on touch devices
+
+When both zoom/pan and brush selection are enabled, drag pans and Shift+drag brushes.
+
+---
+
+## Quick Start
+
+The simplest way to enable zoom and pan is through chart options:
+
+```tsx
+import { LineChart } from "@chartts/react"
+
+const data = Array.from({ length: 365 }, (_, i) => ({
+  date: new Date(2025, 0, i + 1).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+  price: 100 + Math.sin(i / 30) * 20 + Math.random() * 5,
+}))
+
+export function ZoomableChart() {
+  return (
+    <LineChart
+      data={data}
+      x="date"
+      y="price"
+      zoom
+      pan
+      className="h-64 w-full"
+    />
+  )
+}
+```
+
+---
+
+## Programmatic API
+
+For fine-grained control, use `createZoomPan()` directly:
+
+```ts
+import { createChart } from "@chartts/core"
+import { createZoomPan } from "@chartts/core/interaction"
+
+const chart = createChart(container, { type: "line" })
+
+const zp = createZoomPan(
+  {
+    x: true,
+    y: false,
+    minZoom: 1,
+    maxZoom: 50,
+    wheel: true,
+    drag: true,
+    pinch: true,
+  },
+  () => chart.render()
+)
+
+// Attach to the chart's SVG element
+zp.attach(
+  chart.element,
+  () => chart.getArea(),
+  () => ({ xScale: chart.getXScale(), yScale: chart.getYScale() })
+)
+```
+
+---
+
+## Configuration
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `x` | `boolean` | `true` | Enable zoom/pan on the x-axis |
+| `y` | `boolean` | `false` | Enable zoom/pan on the y-axis |
+| `wheel` | `boolean` | `true` | Enable scroll wheel zoom |
+| `drag` | `boolean` | `true` | Enable click-drag to pan |
+| `pinch` | `boolean` | `true` | Enable touch pinch-to-zoom |
+| `minZoom` | `number` | `1` | Minimum zoom level (1 = fully zoomed out) |
+| `maxZoom` | `number` | `20` | Maximum zoom level |
+| `normalizedPan` | `boolean` | `true` | Use axis-scale-normalized pan deltas. Set to `false` for chart types like geo or pie that apply pan directly to pixel transforms |
+
+---
+
+## Instance API
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `attach` | `(el, getArea, getScales) => void` | Bind event listeners to a DOM element |
+| `reset` | `() => void` | Reset zoom and pan to initial state (1x zoom, 0 offset) |
+| `getState` | `() => ZoomPanState` | Get current `{ zoomX, zoomY, panX, panY }` |
+| `applyToScales` | `(xScale, yScale, area) => void` | Apply current zoom/pan state to scale ranges/domains. Call at the start of each render |
+| `destroy` | `() => void` | Remove all event listeners and clean up |
+
+### ZoomPanState
+
+```ts
+interface ZoomPanState {
+  zoomX: number  // 1 = no zoom, higher = zoomed in
+  zoomY: number
+  panX: number   // fraction of content offset
+  panY: number
+}
+```
+
+---
+
+## X-only vs. X+Y Zoom
+
+For time series and most line/bar charts, x-only zoom (the default) is the right choice. The y-axis auto-scales to the visible data range.
+
+For scatter plots or heatmaps where both axes carry independent information, enable both:
+
+```ts
+const zp = createZoomPan({
+  x: true,
+  y: true,
+  maxZoom: 10,
+}, () => chart.render())
+```
+
+---
+
+## Reset Zoom Button
+
+Add a reset control to let users return to the full view:
+
+```tsx
+import { useRef } from "react"
+import { LineChart, useChartRef } from "@chartts/react"
+
+export function ChartWithReset() {
+  const chartRef = useChartRef()
+
+  return (
+    <div className="relative">
+      <LineChart
+        ref={chartRef}
+        data={data}
+        x="date"
+        y="value"
+        zoom
+        pan
+        className="h-64 w-full"
+      />
+      <button
+        className="absolute top-2 right-2 text-sm px-2 py-1 bg-white border rounded"
+        onClick={() => chartRef.current?.resetZoom()}
+      >
+        Reset
+      </button>
+    </div>
+  )
+}
+```
+
+---
+
+## How It Works
+
+Zoom and pan operate on scale ranges and domains, not on DOM element transforms. This means:
+
+1. **Wheel zoom** calculates a zoom factor from scroll delta, then adjusts the x-scale range so the zoom is centered on the cursor position.
+2. **Drag pan** converts pointer movement (in pixels) to a proportional offset of the scale range.
+3. **Pinch zoom** measures the distance between two touch points across frames to derive a scale factor. The zoom center is the midpoint between the fingers.
+4. On each render, `applyToScales()` adjusts the x-scale range (and optionally y-scale domain) to reflect the current zoom/pan state.
+
+Pan is clamped so the visible window cannot scroll past the data boundaries.
+
+---
+
+## Events
+
+When zoom or pan state changes, the chart emits a `zoom:change` event:
+
+```ts
+chart.on("zoom:change", ({ zoomX, zoomY, panX, panY }) => {
+  console.log(`Zoom: ${zoomX.toFixed(1)}x, Pan offset: ${panX.toFixed(3)}`)
+})
+
+chart.on("zoom:reset", () => {
+  console.log("Zoom reset to default")
+})
+```
+
+---
+
+## Tips
+
+- When Shift+drag is used for brush selection, regular drag is reserved for panning. This is handled automatically
+- The cursor changes to `grabbing` during a drag and returns to `crosshair` on release
+- For large datasets, pair zoom/pan with `decimate: true` so only visible points are rendered at each zoom level
+- `normalizedPan: false` is intended for chart types (geo, pie) that pan in pixel space rather than data space

@@ -1,0 +1,547 @@
+---
+title: "Server-Side Rendered Charts in Next.js: The Complete Guide"
+description: "How to render charts in Next.js Server Components without client-side JavaScript. Solve CLS, hydration mismatches, and bundle bloat with SVG-first charting."
+date: "2026-02-23"
+readTime: "11 min read"
+tag: "Tutorial"
+---
+
+Charts are one of the last holdouts against server-side rendering. Nearly every charting library on npm requires a browser to function. They depend on Canvas APIs, measure DOM elements at runtime, or attach event listeners during initialization. Drop one into a Next.js Server Component and you get a build error. Wrap it in `"use client"` and you lose every benefit of the App Router.
+
+This is not a minor inconvenience. It is an architectural problem that affects performance, SEO, and user experience across every data-heavy application built with Next.js.
+
+This guide explains why charts break server rendering, how SVG-based charting solves the problem, and how to build fully server-rendered dashboards with Chart.ts and Next.js App Router.
+
+## Why most charting libraries fail at SSR
+
+To understand the problem, you need to understand what happens when Next.js renders a Server Component.
+
+Server Components execute on the server. They run in a Node.js environment. They have no access to `window`, `document`, `navigator`, or any browser API. They cannot measure pixel dimensions. They cannot create Canvas contexts. They cannot attach click handlers.
+
+Most charting libraries need at least one of these things during their initial render:
+
+**Canvas-based libraries** (Chart.js, ECharts, Apache ECharts) call `document.createElement('canvas')` or `canvas.getContext('2d')` during initialization. These APIs do not exist on the server. The library crashes before it produces any output.
+
+**DOM-measuring libraries** (many D3 wrappers, Recharts in some configurations) need to measure the container's pixel width and height to calculate chart dimensions. On the server, there is no container to measure. The library either crashes or renders at zero dimensions.
+
+**Imperative libraries** (Highcharts, ApexCharts) create their own DOM tree using imperative calls like `document.createElementNS()`. They bypass React's rendering model entirely. Server Components cannot run imperative DOM code.
+
+The result is that almost every chart in a Next.js application ends up inside a Client Component boundary:
+
+```tsx
+// The standard workaround: push everything to the client
+"use client";
+
+import { BarChart } from "some-chart-library";
+
+export function RevenueChart({ data }) {
+  return <BarChart data={data} width={600} height={400} />;
+}
+```
+
+This "works," but it defeats the purpose of using the App Router.
+
+## The real cost of client-side charts
+
+Wrapping charts in `"use client"` is not just a stylistic choice. It has measurable consequences.
+
+### Bundle size
+
+When you mark a component as `"use client"`, its entire dependency tree ships to the browser as JavaScript. Chart.js is 63kb minified and gzipped. ECharts is 312kb. Recharts pulls in D3 modules that total 40-80kb depending on which charts you use.
+
+For a dashboard with 6 charts, you might be shipping 200kb+ of chart JavaScript before a single pixel appears on screen. This JavaScript needs to be downloaded, parsed, and executed before the charts become visible.
+
+### Cumulative Layout Shift (CLS)
+
+Client-side charts cause layout shift by definition. The server sends HTML without the chart. The browser downloads and executes the chart JavaScript. The chart renders and pushes other content around. Google measures this as CLS, and it directly affects your Core Web Vitals score.
+
+You can mitigate CLS with skeleton loaders and fixed-height containers, but you cannot eliminate it if the chart content is entirely client-rendered.
+
+### Hydration mismatches
+
+If you try to render a placeholder on the server and swap in the real chart on the client, React will warn about hydration mismatches. The server HTML and client HTML do not match. React either patches the DOM (causing a flash) or re-renders the entire subtree.
+
+### Streaming and Suspense incompatibility
+
+Server Components can stream progressively with Suspense boundaries. A dashboard can show its header immediately, stream in each chart as its data resolves, and keep the connection open for slow queries. Client-side charts cannot participate in this streaming model. They are invisible until all their JavaScript loads.
+
+## How SVG charting solves server rendering
+
+SVG is a text-based format. A bar chart in SVG is a string of XML elements:
+
+```xml
+<svg viewBox="0 0 600 400">
+  <rect x="50" y="100" width="80" height="200" fill="#3b82f6" />
+  <rect x="150" y="150" width="80" height="150" fill="#3b82f6" />
+  <rect x="250" y="50" width="80" height="250" fill="#3b82f6" />
+</svg>
+```
+
+No Canvas context. No DOM measurement. No browser APIs. A function can take data in and produce SVG elements out, entirely on the server.
+
+This is the key insight behind Chart.ts. Every chart type outputs React elements (or Vue/Svelte/Solid components) that resolve to SVG markup. The rendering function is pure: data goes in, elements come out. It works identically on the server and in the browser.
+
+```tsx
+// This is a Server Component. No "use client" needed.
+import { BarChart } from "@chartts/react";
+
+export async function RevenueChart() {
+  const data = await fetch("https://api.example.com/revenue");
+  const revenue = await data.json();
+
+  return (
+    <BarChart
+      data={revenue}
+      x="month"
+      y="amount"
+      className="h-80 w-full text-blue-500 dark:text-blue-400"
+    />
+  );
+}
+```
+
+The chart renders to SVG on the server. The HTML response includes the fully rendered chart. The browser paints it immediately. No JavaScript downloads, no layout shift, no hydration mismatch.
+
+## Getting started: Chart.ts with Next.js App Router
+
+### Installation
+
+```bash
+npm install @chartts/core @chartts/react
+```
+
+There is no additional SSR plugin, no special configuration, no Node.js polyfills. The library works in Server Components out of the box because it produces standard React elements.
+
+### Your first server-rendered chart
+
+Create a Server Component that fetches data and renders a chart:
+
+```tsx
+// app/dashboard/revenue-chart.tsx
+import { BarChart } from "@chartts/react";
+
+async function getRevenue() {
+  const res = await fetch("https://api.example.com/revenue", {
+    next: { revalidate: 3600 }, // Cache for 1 hour
+  });
+  return res.json();
+}
+
+export async function RevenueChart() {
+  const data = await getRevenue();
+
+  return (
+    <BarChart
+      data={data}
+      x="month"
+      y="revenue"
+      className="h-96 w-full"
+      barClassName="fill-blue-500 dark:fill-blue-400"
+      axisClassName="text-gray-500 dark:text-gray-400"
+    />
+  );
+}
+```
+
+This component is async. It fetches data on the server. It renders the chart to SVG. The client receives fully-formed HTML with no JavaScript dependency.
+
+### Styling with Tailwind CSS
+
+Because Chart.ts outputs real SVG elements in the DOM, you can style them directly with Tailwind classes. This is not a custom theming API. It is standard CSS applied to standard DOM elements.
+
+```tsx
+<LineChart
+  data={metrics}
+  x="date"
+  y="value"
+  className="h-64 w-full"
+  lineClassName="stroke-emerald-500 dark:stroke-emerald-400 stroke-2"
+  dotClassName="fill-emerald-500 dark:fill-emerald-400"
+  gridClassName="stroke-gray-200 dark:stroke-gray-700"
+  axisClassName="text-xs text-gray-600 dark:text-gray-400"
+/>
+```
+
+Dark mode works automatically through Tailwind's `dark:` variant. No theme configuration, no context providers, no runtime color switching.
+
+## Streaming charts with Suspense
+
+The real power of server-rendered charts shows up when you combine them with Next.js streaming.
+
+Consider a dashboard with four charts. Each chart fetches data from a different API. Some APIs respond in 50ms. Others take 2 seconds. With client-side charts, you would either wait for all four APIs before rendering anything, or manage four independent loading states in client code.
+
+With Server Components and Suspense, each chart streams independently:
+
+```tsx
+// app/dashboard/page.tsx
+import { Suspense } from "react";
+import { RevenueChart } from "./revenue-chart";
+import { UsersChart } from "./users-chart";
+import { ConversionChart } from "./conversion-chart";
+import { PerformanceChart } from "./performance-chart";
+import { ChartSkeleton } from "./chart-skeleton";
+
+export default function DashboardPage() {
+  return (
+    <div className="grid grid-cols-2 gap-6 p-8">
+      <Suspense fallback={<ChartSkeleton className="h-96" />}>
+        <RevenueChart />
+      </Suspense>
+
+      <Suspense fallback={<ChartSkeleton className="h-96" />}>
+        <UsersChart />
+      </Suspense>
+
+      <Suspense fallback={<ChartSkeleton className="h-96" />}>
+        <ConversionChart />
+      </Suspense>
+
+      <Suspense fallback={<ChartSkeleton className="h-96" />}>
+        <PerformanceChart />
+      </Suspense>
+    </div>
+  );
+}
+```
+
+Next.js sends the page shell immediately. As each chart's data resolves, the server streams the rendered SVG into the page. The user sees charts appear one by one, fastest first, without any client-side JavaScript orchestration.
+
+The skeleton component is simple:
+
+```tsx
+// app/dashboard/chart-skeleton.tsx
+export function ChartSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={`animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800 ${className}`} />
+  );
+}
+```
+
+Because the skeleton and the final chart occupy the same dimensions, there is zero layout shift when the real chart streams in.
+
+## Adding interactivity selectively
+
+Server-rendered charts are not interactive by default. If you need tooltips, click handlers, or zoom/pan behavior, you can add interactivity to specific charts while keeping the rest server-rendered.
+
+Chart.ts supports a hybrid approach. The chart structure renders on the server. A thin client-side layer adds event handlers:
+
+```tsx
+// app/dashboard/interactive-chart.tsx
+import { LineChart } from "@chartts/react";
+import { ChartTooltip } from "./chart-tooltip";
+
+export async function InteractiveRevenueChart() {
+  const data = await getRevenue();
+
+  return (
+    <div className="relative">
+      <LineChart
+        data={data}
+        x="month"
+        y="revenue"
+        className="h-96 w-full"
+        lineClassName="stroke-blue-500 stroke-2"
+      />
+      <ChartTooltip />
+    </div>
+  );
+}
+```
+
+```tsx
+// app/dashboard/chart-tooltip.tsx
+"use client";
+
+import { useChartTooltip } from "@chartts/react";
+
+export function ChartTooltip() {
+  const { visible, x, y, data } = useChartTooltip();
+
+  if (!visible) return null;
+
+  return (
+    <div
+      className="absolute rounded-lg bg-gray-900 px-3 py-2 text-sm text-white shadow-lg"
+      style={{ left: x, top: y }}
+    >
+      <p className="font-medium">{data.month}</p>
+      <p className="text-gray-300">${data.revenue.toLocaleString()}</p>
+    </div>
+  );
+}
+```
+
+The `ChartTooltip` is a Client Component, but it is tiny. It adds a few hundred bytes of JavaScript for mouse tracking. The chart itself, its SVG structure, all the path calculations, the axis labels, the grid lines, all of that is server-rendered and requires zero client JavaScript.
+
+## Static export and ISR
+
+Server-rendered SVG charts work with every Next.js rendering strategy.
+
+### Static Generation (SSG)
+
+Charts can be statically generated at build time. The SVG is baked into the HTML file:
+
+```tsx
+// app/reports/[year]/page.tsx
+import { BarChart } from "@chartts/react";
+import { getAnnualReport } from "@/lib/reports";
+
+export async function generateStaticParams() {
+  return [{ year: "2024" }, { year: "2025" }, { year: "2026" }];
+}
+
+export default async function ReportPage({ params }: { params: { year: string } }) {
+  const report = await getAnnualReport(params.year);
+
+  return (
+    <article className="prose mx-auto max-w-4xl p-8">
+      <h1>Annual Report {params.year}</h1>
+      <BarChart
+        data={report.quarterlyRevenue}
+        x="quarter"
+        y="revenue"
+        className="my-8 h-80 w-full"
+        barClassName="fill-indigo-500"
+      />
+      <p>{report.summary}</p>
+    </article>
+  );
+}
+```
+
+At build time, `next build` fetches the report data and renders the chart SVG inline. The resulting HTML file has zero JavaScript and renders charts instantly from a CDN.
+
+### Incremental Static Regeneration (ISR)
+
+Add a `revalidate` option and the charts update automatically:
+
+```tsx
+export const revalidate = 3600; // Regenerate every hour
+
+export default async function MetricsPage() {
+  const metrics = await fetchMetrics();
+
+  return (
+    <AreaChart
+      data={metrics}
+      x="timestamp"
+      y="value"
+      className="h-96 w-full"
+      areaClassName="fill-emerald-500/20"
+      lineClassName="stroke-emerald-500 stroke-2"
+    />
+  );
+}
+```
+
+The first visitor gets the cached chart. After one hour, the next visitor triggers a background regeneration. The chart updates with fresh data while the previous version is served to all other visitors. No loading spinners, no client-side fetching.
+
+## Building a complete server-rendered dashboard
+
+Here is a full example of a dashboard page that renders entirely on the server. It fetches data from multiple endpoints, renders four different chart types, and ships zero chart JavaScript to the client.
+
+```tsx
+// app/dashboard/page.tsx
+import { Suspense } from "react";
+import {
+  BarChart,
+  LineChart,
+  AreaChart,
+  PieChart,
+} from "@chartts/react";
+import { ChartSkeleton } from "@/components/chart-skeleton";
+
+async function fetchSalesData() {
+  const res = await fetch(`${process.env.API_URL}/sales`, {
+    next: { revalidate: 300 },
+  });
+  return res.json();
+}
+
+async function fetchTrafficData() {
+  const res = await fetch(`${process.env.API_URL}/traffic`, {
+    next: { revalidate: 60 },
+  });
+  return res.json();
+}
+
+async function fetchRevenueBreakdown() {
+  const res = await fetch(`${process.env.API_URL}/revenue-breakdown`, {
+    next: { revalidate: 3600 },
+  });
+  return res.json();
+}
+
+async function fetchMonthlyGrowth() {
+  const res = await fetch(`${process.env.API_URL}/growth`, {
+    next: { revalidate: 3600 },
+  });
+  return res.json();
+}
+
+async function SalesChart() {
+  const data = await fetchSalesData();
+  return (
+    <div className="rounded-xl border border-gray-200 p-6 dark:border-gray-700">
+      <h3 className="mb-4 text-lg font-semibold">Daily Sales</h3>
+      <BarChart
+        data={data}
+        x="date"
+        y="amount"
+        className="h-72 w-full"
+        barClassName="fill-blue-500 dark:fill-blue-400"
+        gridClassName="stroke-gray-100 dark:stroke-gray-800"
+      />
+    </div>
+  );
+}
+
+async function TrafficChart() {
+  const data = await fetchTrafficData();
+  return (
+    <div className="rounded-xl border border-gray-200 p-6 dark:border-gray-700">
+      <h3 className="mb-4 text-lg font-semibold">Traffic</h3>
+      <AreaChart
+        data={data}
+        x="hour"
+        y="visitors"
+        className="h-72 w-full"
+        areaClassName="fill-emerald-500/10 dark:fill-emerald-400/10"
+        lineClassName="stroke-emerald-500 dark:stroke-emerald-400 stroke-2"
+      />
+    </div>
+  );
+}
+
+async function RevenueBreakdownChart() {
+  const data = await fetchRevenueBreakdown();
+  return (
+    <div className="rounded-xl border border-gray-200 p-6 dark:border-gray-700">
+      <h3 className="mb-4 text-lg font-semibold">Revenue by Channel</h3>
+      <PieChart
+        data={data}
+        value="revenue"
+        label="channel"
+        className="mx-auto h-72 w-72"
+      />
+    </div>
+  );
+}
+
+async function GrowthChart() {
+  const data = await fetchMonthlyGrowth();
+  return (
+    <div className="rounded-xl border border-gray-200 p-6 dark:border-gray-700">
+      <h3 className="mb-4 text-lg font-semibold">Monthly Growth</h3>
+      <LineChart
+        data={data}
+        x="month"
+        y="growth"
+        className="h-72 w-full"
+        lineClassName="stroke-violet-500 dark:stroke-violet-400 stroke-2"
+        dotClassName="fill-violet-500 dark:fill-violet-400"
+      />
+    </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <main className="mx-auto max-w-7xl p-8">
+      <h1 className="mb-8 text-3xl font-bold">Dashboard</h1>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Suspense fallback={<ChartSkeleton className="h-[360px]" />}>
+          <SalesChart />
+        </Suspense>
+        <Suspense fallback={<ChartSkeleton className="h-[360px]" />}>
+          <TrafficChart />
+        </Suspense>
+        <Suspense fallback={<ChartSkeleton className="h-[360px]" />}>
+          <RevenueBreakdownChart />
+        </Suspense>
+        <Suspense fallback={<ChartSkeleton className="h-[360px]" />}>
+          <GrowthChart />
+        </Suspense>
+      </div>
+    </main>
+  );
+}
+```
+
+This entire page renders on the server. Each chart streams independently through its own Suspense boundary. The client receives pure HTML and CSS. The charts appear in the initial page load with no JavaScript execution, no layout shift, and no loading spinners for cached data.
+
+## Performance comparison
+
+To quantify the difference, here is what a typical dashboard looks like with client-side charting versus server-side SVG charting:
+
+| Metric | Client-side (Chart.js) | Server-side (Chart.ts) |
+|---|---|---|
+| Chart JS bundle | ~63kb gzipped | 0kb (SVG in HTML) |
+| Time to first chart | ~1.2s (JS parse + execute) | ~0ms (in initial HTML) |
+| Cumulative Layout Shift | 0.15-0.3 (poor) | 0 (stable) |
+| Largest Contentful Paint | Delayed by JS loading | Part of initial render |
+| Works without JavaScript | No | Yes |
+| Screen reader accessible | Partial (Canvas) | Full (SVG + ARIA) |
+
+The numbers vary by application, but the pattern is consistent. Server-rendered SVG charts load faster, score better on Core Web Vitals, and work in more environments.
+
+## Edge cases and considerations
+
+### Charts that must be client-side
+
+Some chart behaviors require client-side JavaScript. Real-time WebSocket updates, drag-to-zoom on scatter plots, and animated transitions all need browser APIs. For these cases, use a Client Component:
+
+```tsx
+"use client";
+
+import { LineChart } from "@chartts/react";
+import { useWebSocket } from "@/hooks/use-websocket";
+
+export function RealTimeChart() {
+  const data = useWebSocket("wss://stream.example.com/metrics");
+
+  return (
+    <LineChart
+      data={data}
+      x="timestamp"
+      y="value"
+      animate
+      className="h-64 w-full"
+      lineClassName="stroke-red-500 stroke-2"
+    />
+  );
+}
+```
+
+The key insight is that this should be the exception, not the default. Most dashboard charts display static or semi-static data. Render those on the server. Reserve client-side rendering for genuinely interactive or real-time charts.
+
+### Responsive sizing
+
+SVG charts use `viewBox` for sizing, which scales naturally with CSS. You do not need to measure the container at runtime:
+
+```tsx
+<LineChart
+  data={data}
+  x="month"
+  y="value"
+  className="h-48 w-full sm:h-64 lg:h-96"
+/>
+```
+
+Tailwind's responsive prefixes control the chart height at different breakpoints. The SVG scales to fill the container. No resize observers, no JavaScript-driven layout.
+
+### SEO for data content
+
+Server-rendered SVG charts are visible to search engine crawlers. Google's crawler executes JavaScript, but it deprioritizes JS-heavy pages and may not wait for async chart rendering. With server-rendered SVG, the chart content is in the initial HTML response. Crawlers see it immediately.
+
+This matters for pages where chart data is the primary content: financial reports, analytics dashboards shared publicly, data journalism articles.
+
+## Conclusion
+
+The default assumption in the React ecosystem is that charts require client-side JavaScript. This was true when Canvas was the only viable rendering technology and D3 was the only serious charting library. It is no longer true.
+
+SVG-based charts can render entirely on the server. They produce standard HTML elements that stream through Suspense boundaries, style with Tailwind classes, and work without a single byte of client JavaScript.
+
+Chart.ts was built around this idea from day one. Every chart type outputs pure React elements. Every rendering function is a pure transformation from data to SVG. The result is charts that work with Server Components, streaming, static export, and ISR without any special configuration.
+
+If you are building dashboards with Next.js App Router, you no longer need to choose between modern architecture and functional charts. You can have both.

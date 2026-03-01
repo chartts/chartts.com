@@ -1,0 +1,195 @@
+---
+title: "Brush Selection"
+description: "Click-drag to select a data range on any chart. Emits start/end indices and labels via the brush:end event."
+badge: "Feature"
+---
+
+## Overview
+
+`createBrush()` lets users click and drag across the chart area to select a range of data points. A semi-transparent rectangle follows the cursor during selection, and when released, a `brush:end` event fires with the start/end indices and labels.
+
+When zoom/pan is also enabled, Shift+drag activates the brush (regular drag pans). When zoom/pan is off, a plain click-drag starts the brush.
+
+---
+
+## Quick Start
+
+Enable brush through chart options:
+
+```tsx
+import { LineChart } from "@chartts/react"
+
+const dailySales = Array.from({ length: 90 }, (_, i) => ({
+  date: new Date(2025, 0, i + 1).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+  revenue: 2000 + Math.random() * 3000,
+}))
+
+export function BrushableChart() {
+  return (
+    <LineChart
+      data={dailySales}
+      x="date"
+      y="revenue"
+      brush
+      onBrushEnd={({ startIndex, endIndex, startLabel, endLabel }) => {
+        console.log(`Selected: ${startLabel} to ${endLabel} (${endIndex - startIndex + 1} points)`)
+      }}
+      className="h-64 w-full"
+    />
+  )
+}
+```
+
+---
+
+## With Zoom + Brush
+
+When both features are on, drag pans the chart and Shift+drag draws the selection rectangle:
+
+```tsx
+<LineChart
+  data={data}
+  x="date"
+  y="price"
+  zoom
+  pan
+  brush
+  onBrushEnd={({ startIndex, endIndex }) => {
+    // Zoom into the selected range, filter data, etc.
+    const selected = data.slice(startIndex, endIndex + 1)
+    setFilteredData(selected)
+  }}
+  className="h-64 w-full"
+/>
+```
+
+---
+
+## Programmatic API
+
+```ts
+import { createChart } from "@chartts/core"
+import { createBrush } from "@chartts/core/interaction"
+
+const chart = createChart(container, { type: "bar" })
+
+const brush = createBrush(
+  {
+    fillColor: "rgba(59, 130, 246, 0.15)",
+    strokeColor: "rgba(59, 130, 246, 0.5)",
+  },
+  chart._bus,
+  chart.element,
+  () => chart.getArea(),
+  () => chart.getXScale(),
+  () => chart.getPreparedData(),
+  true // isPanEnabled: true means Shift+drag activates brush
+)
+
+chart.on("brush:end", ({ startIndex, endIndex, startLabel, endLabel }) => {
+  console.log(`Brushed from ${startLabel} to ${endLabel}`)
+})
+
+// Clean up
+brush.destroy()
+```
+
+---
+
+## Configuration
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `fillColor` | `string` | `'rgba(59,130,246,0.15)'` | Fill color of the selection rectangle |
+| `strokeColor` | `string` | `'rgba(59,130,246,0.5)'` | Border color of the selection rectangle |
+
+---
+
+## brush:end Event Payload
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `startIndex` | `number` | Index of the first selected data point |
+| `endIndex` | `number` | Index of the last selected data point |
+| `startLabel` | `string \| number \| Date` | Label of the first selected point |
+| `endLabel` | `string \| number \| Date` | Label of the last selected point |
+
+---
+
+## Use Case: Drill-Down Table
+
+Show detail for the brushed range:
+
+```tsx
+import { useState } from "react"
+import { BarChart } from "@chartts/react"
+
+const monthlySales = [
+  { month: "Jan", sales: 4200, returns: 180 },
+  { month: "Feb", sales: 5800, returns: 220 },
+  { month: "Mar", sales: 7100, returns: 150 },
+  { month: "Apr", sales: 6400, returns: 310 },
+  { month: "May", sales: 8200, returns: 190 },
+  { month: "Jun", sales: 9600, returns: 260 },
+  { month: "Jul", sales: 8800, returns: 200 },
+  { month: "Aug", sales: 9200, returns: 170 },
+  { month: "Sep", sales: 7600, returns: 230 },
+  { month: "Oct", sales: 8400, returns: 280 },
+  { month: "Nov", sales: 10200, returns: 320 },
+  { month: "Dec", sales: 11800, returns: 350 },
+]
+
+export function DrillDown() {
+  const [selected, setSelected] = useState(monthlySales)
+
+  return (
+    <div>
+      <BarChart
+        data={monthlySales}
+        x="month"
+        y="sales"
+        brush
+        onBrushEnd={({ startIndex, endIndex }) => {
+          setSelected(monthlySales.slice(startIndex, endIndex + 1))
+        }}
+        className="h-48 w-full"
+      />
+      <table className="mt-4 w-full text-sm">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Sales</th>
+            <th>Returns</th>
+          </tr>
+        </thead>
+        <tbody>
+          {selected.map((row) => (
+            <tr key={row.month}>
+              <td>{row.month}</td>
+              <td>${row.sales.toLocaleString()}</td>
+              <td>{row.returns}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+```
+
+---
+
+## Keyboard Support
+
+Press **Escape** during a brush drag to cancel the selection. The rectangle is removed and no event is emitted.
+
+A minimum drag distance of 5 pixels is required for a selection to register. Shorter drags are treated as clicks and ignored.
+
+---
+
+## Tips
+
+- The selection rectangle is rendered as an absolute-positioned `<div>` overlaid on the chart, not as an SVG element. This keeps it independent of the renderer
+- When `isPanEnabled` is `true`, you must hold Shift to brush. When `false`, any click-drag starts a brush
+- Brush selection is x-axis only. The rectangle spans the full chart height
+- Combine brush with `setData()` to implement "zoom to selection" by filtering the dataset to the brushed range

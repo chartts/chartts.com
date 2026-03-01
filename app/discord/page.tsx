@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function DiscordPage() {
   return (
     <>
-<section className="pt-32 pb-16 px-6">
+<section className="pt-24 sm:pt-32 pb-16 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto text-center">
           <span className="inline-block px-3 py-1 text-xs font-mono rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-6">
             Community

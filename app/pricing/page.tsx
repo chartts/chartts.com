@@ -22,7 +22,7 @@ function Check() {
 }
 
 const openSourceFeatures = [
-  "40+ chart types",
+  "65+ chart types",
   "SVG, Canvas, and WebGL renderers",
   "Full Tailwind CSS integration",
   "React, Vue, Svelte, Solid, Angular, Vanilla JS",
@@ -37,9 +37,9 @@ const openSourceFeatures = [
 ];
 
 const proThemesList = [
-  "8 hand-crafted themes",
-  "Neon, Pastel, Monochrome, Luxury",
-  "Retro, Minimal, Midnight, Earth",
+  "34 hand-crafted themes",
+  "Nord, Dracula, Catppuccin, Tokyo Night, Gruvbox",
+  "Synthwave, Cyberpunk, Material, Solarized + more",
   "Drop-in theme presets",
   "Dark + light variants",
   "Priority feature requests",

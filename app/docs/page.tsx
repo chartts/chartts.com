@@ -189,7 +189,7 @@ export default function App() {
           {[
             {
               title: "Chart Types",
-              desc: "Explore all 40+ chart types with examples and API docs.",
+              desc: "Explore all 65+ chart types with examples and API docs.",
               href: "/docs/charts",
             },
             {

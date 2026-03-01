@@ -433,15 +433,11 @@ html.light [data-rehype-pretty-code-figure] code[data-theme="light"] {
 html.dark .shiki-block .shiki,
 html.dark .shiki-block pre {
   background-color: var(--c-bg-surface) !important;
-  color: var(--shiki-dark) !important;
 }
 html.light .shiki-block .shiki,
 html.light .shiki-block pre {
   background-color: var(--c-bg-surface) !important;
   color: var(--shiki-light) !important;
-}
-html.dark .shiki-block span {
-  color: var(--shiki-dark) !important;
 }
 html.light .shiki-block span {
   color: var(--shiki-light) !important;

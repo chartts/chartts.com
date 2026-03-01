@@ -9,9 +9,28 @@ export const metadata: Metadata = {
 
 const releases = [
   {
+    version: "0.1.6",
+    date: "2026-02-28",
+    tag: "Latest",
+    changes: [
+      "11 new packages: @chartts/finance, @chartts/annotation, @chartts/ssr, @chartts/datalabels, @chartts/regression, @chartts/statistics, @chartts/test-utils, @chartts/cli, @chartts/date-fns, @chartts/dayjs, @chartts/websocket",
+      "Theme expansion: 8 to 34 presets (Nord, Dracula, Catppuccin, Tokyo Night, Gruvbox, Synthwave, Cyberpunk, Material, Solarized, and more)",
+      "24 new documentation pages covering streaming, zoom/pan, brush, export, data adapters, plugins, linked charts, decimation, annotations, and all new packages",
+      "Financial indicators package: SMA, EMA, WMA, RSI, MACD, Bollinger Bands, ATR, VWAP, OBV, Sharpe ratio, drawdown analysis",
+      "Regression package: linear, polynomial, exponential, logarithmic, power regression with trend lines and forecasting",
+      "Statistics package: mean, median, mode, variance, percentile, quartiles, outliers, KDE, bootstrap confidence intervals",
+      "Server-side rendering package with SVG and PNG/JPEG export",
+      "CLI tool: generate charts from terminal with CSV/JSON input",
+      "WebSocket/SSE streaming adapter for real-time data",
+      "Testing utilities: mock data generators, chart data assertions, snapshot testing",
+      "Improved SEO: expanded structured data, favicon.ico, updated OG image, enhanced meta tags",
+      "NaN handling across all chart types for financial indicator warmup periods",
+    ],
+  },
+  {
     version: "0.1.5",
     date: "2026-02-26",
-    tag: "Latest",
+    tag: null,
     changes: [
       "5 new chart types: Violin, Pack (circle packing), Voronoi, WordCloud, Pillar",
       "New GL chart: Torus3D with WebGL rendering",
@@ -26,7 +45,7 @@ const releases = [
     date: "2026-02-26",
     tag: null,
     changes: [
-      "Added README files to all 14 packages with install instructions, API docs, and examples",
+      "Added README files to all packages with install instructions, API docs, and examples",
       "Improved package descriptions across all packages",
       "Fixed cross-repo website redeploy in CI pipeline",
     ],
@@ -67,7 +86,7 @@ const releases = [
     date: "2026-02-23",
     tag: "Initial Release",
     changes: [
-      "40+ chart types: line, bar, area, pie, donut, scatter, bubble, radar, candlestick, waterfall, funnel, gauge, sparkline, heatmap, treemap, boxplot, histogram, sankey, sunburst, and more",
+      "65+ chart types: line, bar, area, pie, donut, scatter, bubble, radar, candlestick, waterfall, funnel, gauge, sparkline, heatmap, treemap, boxplot, histogram, sankey, sunburst, and more",
       "SVG-first rendering with Canvas and WebGL fallbacks",
       "Full Tailwind CSS integration with className on every element",
       "Native dark mode support with dark: variants",
@@ -84,7 +103,7 @@ const releases = [
 export default function ChangelogPage() {
   return (
     <>
-<section className="pt-32 pb-16 px-6">
+<section className="pt-24 sm:pt-32 pb-16 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight heading">
             Changelog

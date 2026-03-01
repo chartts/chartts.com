@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Free Chart Maker | Create Charts Online",
+  title: "Free Chart Maker | 55+ Chart Types, 100+ Themes | Create Charts Online",
   description:
-    "Free chart maker online. Create bar charts, line charts, pie charts, scatter plots, area charts and donut charts. Paste your data, preview instantly, and download as SVG or PNG. No sign-up required. The best free graph maker and pie chart maker.",
+    "Free chart maker online. 55+ chart types: bar, line, pie, scatter, candlestick, sankey, treemap, heatmap, radar, and more. 100+ themes. Paste data or import CSV, preview instantly, download as SVG or PNG. Shareable image URLs via i.chartts.com. No sign-up, no watermarks.",
   keywords: [
     "chart maker",
     "graph maker",
@@ -12,9 +12,13 @@ export const metadata: Metadata = {
     "bar chart maker",
     "line chart maker",
     "scatter plot maker",
-    "donut chart maker",
-    "area chart maker",
+    "candlestick chart maker",
+    "heatmap maker",
+    "sankey diagram maker",
     "create charts online",
+    "chart image url",
+    "svg chart generator",
+    "png chart generator",
   ],
 };
 

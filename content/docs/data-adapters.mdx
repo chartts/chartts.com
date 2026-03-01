@@ -1,0 +1,355 @@
+---
+title: "Data Adapters"
+description: "Import and export chart data from CSV, JSON, Excel, Parquet, and Apache Arrow formats with dedicated adapter packages."
+badge: "Ecosystem"
+---
+
+## Overview
+
+Chart.ts provides five data adapter packages that convert between external data formats and the `ChartData` shape used by all chart types. Each adapter is a separate package, so you only install what you need.
+
+| Package | Format | Import | Export | Dependency |
+|---------|--------|--------|--------|------------|
+| `@chartts/csv` | CSV / TSV | `fromCSV()` | `toCSV()` | None |
+| `@chartts/json` | JSON (rows or columnar) | `fromJSON()` | `toJSON()` | None |
+| `@chartts/excel` | XLSX / XLS | `fromExcel()` | `toExcel()` | `xlsx` |
+| `@chartts/parquet` | Apache Parquet | `fromParquet()` | N/A | `hyparquet` |
+| `@chartts/arrow` | Apache Arrow IPC | `fromArrow()` | `toArrow()`, `toArrowIPC()` | `apache-arrow` |
+
+All adapters auto-detect label and series columns when you do not specify them explicitly. String columns become labels, numeric columns become series.
+
+---
+
+## @chartts/csv
+
+### Installation
+
+```bash
+npm install @chartts/csv
+```
+
+### fromCSV()
+
+Parse a CSV or TSV string into `ChartData`. Delimiter is auto-detected (tabs vs commas).
+
+```ts
+import { fromCSV } from "@chartts/csv"
+
+const csv = `Month,Revenue,Expenses
+Jan,42000,38000
+Feb,58000,41000
+Mar,71000,52000
+Apr,64000,47000`
+
+const data = fromCSV(csv)
+// { labels: ["Jan","Feb","Mar","Apr"], series: [{ name:"Revenue", values:[42000,...] }, { name:"Expenses", values:[38000,...] }] }
+```
+
+#### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `delimiter` | `string` | auto-detect | Column delimiter character |
+| `headers` | `boolean` | `true` | Whether the first row contains column headers |
+| `labelColumn` | `number \| string` | first non-numeric column | Column to use as labels (index or header name) |
+| `seriesColumns` | `(number \| string)[]` | all numeric columns | Columns to use as data series |
+
+### toCSV()
+
+Convert `ChartData` back to a CSV string.
+
+```ts
+import { toCSV } from "@chartts/csv"
+
+const csvString = toCSV(data, { delimiter: "\t" })
+// Tab-separated output
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `delimiter` | `string` | `','` | Column delimiter |
+| `headers` | `boolean` | `true` | Include a header row |
+
+---
+
+## @chartts/json
+
+### Installation
+
+```bash
+npm install @chartts/json
+```
+
+### fromJSON()
+
+Accepts three input shapes:
+
+1. **Array of objects** (row-oriented):
+```ts
+import { fromJSON } from "@chartts/json"
+
+const data = fromJSON([
+  { city: "Tokyo", population: 13960, area: 2194 },
+  { city: "Delhi", population: 11030, area: 1484 },
+  { city: "Shanghai", population: 24870, area: 6341 },
+  { city: "Beijing", population: 21540, area: 16411 },
+])
+// labels: ["Tokyo","Delhi","Shanghai","Beijing"], series: [{ name:"population", ... }, { name:"area", ... }]
+```
+
+2. **Columnar object**:
+```ts
+const data = fromJSON({
+  labels: ["Q1", "Q2", "Q3", "Q4"],
+  revenue: [42000, 58000, 71000, 64000],
+  costs: [38000, 41000, 52000, 47000],
+})
+```
+
+3. **ChartData passthrough**: If the input is already a valid `ChartData` object (has `series` array with `name` and `values`), it is returned as-is.
+
+You can also pass a JSON string instead of a parsed object:
+
+```ts
+const data = fromJSON('{"labels":["Jan","Feb"],"revenue":[100,200]}')
+```
+
+#### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `labelKey` | `string` | auto-detect first string key | Key to use as labels |
+| `seriesKeys` | `string[]` | all numeric keys | Keys to use as data series |
+
+### toJSON()
+
+```ts
+import { toJSON } from "@chartts/json"
+
+// Row format (default)
+const rows = toJSON(data)
+// [{ label: "Q1", revenue: 42000, costs: 38000 }, ...]
+
+// Columnar format
+const columnar = toJSON(data, { format: "columnar" })
+// { labels: ["Q1",...], revenue: [42000,...], costs: [38000,...] }
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `format` | `'rows' \| 'columnar'` | `'rows'` | Output format |
+
+---
+
+## @chartts/excel
+
+### Installation
+
+```bash
+npm install @chartts/excel
+```
+
+Requires `xlsx` (SheetJS) as a peer dependency.
+
+### fromExcel()
+
+Parse an Excel file (XLSX, XLS) from an `ArrayBuffer` or `Uint8Array`:
+
+```ts
+import { fromExcel } from "@chartts/excel"
+
+const response = await fetch("/reports/q4-sales.xlsx")
+const buffer = await response.arrayBuffer()
+
+const data = fromExcel(buffer, {
+  sheet: "Summary",
+  labelColumn: "Region",
+  seriesColumns: ["Revenue", "Profit"],
+})
+```
+
+#### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `sheet` | `string \| number` | `0` | Sheet name or index |
+| `headers` | `boolean` | `true` | Whether the first row contains headers |
+| `range` | `string` | entire sheet | Cell range to read, e.g. `"A1:D10"` |
+| `labelColumn` | `number \| string` | first non-numeric column | Column for labels |
+| `seriesColumns` | `(number \| string)[]` | all numeric columns | Columns for data series |
+
+### toExcel()
+
+Export `ChartData` as an XLSX `ArrayBuffer`:
+
+```ts
+import { toExcel } from "@chartts/excel"
+
+const buffer = toExcel(data, { sheetName: "Chart Data" })
+
+// Download as file
+const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+const url = URL.createObjectURL(blob)
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `sheetName` | `string` | `'Sheet1'` | Name of the worksheet |
+
+---
+
+## @chartts/parquet
+
+### Installation
+
+```bash
+npm install @chartts/parquet
+```
+
+Requires `hyparquet` as a peer dependency. This is a pure-JavaScript Parquet reader that works in the browser.
+
+### fromParquet()
+
+Parse a Parquet file from an `ArrayBuffer` or `Uint8Array`. Returns a `Promise` since Parquet parsing is asynchronous.
+
+```ts
+import { fromParquet } from "@chartts/parquet"
+
+const response = await fetch("/data/metrics.parquet")
+const buffer = await response.arrayBuffer()
+
+const data = await fromParquet(buffer, {
+  labelColumn: "timestamp",
+  seriesColumns: ["cpu_usage", "memory_usage"],
+  rowLimit: 10000,
+})
+```
+
+#### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `labelColumn` | `string` | auto-detect first non-numeric column | Column name for labels |
+| `seriesColumns` | `string[]` | all numeric columns | Column names for data series |
+| `rowLimit` | `number` | all rows | Maximum number of rows to read |
+
+> Note: `@chartts/parquet` provides import only. There is no `toParquet()` function.
+
+---
+
+## @chartts/arrow
+
+### Installation
+
+```bash
+npm install @chartts/arrow
+```
+
+Requires `apache-arrow` as a peer dependency.
+
+### fromArrow()
+
+Parse Arrow IPC data or an Arrow `Table` object:
+
+```ts
+import { fromArrow } from "@chartts/arrow"
+
+// From IPC buffer
+const response = await fetch("/api/query?format=arrow")
+const buffer = await response.arrayBuffer()
+const data = fromArrow(buffer)
+
+// From an existing Arrow Table
+import { tableFromIPC } from "apache-arrow"
+const table = tableFromIPC(buffer)
+const data = fromArrow(table, {
+  labelColumn: "date",
+  seriesColumns: ["open", "high", "low", "close"],
+})
+```
+
+#### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `labelColumn` | `string` | auto-detect first non-numeric field | Column name for labels |
+| `seriesColumns` | `string[]` | all numeric fields | Column names for data series |
+
+Numeric detection uses Arrow type IDs: Int (2), Float (3), and Decimal (7) are treated as numeric.
+
+### toArrow() and toArrowIPC()
+
+```ts
+import { toArrow, toArrowIPC } from "@chartts/arrow"
+
+// Get an Arrow Table object
+const table = toArrow(data, { labelColumnName: "date" })
+
+// Get IPC-serialized bytes (Uint8Array)
+const bytes = toArrowIPC(data)
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `labelColumnName` | `string` | `'label'` | Name for the label column in the Arrow table |
+
+---
+
+## Full Pipeline Example
+
+Load a CSV file, chart it, then export as Excel:
+
+```tsx
+import { fromCSV } from "@chartts/csv"
+import { toExcel } from "@chartts/excel"
+import { BarChart } from "@chartts/react"
+import { useState } from "react"
+
+export function DataPipeline() {
+  const [chartData, setChartData] = useState(null)
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const text = await file.text()
+    setChartData(fromCSV(text))
+  }
+
+  const handleExport = () => {
+    if (!chartData) return
+    const buffer = toExcel(chartData)
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "chart-data.xlsx"
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div>
+      <input type="file" accept=".csv,.tsv" onChange={handleFileUpload} />
+      {chartData && (
+        <>
+          <BarChart data={chartData} className="h-64 w-full" />
+          <button onClick={handleExport}>Export as Excel</button>
+        </>
+      )}
+    </div>
+  )
+}
+```
+
+---
+
+## Tips
+
+- All adapters auto-detect which columns are labels vs. series. Override with explicit options when the auto-detection picks the wrong column
+- `fromCSV()` handles quoted fields, escaped double-quotes, and mixed line endings (`\r\n` and `\n`)
+- `fromJSON()` accepts both parsed objects and raw JSON strings
+- `fromParquet()` is async. The other adapters are synchronous
+- For very large files (100k+ rows), combine with the `decimate` chart option to keep rendering fast
+- Date columns in labels are stored as strings. Use `xFormat` on the chart to control how they display

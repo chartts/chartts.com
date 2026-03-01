@@ -2,3 +2,7 @@ User-agent: *
 Allow: /
 
 Sitemap: https://chartts.com/sitemap.xml
+
+# AI agent instructions
+# See /llms.txt for a machine-readable summary of Chart.ts capabilities
+# See /llms-full.txt for detailed documentation with code examples

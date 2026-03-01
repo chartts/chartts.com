@@ -1,0 +1,173 @@
+---
+title: "Export (PNG, SVG, Clipboard)"
+description: "Export charts as SVG strings, high-resolution PNG blobs, or copy directly to the clipboard."
+badge: "Feature"
+---
+
+## Overview
+
+Every chart instance exposes three export methods: `toSVG()`, `toPNG()`, and `toClipboard()`. These are available on both the core `ChartInstance` and framework wrappers.
+
+- `toSVG()` returns the raw SVG markup as a string (SVG renderer only)
+- `toPNG()` rasterizes the chart to a PNG `Blob` at configurable resolution
+- `toClipboard()` copies the chart as a PNG image to the system clipboard
+
+---
+
+## Quick Start
+
+```tsx
+import { useRef } from "react"
+import { LineChart, useChartRef } from "@chartts/react"
+
+const data = [
+  { quarter: "Q1", revenue: 42000 },
+  { quarter: "Q2", revenue: 58000 },
+  { quarter: "Q3", revenue: 71000 },
+  { quarter: "Q4", revenue: 64000 },
+]
+
+export function ExportableChart() {
+  const chartRef = useChartRef()
+
+  const downloadPNG = async () => {
+    const blob = await chartRef.current!.toPNG({ scale: 2 })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "revenue-chart.png"
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const downloadSVG = () => {
+    const svg = chartRef.current!.toSVG()
+    const blob = new Blob([svg], { type: "image/svg+xml" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "revenue-chart.svg"
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const copyToClipboard = async () => {
+    await chartRef.current!.toClipboard()
+    alert("Chart copied to clipboard")
+  }
+
+  return (
+    <div>
+      <LineChart ref={chartRef} data={data} x="quarter" y="revenue" className="h-64 w-full" />
+      <div className="flex gap-2 mt-2">
+        <button onClick={downloadPNG}>Download PNG</button>
+        <button onClick={downloadSVG}>Download SVG</button>
+        <button onClick={copyToClipboard}>Copy to Clipboard</button>
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## API Reference
+
+### `toSVG()`
+
+```ts
+toSVG(): string
+```
+
+Returns the chart's SVG element as an HTML string. Only available when using the SVG renderer. Throws an error if the chart uses the Canvas renderer.
+
+```ts
+const svgString = chart.toSVG()
+// '<?xml ...><svg xmlns="http://www.w3.org/2000/svg" ...>...</svg>'
+```
+
+### `toPNG(options?)`
+
+```ts
+toPNG(options?: { scale?: number }): Promise<Blob>
+```
+
+Returns a `Promise<Blob>` containing the chart as a PNG image.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `scale` | `number` | `2` | Resolution multiplier. 2 = 2x pixel density (good for Retina displays) |
+
+**SVG renderer**: The SVG is serialized, loaded into an `Image`, drawn onto an offscreen `<canvas>` at the specified scale, then exported as PNG.
+
+**Canvas renderer**: The canvas is exported directly via `canvas.toBlob()`. The `scale` option is ignored since the canvas already has a fixed resolution.
+
+```ts
+// High-res export for print
+const blob = await chart.toPNG({ scale: 4 })
+
+// Standard resolution
+const blob = await chart.toPNG({ scale: 1 })
+```
+
+### `toClipboard()`
+
+```ts
+toClipboard(): Promise<void>
+```
+
+Copies the chart as a PNG image to the system clipboard using the Clipboard API. This calls `toPNG()` internally, then writes the blob via `navigator.clipboard.write()`.
+
+```ts
+await chart.toClipboard()
+// User can now Ctrl+V / Cmd+V the chart into documents, Slack, email, etc.
+```
+
+> The Clipboard API requires a secure context (HTTPS) and may require user interaction (button click) in some browsers.
+
+---
+
+## Core API (Advanced)
+
+The export subsystem is implemented by `createExporter()`, which the chart orchestrator calls internally. If you are building a custom chart type, you can use it directly:
+
+```ts
+import { createExporter } from "@chartts/core/api/exporter"
+
+const exporter = createExporter({
+  getRoot: () => rendererRoot,
+  getWidth: () => 800,
+  getHeight: () => 400,
+  isCanvas: false,
+})
+
+const svg = exporter.toSVG()
+const png = await exporter.toPNG({ scale: 3 })
+await exporter.toClipboard()
+```
+
+---
+
+## Server-Side Export
+
+For server-side rendering (Node.js), SVG export works directly since it produces a string. PNG export requires a DOM environment. Use a headless browser or a library like `sharp` to convert the SVG string:
+
+```ts
+import { createChart } from "@chartts/core/ssr"
+
+const chart = createChart({ type: "bar", width: 800, height: 400 })
+chart.setData(data)
+
+// SVG string, ready to save or send as HTTP response
+const svg = chart.toSVG()
+```
+
+---
+
+## Tips
+
+- `scale: 2` (the default) produces crisp images on high-DPI screens. Use `scale: 1` for smaller file sizes when high resolution is not needed
+- `toSVG()` preserves all CSS classes and inline styles. The output is a self-contained SVG document
+- For automated exports (e.g., scheduled reports), use server-side rendering with `@chartts/ssr` to avoid needing a browser
+- `toClipboard()` requires a user gesture in most browsers. Call it from a click handler, not on page load
+- The Canvas renderer does not support `toSVG()`. If you need both PNG and SVG export, use the SVG renderer

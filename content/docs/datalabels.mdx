@@ -1,0 +1,270 @@
+---
+title: "Data Labels Plugin"
+description: "Automatically place text labels on data points for bar, line, and pie charts. Configurable formatting, positioning, and smart display."
+badge: "@chartts/datalabels"
+---
+
+## Quick Start
+
+```ts
+import { barLabels } from '@chartts/datalabels'
+
+const nodes = barLabels(preparedData, chartArea, xScale, yScale, {
+  format: (value) => `$${value.toLocaleString()}`,
+  color: '#374151',
+  fontSize: 12,
+})
+```
+
+Returns `RenderNode[]` ready to inject into the chart render tree. Each preset is tuned for a specific chart type.
+
+## Installation
+
+```bash
+npm install @chartts/datalabels @chartts/core
+```
+
+---
+
+## API Reference
+
+### `createDataLabels(data, area, xScale, yScale, options?)`
+
+The core function. Generates text `RenderNode` elements for every data point across all series. Each value is mapped through the provided scales and positioned relative to its data point. Nodes are wrapped in a group with class `chartts-datalabels`.
+
+```ts
+function createDataLabels(
+  data: PreparedData,
+  area: ChartArea,
+  xScale: Scale,
+  yScale: Scale,
+  options?: DataLabelOptions,
+): RenderNode[]
+```
+
+```ts
+import { createDataLabels } from '@chartts/datalabels'
+
+const labels = createDataLabels(data, area, xScale, yScale, {
+  position: 'top',
+  format: (value, index, seriesIndex) => `${value}%`,
+  offset: 14,
+  display: (value) => value > 50,
+})
+```
+
+---
+
+### `DataLabelOptions`
+
+```ts
+interface DataLabelOptions {
+  position?: 'top' | 'center' | 'bottom' | 'outside' | 'inside'
+  format?: (value: number, index: number, seriesIndex: number) => string
+  color?: string
+  fontSize?: number
+  fontFamily?: string
+  fontWeight?: string | number
+  offset?: number
+  rotation?: number
+  anchor?: 'start' | 'middle' | 'end'
+  display?: boolean | ((value: number, index: number) => boolean)
+  backgroundColor?: string
+  padding?: number
+  borderRadius?: number
+}
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `position` | `'top' \| 'center' \| 'bottom' \| 'outside' \| 'inside'` | `'top'` | Where to place the label relative to the data point |
+| `format` | `(value, index, seriesIndex) => string` | rounds to 2 decimals | Custom label text formatter |
+| `color` | `string` | `'#374151'` | Text fill color |
+| `fontSize` | `number` | `11` | Font size in pixels |
+| `fontFamily` | `string` | inherited | CSS font family |
+| `fontWeight` | `string \| number` | inherited | CSS font weight |
+| `offset` | `number` | `14` | Pixels between the data point and the label |
+| `rotation` | `number` | `0` | Label rotation in degrees |
+| `anchor` | `'start' \| 'middle' \| 'end'` | `'middle'` | SVG text-anchor alignment |
+| `display` | `boolean \| (value, index) => boolean` | `true` | Control which labels are visible |
+| `backgroundColor` | `string` | none | Background rectangle fill color |
+| `padding` | `number` | `3` | Padding around background rectangle |
+| `borderRadius` | `number` | `2` | Corner radius of background rectangle |
+
+---
+
+## Presets
+
+### `barLabels(data, area, xScale, yScale, opts?)`
+
+Optimized for bar charts. Labels are placed above each bar in the `'top'` position with `anchor: 'middle'`, `offset: 8`, `fontSize: 11`.
+
+```ts
+function barLabels(
+  data: PreparedData,
+  area: ChartArea,
+  xScale: Scale,
+  yScale: Scale,
+  opts?: DataLabelOptions,
+): RenderNode[]
+```
+
+```ts
+import { barLabels } from '@chartts/datalabels'
+
+const labels = barLabels(data, area, xScale, yScale, {
+  format: (value) => `${value}k`,
+  color: '#1e40af',
+  fontWeight: 600,
+})
+```
+
+### `pieLabels(data, area, opts?)`
+
+Optimized for pie and donut charts. Labels are positioned at the centroid of each arc segment using polar coordinate math. No scales needed since pie charts use radial layout.
+
+Default position is `'outside'` (at 78% of radius). Set `position: 'inside'` to place labels at 55% of radius.
+
+```ts
+function pieLabels(
+  data: PreparedData,
+  area: ChartArea,
+  opts?: DataLabelOptions,
+): RenderNode[]
+```
+
+```ts
+import { pieLabels } from '@chartts/datalabels'
+
+const labels = pieLabels(data, chartArea, {
+  format: (value) => `${value}%`,
+  color: '#ffffff',
+  fontSize: 13,
+  fontWeight: 'bold',
+  position: 'inside',
+  backgroundColor: 'rgba(0,0,0,0.5)',
+  padding: 4,
+  borderRadius: 4,
+})
+```
+
+### `lineLabels(data, area, xScale, yScale, opts?)`
+
+Optimized for line charts. By default, uses **smart display** that only labels key points: the first value, last value, minimum, and maximum for each series. This prevents label clutter on dense line charts.
+
+To show all labels, set `display: true`. To customize which labels appear, pass a filter function.
+
+```ts
+function lineLabels(
+  data: PreparedData,
+  area: ChartArea,
+  xScale: Scale,
+  yScale: Scale,
+  opts?: DataLabelOptions,
+): RenderNode[]
+```
+
+```ts
+import { lineLabels } from '@chartts/datalabels'
+
+// Smart mode: only first, last, min, max
+const smartLabels = lineLabels(data, area, xScale, yScale, {
+  format: (value) => `$${value}`,
+})
+
+// Show all labels
+const allLabels = lineLabels(data, area, xScale, yScale, {
+  display: true,
+  format: (value) => value.toFixed(1),
+})
+
+// Custom filter: only show values above 100
+const filteredLabels = lineLabels(data, area, xScale, yScale, {
+  display: (value) => value > 100,
+  color: '#dc2626',
+})
+```
+
+---
+
+## Practical Examples
+
+### Revenue bar chart with formatted labels
+
+```ts
+import { barLabels } from '@chartts/datalabels'
+
+const labels = barLabels(data, area, xScale, yScale, {
+  format: (value) => {
+    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
+    if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`
+    return `$${value}`
+  },
+  color: '#166534',
+  fontWeight: 600,
+  backgroundColor: '#dcfce7',
+  padding: 4,
+  borderRadius: 3,
+})
+```
+
+### Pie chart with percentage and value
+
+```ts
+import { pieLabels } from '@chartts/datalabels'
+
+const total = data.series[0].values.reduce((s, v) => s + v, 0)
+
+const labels = pieLabels(data, area, {
+  format: (value) => {
+    const pct = ((value / total) * 100).toFixed(0)
+    return `${pct}%`
+  },
+  position: 'outside',
+  fontSize: 12,
+  color: '#475569',
+})
+```
+
+### Line chart: only label peaks
+
+```ts
+import { lineLabels } from '@chartts/datalabels'
+
+// Use smart mode (default) to auto-detect peaks
+const labels = lineLabels(data, area, xScale, yScale, {
+  format: (value) => value.toFixed(0),
+  backgroundColor: '#1e293b',
+  color: '#ffffff',
+  padding: 4,
+  borderRadius: 6,
+  fontSize: 10,
+})
+```
+
+### Conditional coloring
+
+```ts
+import { createDataLabels } from '@chartts/datalabels'
+
+// Separate positive and negative labels with different colors
+const positiveLabels = createDataLabels(data, area, xScale, yScale, {
+  display: (value) => value >= 0,
+  color: '#16a34a',
+  format: (v) => `+${v.toFixed(1)}%`,
+})
+
+const negativeLabels = createDataLabels(data, area, xScale, yScale, {
+  display: (value) => value < 0,
+  color: '#dc2626',
+  format: (v) => `${v.toFixed(1)}%`,
+})
+```
+
+---
+
+## Related
+
+- [@chartts/annotation](/docs/annotation-plugin) for reference lines, areas, and thresholds
+- [Bar Chart](/docs/charts/bar) for bar chart rendering
+- [Line Chart](/docs/charts/line) for line chart rendering

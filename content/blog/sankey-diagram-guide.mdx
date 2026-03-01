@@ -1,0 +1,539 @@
+---
+title: "How to Build Sankey Diagrams in React: A Complete Guide"
+description: "Build interactive Sankey diagrams with React. Visualize flows, energy transfers, budget allocation, and user journeys. Step-by-step guide with Chart.ts."
+date: "2026-02-19"
+readTime: "11 min read"
+tag: "Tutorial"
+---
+
+A **Sankey diagram** shows how quantities flow between stages. The width of each flow is proportional to its magnitude. Big flows are wide. Small flows are narrow. You can trace where things come from and where they go at a glance.
+
+They were invented by Irish engineer Matthew Sankey in 1898 to visualize the energy efficiency of a steam engine. The original diagram showed how much of the input energy became useful work and how much was lost to exhaust, condensation, and friction. Over a century later, the same visual language is used for everything from national energy budgets to website user flows.
+
+This guide covers what Sankey diagrams are, when to use them, and how to build interactive ones in React with Chart.ts.
+
+## When to use a Sankey diagram
+
+Sankey diagrams excel at one thing: showing **many-to-many flows** between categories where the relative size of each flow matters.
+
+### Good use cases
+
+**Energy flow.** The classic use case. Where does a country's energy come from (coal, gas, renewables) and where does it go (residential, commercial, industrial, transportation)? The International Energy Agency and the US Department of Energy publish Sankey diagrams that visualize entire national energy systems.
+
+**Budget allocation.** A company earns revenue from three business lines and spends it across eight departments. A Sankey diagram shows which revenue sources fund which departments and reveals whether a single business line is subsidizing everything else.
+
+**User journey analysis.** Users land on your site from five traffic sources (organic search, paid ads, social media, email, direct). They visit different pages and eventually convert, bounce, or sign up. A Sankey diagram traces these paths and shows where users drop off.
+
+**Supply chain.** Raw materials flow from suppliers to factories to distribution centers to retail stores. A Sankey diagram reveals bottlenecks, shows which suppliers feed which products, and highlights concentration risk.
+
+**Website traffic.** Where do page views come from, and where do they go? A Sankey diagram can show the flow from landing pages through the site to exit pages, revealing the actual navigation patterns users follow versus the ones you designed.
+
+### Poor use cases
+
+Sankey diagrams are not the right choice for:
+
+- **Time series data.** Use line or area charts.
+- **Simple part-to-whole relationships.** Use a bar chart or treemap.
+- **Comparing two values.** Use a bar chart.
+- **Data with many small flows.** If you have 50 categories with similar-sized flows, the diagram becomes a tangle of spaghetti. Consider grouping small categories into an "Other" bucket.
+
+## Understanding Sankey data structure
+
+Sankey diagrams consume two types of data: **nodes** and **links**.
+
+**Nodes** are the categories. In an energy flow diagram, nodes might be "Coal," "Natural Gas," "Solar," "Residential," "Commercial," and "Industrial."
+
+**Links** are the flows between nodes. Each link has a source node, a target node, and a value representing the flow magnitude.
+
+```typescript
+interface SankeyNode {
+  id: string;
+  label: string;
+  color?: string;
+}
+
+interface SankeyLink {
+  source: string; // node id
+  target: string; // node id
+  value: number;
+}
+
+interface SankeyData {
+  nodes: SankeyNode[];
+  links: SankeyLink[];
+}
+```
+
+Here is a concrete example for a website traffic flow:
+
+```typescript
+const trafficFlow: SankeyData = {
+  nodes: [
+    // Sources
+    { id: "organic", label: "Organic Search" },
+    { id: "paid", label: "Paid Ads" },
+    { id: "social", label: "Social Media" },
+    { id: "direct", label: "Direct" },
+    // Pages
+    { id: "homepage", label: "Homepage" },
+    { id: "pricing", label: "Pricing" },
+    { id: "docs", label: "Documentation" },
+    { id: "blog", label: "Blog" },
+    // Outcomes
+    { id: "signup", label: "Sign Up" },
+    { id: "trial", label: "Start Trial" },
+    { id: "bounce", label: "Bounce" },
+  ],
+  links: [
+    // Source to page flows
+    { source: "organic", target: "homepage", value: 5000 },
+    { source: "organic", target: "docs", value: 3500 },
+    { source: "organic", target: "blog", value: 8000 },
+    { source: "paid", target: "homepage", value: 2000 },
+    { source: "paid", target: "pricing", value: 6000 },
+    { source: "social", target: "blog", value: 4000 },
+    { source: "social", target: "homepage", value: 1500 },
+    { source: "direct", target: "homepage", value: 3000 },
+    { source: "direct", target: "pricing", value: 1000 },
+    // Page to outcome flows
+    { source: "homepage", target: "signup", value: 2500 },
+    { source: "homepage", target: "bounce", value: 9000 },
+    { source: "pricing", target: "trial", value: 4000 },
+    { source: "pricing", target: "bounce", value: 3000 },
+    { source: "docs", target: "signup", value: 1500 },
+    { source: "docs", target: "bounce", value: 2000 },
+    { source: "blog", target: "signup", value: 3000 },
+    { source: "blog", target: "bounce", value: 9000 },
+  ],
+};
+```
+
+The layout algorithm handles positioning. It determines the vertical order of nodes at each stage and the curvature of the links between them. You provide the data. The library computes the geometry.
+
+## Building a basic Sankey diagram
+
+With Chart.ts, rendering a Sankey diagram is straightforward:
+
+```tsx
+import { SankeyChart } from "@chartts/react";
+
+const energyData = {
+  nodes: [
+    { id: "coal", label: "Coal" },
+    { id: "gas", label: "Natural Gas" },
+    { id: "solar", label: "Solar" },
+    { id: "wind", label: "Wind" },
+    { id: "nuclear", label: "Nuclear" },
+    { id: "residential", label: "Residential" },
+    { id: "commercial", label: "Commercial" },
+    { id: "industrial", label: "Industrial" },
+    { id: "transport", label: "Transportation" },
+    { id: "losses", label: "Losses" },
+  ],
+  links: [
+    { source: "coal", target: "industrial", value: 120 },
+    { source: "coal", target: "commercial", value: 40 },
+    { source: "coal", target: "losses", value: 80 },
+    { source: "gas", target: "residential", value: 90 },
+    { source: "gas", target: "commercial", value: 60 },
+    { source: "gas", target: "industrial", value: 70 },
+    { source: "gas", target: "losses", value: 30 },
+    { source: "solar", target: "residential", value: 50 },
+    { source: "solar", target: "commercial", value: 30 },
+    { source: "wind", target: "industrial", value: 45 },
+    { source: "wind", target: "commercial", value: 25 },
+    { source: "nuclear", target: "industrial", value: 80 },
+    { source: "nuclear", target: "commercial", value: 40 },
+    { source: "nuclear", target: "losses", value: 60 },
+  ],
+};
+
+export function EnergyFlowDiagram() {
+  return (
+    <SankeyChart
+      data={energyData}
+      className="h-[500px] w-full"
+      nodeClassName="fill-gray-700 dark:fill-gray-300"
+      linkClassName="fill-gray-300/50 dark:fill-gray-600/50"
+      labelClassName="text-sm text-gray-700 dark:text-gray-300"
+      nodeWidth={20}
+      nodePadding={12}
+    />
+  );
+}
+```
+
+The `nodeWidth` prop controls how thick the rectangular node blocks are. The `nodePadding` prop controls the vertical spacing between nodes in the same column. The layout algorithm positions nodes to minimize link crossings.
+
+## Customizing node colors
+
+In most Sankey diagrams, color is used to distinguish categories or to carry meaning (green for renewable energy, gray for fossil fuels, red for losses).
+
+```tsx
+const coloredEnergyData = {
+  nodes: [
+    { id: "coal", label: "Coal", color: "#374151" },
+    { id: "gas", label: "Natural Gas", color: "#6b7280" },
+    { id: "solar", label: "Solar", color: "#f59e0b" },
+    { id: "wind", label: "Wind", color: "#06b6d4" },
+    { id: "nuclear", label: "Nuclear", color: "#8b5cf6" },
+    { id: "residential", label: "Residential", color: "#3b82f6" },
+    { id: "commercial", label: "Commercial", color: "#10b981" },
+    { id: "industrial", label: "Industrial", color: "#f97316" },
+    { id: "transport", label: "Transportation", color: "#ef4444" },
+    { id: "losses", label: "Losses", color: "#dc2626" },
+  ],
+  links: [
+    // ... same links as before
+  ],
+};
+
+export function ColoredEnergyFlow() {
+  return (
+    <SankeyChart
+      data={coloredEnergyData}
+      className="h-[500px] w-full"
+      linkColorMode="source"
+      linkOpacity={0.4}
+      labelClassName="text-sm font-medium"
+      nodeWidth={20}
+      nodePadding={12}
+    />
+  );
+}
+```
+
+The `linkColorMode` prop controls how links are colored:
+
+- `"source"` - each link takes the color of its source node
+- `"target"` - each link takes the color of its target node
+- `"gradient"` - each link fades from the source color to the target color
+- `"none"` - all links use the default `linkClassName` color
+
+The gradient mode is visually striking and makes it easy to trace flows from source to destination:
+
+```tsx
+<SankeyChart
+  data={data}
+  className="h-[500px] w-full"
+  linkColorMode="gradient"
+  linkOpacity={0.5}
+/>
+```
+
+## Multi-level Sankey diagrams
+
+Real-world data often has more than two levels. A budget flow might go from revenue sources to departments to specific cost categories. A user journey might flow through four or five stages.
+
+Chart.ts handles multi-level Sankey diagrams by detecting the graph structure from your links. If node A connects to node B, and node B connects to node C, then A is level 1, B is level 2, and C is level 3.
+
+```tsx
+const budgetFlow = {
+  nodes: [
+    // Revenue sources (Level 1)
+    { id: "product", label: "Product Revenue", color: "#3b82f6" },
+    { id: "services", label: "Services Revenue", color: "#8b5cf6" },
+    { id: "licensing", label: "Licensing", color: "#06b6d4" },
+    // Departments (Level 2)
+    { id: "engineering", label: "Engineering" },
+    { id: "sales", label: "Sales & Marketing" },
+    { id: "operations", label: "Operations" },
+    { id: "admin", label: "Administration" },
+    // Cost categories (Level 3)
+    { id: "salaries", label: "Salaries", color: "#f97316" },
+    { id: "infrastructure", label: "Infrastructure", color: "#ef4444" },
+    { id: "tools", label: "Tools & Software", color: "#f59e0b" },
+    { id: "travel", label: "Travel", color: "#10b981" },
+    { id: "office", label: "Office", color: "#ec4899" },
+    { id: "profit", label: "Profit", color: "#22c55e" },
+  ],
+  links: [
+    // Revenue to departments
+    { source: "product", target: "engineering", value: 2000 },
+    { source: "product", target: "sales", value: 800 },
+    { source: "product", target: "operations", value: 400 },
+    { source: "services", target: "engineering", value: 500 },
+    { source: "services", target: "sales", value: 300 },
+    { source: "services", target: "admin", value: 200 },
+    { source: "licensing", target: "sales", value: 100 },
+    { source: "licensing", target: "admin", value: 100 },
+    { source: "licensing", target: "operations", value: 50 },
+    // Departments to cost categories
+    { source: "engineering", target: "salaries", value: 1800 },
+    { source: "engineering", target: "infrastructure", value: 500 },
+    { source: "engineering", target: "tools", value: 200 },
+    { source: "sales", target: "salaries", value: 600 },
+    { source: "sales", target: "travel", value: 200 },
+    { source: "sales", target: "tools", value: 100 },
+    { source: "sales", target: "profit", value: 300 },
+    { source: "operations", target: "salaries", value: 200 },
+    { source: "operations", target: "office", value: 150 },
+    { source: "operations", target: "infrastructure", value: 100 },
+    { source: "admin", target: "salaries", value: 200 },
+    { source: "admin", target: "office", value: 50 },
+    { source: "admin", target: "tools", value: 50 },
+  ],
+};
+
+export function BudgetFlowDiagram() {
+  return (
+    <SankeyChart
+      data={budgetFlow}
+      className="h-[600px] w-full"
+      linkColorMode="gradient"
+      linkOpacity={0.35}
+      nodeWidth={18}
+      nodePadding={14}
+      labelClassName="text-sm font-medium text-gray-800 dark:text-gray-200"
+    />
+  );
+}
+```
+
+The diagram automatically arranges nodes into three columns. Revenue sources appear on the left, departments in the middle, and cost categories on the right. You can see at a glance how product revenue flows through engineering into salaries and infrastructure.
+
+## Interactive hover effects
+
+Sankey diagrams become much more useful with interactivity. When a user hovers over a node or link, you can highlight the connected flows and dim everything else.
+
+```tsx
+import { SankeyChart } from "@chartts/react";
+
+export function InteractiveEnergyFlow() {
+  return (
+    <SankeyChart
+      data={energyData}
+      className="h-[500px] w-full"
+      linkColorMode="source"
+      linkOpacity={0.3}
+      nodeWidth={20}
+      nodePadding={12}
+      labelClassName="text-sm font-medium"
+      hover={{
+        highlightConnected: true,
+        dimOpacity: 0.08,
+        highlightOpacity: 0.6,
+      }}
+      onNodeHover={(node) => {
+        console.log(`Hovered: ${node.label}`);
+      }}
+      onLinkHover={(link) => {
+        console.log(`Flow: ${link.source} -> ${link.target}: ${link.value}`);
+      }}
+    />
+  );
+}
+```
+
+When `highlightConnected` is true, hovering over a node highlights all links connected to that node and dims everything else. This lets the user isolate a single source or destination and see all its connections.
+
+For a more polished experience, add a tooltip that shows the flow details:
+
+```tsx
+import { SankeyChart, Tooltip } from "@chartts/react";
+
+export function SankeyWithTooltip() {
+  return (
+    <SankeyChart
+      data={budgetFlow}
+      className="h-[600px] w-full"
+      linkColorMode="gradient"
+      linkOpacity={0.35}
+      hover={{ highlightConnected: true, dimOpacity: 0.08 }}
+    >
+      <Tooltip>
+        {(item) => {
+          if (item.type === "node") {
+            return (
+              <div className="rounded-lg bg-white px-4 py-3 shadow-xl ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
+                <p className="font-semibold text-gray-900 dark:text-gray-100">
+                  {item.label}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Total flow: ${item.totalValue.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {item.sourceLinks.length} incoming, {item.targetLinks.length} outgoing
+                </p>
+              </div>
+            );
+          }
+
+          if (item.type === "link") {
+            return (
+              <div className="rounded-lg bg-white px-4 py-3 shadow-xl ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
+                <p className="text-sm text-gray-500">
+                  {item.sourceLabel} → {item.targetLabel}
+                </p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  ${item.value.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {((item.value / item.sourceTotalValue) * 100).toFixed(1)}% of {item.sourceLabel}
+                </p>
+              </div>
+            );
+          }
+        }}
+      </Tooltip>
+    </SankeyChart>
+  );
+}
+```
+
+The tooltip renders contextual information depending on whether the user is hovering over a node or a link. For nodes, it shows total flow and connection count. For links, it shows the specific flow value and its percentage of the source node's total output.
+
+## User journey visualization
+
+One of the most practical applications of Sankey diagrams in web development is visualizing user journeys. Here is a complete example that turns analytics data into a user flow diagram:
+
+```tsx
+import { SankeyChart } from "@chartts/react";
+
+// Transform analytics data into Sankey format
+function buildUserJourney(sessions: AnalyticsSession[]): SankeyData {
+  const nodes = new Map<string, SankeyNode>();
+  const linkMap = new Map<string, number>();
+
+  for (const session of sessions) {
+    const pages = session.pageviews;
+
+    for (let i = 0; i < pages.length; i++) {
+      const pageId = `${i}-${pages[i].path}`;
+      if (!nodes.has(pageId)) {
+        nodes.set(pageId, {
+          id: pageId,
+          label: pages[i].title || pages[i].path,
+        });
+      }
+
+      if (i < pages.length - 1) {
+        const nextPageId = `${i + 1}-${pages[i + 1].path}`;
+        const linkKey = `${pageId}::${nextPageId}`;
+        linkMap.set(linkKey, (linkMap.get(linkKey) || 0) + 1);
+      }
+    }
+  }
+
+  const links = Array.from(linkMap.entries()).map(([key, value]) => {
+    const [source, target] = key.split("::");
+    return { source, target, value };
+  });
+
+  return {
+    nodes: Array.from(nodes.values()),
+    links: links.filter((l) => l.value > 10), // Filter noise
+  };
+}
+
+export function UserJourneyDiagram({ sessions }) {
+  const data = buildUserJourney(sessions);
+
+  return (
+    <div>
+      <h2 className="mb-4 text-xl font-bold">User Journey Flow</h2>
+      <p className="mb-6 text-gray-600 dark:text-gray-400">
+        How users navigate through your site. Width represents number of sessions.
+      </p>
+      <SankeyChart
+        data={data}
+        className="h-[600px] w-full"
+        linkColorMode="source"
+        linkOpacity={0.3}
+        nodeWidth={16}
+        nodePadding={10}
+        labelClassName="text-xs font-medium"
+        hover={{ highlightConnected: true, dimOpacity: 0.05 }}
+      />
+    </div>
+  );
+}
+```
+
+This pattern transforms raw analytics sessions into a Sankey format. Each column represents a step in the user journey. The width of each link shows how many users followed that particular path. You can immediately see the most common paths through your site, where users drop off, and which pages lead to conversions.
+
+## Server-side rendering
+
+Because Chart.ts produces SVG, Sankey diagrams work in Next.js Server Components without any special configuration:
+
+```tsx
+// app/analytics/flow/page.tsx
+import { SankeyChart } from "@chartts/react";
+
+async function getFlowData() {
+  const res = await fetch(`${process.env.API_URL}/analytics/flow`, {
+    next: { revalidate: 3600 },
+  });
+  return res.json();
+}
+
+export default async function FlowPage() {
+  const data = await getFlowData();
+
+  return (
+    <main className="mx-auto max-w-6xl p-8">
+      <h1 className="mb-8 text-3xl font-bold">Traffic Flow</h1>
+      <SankeyChart
+        data={data}
+        className="h-[600px] w-full"
+        linkColorMode="gradient"
+        linkOpacity={0.35}
+        nodeWidth={20}
+        nodePadding={14}
+        labelClassName="text-sm font-medium"
+      />
+    </main>
+  );
+}
+```
+
+The Sankey diagram renders to SVG on the server. The browser displays the fully-formed diagram without downloading or executing any chart JavaScript. This is particularly valuable for Sankey diagrams because their layout computation (positioning nodes and routing curved links) can be CPU-intensive. By running it on the server, you avoid blocking the browser's main thread.
+
+## Accessibility
+
+SVG-based Sankey diagrams are inherently more accessible than Canvas-based alternatives. Each node and link is a real DOM element that can carry ARIA attributes:
+
+```tsx
+<SankeyChart
+  data={data}
+  className="h-[600px] w-full"
+  aria-label="Energy flow diagram showing sources of energy and their destinations"
+  nodeAriaLabel={(node) =>
+    `${node.label}: total flow of ${node.totalValue} units`
+  }
+  linkAriaLabel={(link) =>
+    `Flow from ${link.sourceLabel} to ${link.targetLabel}: ${link.value} units`
+  }
+/>
+```
+
+Screen readers can navigate through the diagram, reading each node's label and flow value. Keyboard users can tab between nodes and links. This level of accessibility is simply not possible with Canvas rendering, where the entire diagram is a single opaque pixel buffer.
+
+## Performance considerations
+
+Sankey diagrams are computationally simpler than they look. The layout algorithm runs in O(n * k) time where n is the number of nodes and k is the number of iterations for position optimization. For typical use cases (under 100 nodes, under 500 links), layout computation takes less than 10ms.
+
+The rendering performance depends on the number of SVG elements. Each node is a `rect` and a `text` element. Each link is a `path` element. A Sankey diagram with 50 nodes and 200 links produces roughly 300 SVG elements, which browsers handle without any performance concern.
+
+For very large Sankey diagrams (500+ nodes), consider:
+
+- Grouping small flows into an "Other" category
+- Filtering flows below a minimum threshold
+- Using the Canvas renderer for display and SVG for export
+
+```tsx
+<SankeyChart
+  data={data}
+  className="h-[600px] w-full"
+  minLinkValue={100} // Hide flows smaller than 100
+  maxNodes={50} // Group remaining into "Other"
+/>
+```
+
+## Conclusion
+
+Sankey diagrams are one of the most effective ways to visualize flow data. They reveal patterns that tables and bar charts obscure: where resources come from, where they go, and how much is lost along the way.
+
+Chart.ts makes them accessible to React developers without requiring D3 expertise or Canvas manipulation. The SVG output integrates with Tailwind CSS, supports server-side rendering, and works with screen readers. The component API is declarative: you provide nodes and links, the library handles layout, rendering, and interaction.
+
+Whether you are visualizing energy systems, budget allocations, or user journeys, the patterns in this guide provide a starting point for production-quality Sankey diagrams.

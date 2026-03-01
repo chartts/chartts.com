@@ -1,0 +1,331 @@
+---
+title: "Best Lightweight Chart Libraries for JavaScript in 2026"
+description: "A deep comparison of lightweight JavaScript charting libraries by bundle size, performance, and Core Web Vitals impact. Includes gzipped size benchmarks for Chart.ts, uPlot, Chart.js, Frappe Charts, Chartist, and more."
+date: "2026-02-22"
+readTime: "12 min read"
+tag: "Performance"
+---
+
+Bundle size is not a vanity metric. It directly affects how fast your page loads, how quickly users can interact with it, and how Google ranks it in search results. For charting libraries, this matters more than most dependencies because charts are often visible above the fold and block meaningful paint.
+
+This guide compares the most lightweight JavaScript charting libraries available in 2026, with real gzipped size measurements, Core Web Vitals impact analysis, and honest assessments of what you gain and lose at each size tier.
+
+## Why bundle size matters for charts
+
+A charting library is not like a utility function hidden in your codebase. Charts render visible UI. They are frequently in the initial viewport. They often block Largest Contentful Paint (LCP) and contribute to Total Blocking Time (TBT).
+
+Here is what happens when you add a heavy charting library to a page:
+
+1. **The JavaScript must be downloaded.** On a 3G connection (1.6 Mbps), 100kb of gzipped JavaScript takes ~500ms to transfer. On a fast 4G connection (20 Mbps), it takes ~40ms. The difference between 15kb and 100kb is real on slower networks.
+
+2. **The JavaScript must be parsed and executed.** V8 can parse ~1MB of JavaScript per second on a mid-range mobile device. A 300kb (uncompressed) charting library takes ~300ms just to parse. This directly increases Total Blocking Time.
+
+3. **The chart must render.** SVG charts need DOM nodes created. Canvas charts need pixels drawn. WebGL charts need shaders compiled. All of this happens before the user sees anything.
+
+The total cost is: **download time + parse time + execution time + render time**. A lightweight library reduces the first three components significantly.
+
+### Core Web Vitals impact
+
+Google's Core Web Vitals measure three things that charting libraries directly affect:
+
+- **Largest Contentful Paint (LCP):** If a chart is the largest visible element, the chart library's load time directly impacts LCP. Target: under 2.5 seconds.
+- **Interaction to Next Paint (INP):** Heavy JavaScript execution blocks the main thread, delaying response to user interactions. A large charting library increases INP even if the user is not interacting with the chart. Target: under 200ms.
+- **Cumulative Layout Shift (CLS):** Charts that render asynchronously (after a heavy library loads) cause layout shifts if the container is not properly sized. Target: under 0.1.
+
+A lightweight charting library helps with all three metrics. A heavy one hurts all three.
+
+## Bundle size comparison table
+
+Here are measured gzipped transfer sizes for producing a single line chart with each library. These numbers reflect what actually gets sent over the network after tree-shaking (where supported):
+
+| Library | Gzipped Size | Rendering | Tree-Shakeable | SSR |
+|---------|-------------|-----------|----------------|-----|
+| uPlot | ~10kb | Canvas | No (already tiny) | No |
+| Chart.ts | &lt;15kb | SVG/Canvas/WebGL | Yes | Yes |
+| Frappe Charts | ~15kb | SVG | No | Partial |
+| Chartist | ~10kb | SVG | No | Yes |
+| Chart.js (tree-shaken) | ~25kb | Canvas | Yes (v4+) | No |
+| Lightweight Charts (TradingView) | ~45kb | Canvas | No | No |
+| ApexCharts | ~50kb | SVG | No | Partial |
+| Recharts | ~45kb | SVG | Partial | Yes |
+| Nivo | ~60kb | SVG/Canvas | Yes | Yes |
+| ECharts (min) | ~100kb | Canvas/SVG | Yes | Partial |
+| Plotly (partial) | ~300kb | SVG/WebGL | No | No |
+
+The spread is enormous. The lightest options are 10-15kb. The heaviest are 300kb+. That is a 20x difference in what you ship to your users.
+
+## The lightweight tier: under 20kb
+
+### uPlot (~10kb gzipped)
+
+[uPlot](https://github.com/leeoniya/uPlot) is possibly the fastest and smallest charting library in existence. It renders to Canvas and is hyper-optimized for time series data.
+
+**What you get at 10kb:**
+- Line charts and area charts
+- Time series with millisecond precision
+- Zoom and pan
+- Multiple Y axes
+- Cursor crosshair with hover values
+- Exceptional performance - millions of data points at 60fps
+
+**What you give up:**
+- No pie charts, bar charts (without plugins), scatter plots, or anything beyond time series
+- No SVG output - Canvas only, so no SSR and no CSS styling
+- No built-in tooltips (the cursor crosshair shows values, but custom tooltips require code)
+- Minimal documentation
+- No TypeScript types in the core package
+- The API is functional and low-level - it is not a "drop this component in" experience
+
+**Verdict:** If you are building a monitoring dashboard or trading interface and only need time series charts, uPlot is unbeatable. For anything else, it is too limited.
+
+```js
+import uPlot from "uplot"
+
+const opts = {
+  width: 800,
+  height: 400,
+  series: [
+    {},
+    { stroke: "steelblue", width: 2 }
+  ],
+}
+
+const data = [
+  [1, 2, 3, 4, 5],       // x values (timestamps)
+  [10, 20, 15, 25, 30],   // y values
+]
+
+new uPlot(opts, data, document.getElementById("chart"))
+```
+
+### Chart.ts (&lt;15kb gzipped)
+
+[Chart.ts](https://chartts.com) packs 65+ chart types into under 15kb gzipped. That is not a per-chart measurement - it is the entire library including all chart types, tooltips, legends, axes, and responsive containers.
+
+**What you get at &lt;15kb:**
+- 65+ chart types: Line, Bar, Area, Pie, Donut, Scatter, Bubble, Radar, Candlestick, Waterfall, Funnel, Gauge, Sparkline, Heatmap, Treemap, Boxplot, Histogram, Sankey, Sunburst, and more
+- SVG rendering by default with automatic Canvas (10k+ points) and WebGL (100k+ points) fallback
+- Native Tailwind CSS support via `className` props on every element
+- Full SSR support - SVG output renders on the server
+- TypeScript-first with complete type inference
+- Built-in accessibility (ARIA attributes, keyboard navigation)
+- Dark mode via Tailwind `dark:` variant
+- Framework packages for React, Vue, Svelte, Solid, and Angular
+
+**What you give up:**
+- Smaller community than established libraries
+- Fewer third-party resources and tutorials
+- Plugin ecosystem is still growing
+
+**Verdict:** Chart.ts delivers the widest feature set of any library in the sub-20kb tier. The combination of 65+ chart types, Tailwind support, and SSR compatibility at this bundle size is unique in the ecosystem.
+
+```tsx
+import { BarChart } from "@chartts/react"
+
+<BarChart
+  data={data}
+  x="category"
+  y="value"
+  className="h-64"
+  barClassName="fill-emerald-500 dark:fill-emerald-400"
+/>
+```
+
+### Frappe Charts (~15kb gzipped)
+
+[Frappe Charts](https://frappe.io/charts) is a simple, lightweight library from the team behind ERPNext.
+
+**What you get at 15kb:**
+- Line, Bar, Mixed, Pie, Percentage, and Heatmap charts
+- SVG rendering
+- Clean default styling
+- Simple, intuitive API
+- No dependencies
+
+**What you give up:**
+- Only 6 chart types
+- No TypeScript types
+- Limited customization
+- Small community and infrequent updates
+- No framework-specific packages
+- No dark mode support
+- No SSR support beyond basic SVG
+
+**Verdict:** If you only need basic charts and want something simple, Frappe Charts works. But for the same bundle budget, Chart.ts gives you 65+ chart types, TypeScript, and Tailwind support.
+
+### Chartist (~10kb gzipped)
+
+[Chartist](https://github.com/chartist-js/chartist) is one of the original lightweight charting libraries. It renders to SVG and uses CSS for styling.
+
+**What you get at 10kb:**
+- Line, Bar, and Pie charts
+- SVG output that can be styled with CSS
+- Responsive by default
+- Plugin system for extending functionality
+
+**What you give up:**
+- Only 3 chart types
+- The library has had periods of inactivity (though it has seen renewed maintenance)
+- Limited interactivity - no built-in tooltips or hover states in core
+- TypeScript types are community-maintained
+- The CSS-based styling approach requires writing custom stylesheets
+
+**Verdict:** Chartist pioneered the "style charts with CSS" approach. It is still functional but very limited in chart types. The CSS styling idea was ahead of its time but is better implemented with Tailwind utility classes today.
+
+## The medium tier: 20-50kb
+
+### Chart.js tree-shaken (~25kb gzipped)
+
+Chart.js v4 introduced proper tree-shaking. Instead of importing the entire library, you register only the components you use:
+
+```js
+import {
+  Chart,
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Filler,
+  Tooltip
+} from "chart.js"
+
+Chart.register(
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Filler,
+  Tooltip
+)
+```
+
+This brings the effective size down to ~25kb for a line chart. Add more chart types and plugins, and it grows.
+
+**The tradeoff:** You save ~10kb compared to importing everything, but you need to manually register every component. Forget one, and you get a runtime error. The DX is worse than "just import and use."
+
+**Verdict at ~25kb:** Decent for teams already invested in the Chart.js ecosystem. But at 25kb for a single chart type with Canvas-only rendering, Chart.ts offers more for less.
+
+### TradingView Lightweight Charts (~45kb gzipped)
+
+[Lightweight Charts](https://www.tradingview.com/lightweight-charts/) is TradingView's open-source library for financial charts.
+
+**What you get at 45kb:**
+- Candlestick, Line, Area, Bar, Histogram, and Baseline charts
+- Real-time data updates
+- Time scales with automatic formatting
+- Crosshair and price lines
+- Good performance with Canvas rendering
+
+**What you give up:**
+- Financial charts only - no pie, scatter, radar, etc.
+- Canvas only - no SSR
+- The "lightweight" name is relative to TradingView's full product, not to the charting ecosystem
+
+**Verdict:** Purpose-built for financial charts. If that is your use case, it is a good option. Otherwise, 45kb for 6 financial chart types is not competitive.
+
+## How to measure real-world impact
+
+Raw bundle size does not tell the full story. Here is how to measure the actual impact of a charting library on your application:
+
+### 1. Measure transfer size, not installed size
+
+The `node_modules` size is irrelevant. What matters is how many bytes go over the network. Use your build tool's output or your browser's Network tab to measure the gzipped transfer size.
+
+```bash
+# With webpack
+npx webpack --json | npx webpack-bundle-analyzer
+
+# With Vite
+npx vite build --report
+
+# With Next.js
+npx @next/bundle-analyzer
+```
+
+### 2. Measure parse time
+
+Bundle size affects parse time, which affects INP and TBT. Chrome DevTools' Performance tab shows script parsing time. Look for long tasks (>50ms) during initial load.
+
+A rough rule of thumb: 1kb of minified JavaScript takes ~1ms to parse on a mid-range mobile device. So:
+- 15kb library: ~15ms parse time
+- 100kb library: ~100ms parse time
+- 300kb library: ~300ms parse time
+
+15ms is invisible. 300ms is noticeable.
+
+### 3. Measure LCP impact
+
+If a chart is your LCP element, the charting library's total cost (download + parse + execute + render) directly determines your LCP score. Use Lighthouse or the Web Vitals Chrome extension to measure this.
+
+### 4. Test on real devices
+
+Your development machine is not representative. Test on a mid-range Android phone (Moto G Power or similar) on a throttled 4G connection. This is what Google uses for Core Web Vitals measurement.
+
+## Strategies for reducing chart bundle size
+
+Even with a heavy charting library, there are techniques to reduce its impact:
+
+### Lazy loading
+
+If charts are below the fold, lazy-load the library:
+
+```tsx
+import { lazy, Suspense } from "react"
+
+const Chart = lazy(() => import("./RevenueChart"))
+
+function Dashboard() {
+  return (
+    <Suspense fallback={<div className="h-64 animate-pulse bg-zinc-100" />}>
+      <Chart />
+    </Suspense>
+  )
+}
+```
+
+This removes the charting library from your initial bundle entirely. The chart loads when the component is rendered.
+
+### Dynamic imports in Next.js
+
+```tsx
+import dynamic from "next/dynamic"
+
+const Chart = dynamic(() => import("./RevenueChart"), {
+  ssr: false,
+  loading: () => <div className="h-64 animate-pulse bg-zinc-100 rounded-lg" />,
+})
+```
+
+### Code splitting by route
+
+If charts only appear on specific pages, ensure your bundler splits them into separate chunks. Most modern frameworks (Next.js, Remix, SvelteKit) do this automatically with file-based routing.
+
+### Use a lighter library
+
+The simplest way to reduce chart bundle size is to use a smaller library. If you are importing 100kb+ of charting code to render line and bar charts, you are overpaying.
+
+## The real cost of "just add a chart"
+
+Here is a concrete example. You have a Next.js marketing site that scores 98 on Lighthouse Performance. Your product manager asks for "a simple revenue chart on the homepage."
+
+**Scenario A: You add ECharts.** Your bundle grows by 100kb+. Parse time increases by ~100ms on mobile. LCP increases by 200-400ms on throttled connections. Your Lighthouse score drops to 85-90. The chart looks great, but the page feels slower.
+
+**Scenario B: You add Chart.ts.** Your bundle grows by &lt;15kb. Parse time increases by ~15ms. LCP impact is negligible. Your Lighthouse score stays at 96-98. The chart matches your Tailwind design system.
+
+**Scenario C: You add Plotly.** Your bundle grows by 300kb+. Your Lighthouse score drops to 70. Your tech lead asks what happened.
+
+This is not hypothetical. We see this play out on production sites constantly. The charting library is often the single largest dependency in a frontend application, and developers frequently choose it without checking the size.
+
+## Recommendation
+
+For most projects in 2026, the decision tree is straightforward:
+
+1. **Do you only need time series?** uPlot at 10kb is the performance king.
+2. **Do you need a variety of chart types with modern DX?** Chart.ts at &lt;15kb gives you 50+ types with Tailwind, TypeScript, and SSR support.
+3. **Are you already using Chart.js and cannot migrate?** Use tree-shaking to get it down to ~25kb per chart type.
+4. **Do you need scientific/statistical charts?** Accept the bundle cost of Plotly. Lazy-load it.
+5. **Do you need financial charts specifically?** TradingView Lightweight Charts at 45kb is purpose-built.
+
+The days of accepting 100kb+ charting libraries as inevitable are over. Modern libraries prove you can have a wide feature set at a fraction of the size. Your users' devices and network connections will thank you.

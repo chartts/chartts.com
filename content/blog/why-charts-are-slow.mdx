@@ -1,0 +1,548 @@
+---
+title: "Why Your React Charts Are Slow (And How to Fix Them)"
+description: "Deep dive into React chart performance. Why charts cause re-renders, bundle bloat, and jank. Practical fixes for Chart.js, Recharts, and alternatives."
+date: "2026-02-17"
+readTime: "13 min read"
+tag: "Performance"
+---
+
+You add a chart to your React dashboard. It works. You add five more. The page takes three seconds to become interactive. You scroll and it stutters. You resize the window and the whole tab freezes for 400ms.
+
+This is not unusual. Chart performance is one of the most common complaints in React applications. And the causes are almost always the same: unnecessary re-renders, oversized bundles, inefficient rendering pipelines, and architectural decisions baked into the charting library itself.
+
+This article is a deep dive into why React charts are slow and what you can do about it. Some fixes are library-agnostic. Some require switching tools. All of them are based on real performance problems measured in production applications.
+
+## Problem 1: Unnecessary re-renders
+
+React re-renders a component whenever its parent re-renders, its state changes, or its context changes. Charts are expensive to render. A bar chart with 100 data points might produce 200+ SVG elements or redraw an entire Canvas. When this happens on every keystroke, mouse move, or state update, performance collapses.
+
+### The common trap
+
+Here is a pattern that appears in almost every React dashboard:
+
+```tsx
+function Dashboard() {
+  const [selectedTab, setSelectedTab] = useState("overview");
+  const [dateRange, setDateRange] = useState("30d");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const data = useData(dateRange);
+
+  return (
+    <div>
+      <input
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="Search..."
+      />
+      <TabBar selected={selectedTab} onChange={setSelectedTab} />
+      <RevenueChart data={data.revenue} />
+      <UsersChart data={data.users} />
+      <ConversionChart data={data.conversions} />
+    </div>
+  );
+}
+```
+
+Every time the user types a character in the search input, `searchQuery` changes. The `Dashboard` component re-renders. All three charts re-render. The charts have nothing to do with the search query, but React does not know that.
+
+### Diagnosis
+
+Open React DevTools Profiler. Enable "Record why each component rendered." Type in the search box and look at the flame chart. You will see all three chart components re-rendering with the reason "Parent re-rendered."
+
+You can also measure render duration:
+
+```tsx
+import { Profiler } from "react";
+
+function onRender(id, phase, actualDuration) {
+  if (actualDuration > 16) {
+    console.warn(`${id} render took ${actualDuration.toFixed(1)}ms`);
+  }
+}
+
+<Profiler id="RevenueChart" onRender={onRender}>
+  <RevenueChart data={data.revenue} />
+</Profiler>
+```
+
+If chart renders exceed 16ms (one frame at 60fps), you have a problem.
+
+### Fix: Memoization
+
+The first line of defense is `React.memo`. It prevents a component from re-rendering if its props have not changed:
+
+```tsx
+const RevenueChart = React.memo(function RevenueChart({ data }) {
+  return (
+    <BarChart
+      data={data}
+      x="month"
+      y="revenue"
+      className="h-80 w-full"
+    />
+  );
+});
+```
+
+But `React.memo` only works if props are referentially stable. If `data.revenue` is a new array on every render (because `useData` returns a new object each time), memoization fails silently.
+
+Ensure data references are stable:
+
+```tsx
+function useData(dateRange: string) {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    fetchData(dateRange).then(setData);
+  }, [dateRange]);
+
+  // Derive chart data with useMemo to maintain referential stability
+  const revenue = useMemo(() => data?.revenue ?? [], [data]);
+  const users = useMemo(() => data?.users ?? [], [data]);
+  const conversions = useMemo(() => data?.conversions ?? [], [data]);
+
+  return { revenue, users, conversions };
+}
+```
+
+### Fix: Component isolation
+
+A more robust solution is to isolate state that changes frequently from components that are expensive to render:
+
+```tsx
+function Dashboard() {
+  const [dateRange, setDateRange] = useState("30d");
+  const data = useData(dateRange);
+
+  return (
+    <div>
+      <SearchBar /> {/* Has its own state, does not trigger parent re-render */}
+      <DateRangePicker value={dateRange} onChange={setDateRange} />
+      <ChartGrid data={data} />
+    </div>
+  );
+}
+
+function SearchBar() {
+  const [query, setQuery] = useState("");
+  return (
+    <input
+      value={query}
+      onChange={(e) => setQuery(e.target.value)}
+      placeholder="Search..."
+    />
+  );
+}
+
+const ChartGrid = React.memo(function ChartGrid({ data }) {
+  return (
+    <div className="grid grid-cols-2 gap-6">
+      <RevenueChart data={data.revenue} />
+      <UsersChart data={data.users} />
+      <ConversionChart data={data.conversions} />
+    </div>
+  );
+});
+```
+
+By moving the search state into its own component, typing no longer triggers re-renders of the chart grid.
+
+## Problem 2: Bundle size
+
+Chart libraries are among the largest dependencies in typical web applications. Here is what popular libraries add to your bundle:
+
+| Library | Minified + Gzipped | Notes |
+|---|---|---|
+| Chart.js | ~63kb | Plus adapter for React |
+| ECharts | ~312kb | Or ~160kb with tree-shaking |
+| Recharts | ~45kb | Plus D3 modules (~35kb) |
+| Nivo | ~60-120kb | Depends on chart types |
+| Victory | ~55kb | Plus D3 dependencies |
+| Highcharts | ~85kb | Commercial license required |
+| ApexCharts | ~110kb | Plus wrapper for React |
+| Chart.ts | ~12kb | All chart types included |
+
+These numbers matter because JavaScript is the most expensive resource per byte. A 100kb JavaScript bundle takes longer to process than a 100kb image. The browser must download it, parse it, compile it, and execute it. On a mid-range mobile device, 100kb of JavaScript takes roughly 200-400ms to parse and compile.
+
+### Diagnosis
+
+Use your bundler's analysis tool to see exactly how much your chart library contributes:
+
+```bash
+# Next.js
+ANALYZE=true next build
+
+# Vite
+npx vite-bundle-analyzer
+
+# Webpack
+npx webpack-bundle-analyzer stats.json
+```
+
+Look for chart-related modules in the visualization. In many applications, the chart library is the single largest dependency after React itself.
+
+### Fix: Tree-shaking
+
+Some libraries support tree-shaking, where the bundler only includes the code you actually use. But tree-shaking has limits:
+
+```tsx
+// This imports the entire Chart.js library (~63kb)
+import { Chart } from "chart.js/auto";
+
+// This imports only the bar chart components (~25kb)
+import {
+  Chart,
+  BarController,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+} from "chart.js";
+
+Chart.register(BarController, BarElement, CategoryScale, LinearScale);
+```
+
+The manual registration pattern reduces bundle size but adds boilerplate and requires you to know which internal modules each chart type needs. If you forget to register a component, you get a runtime error.
+
+### Fix: Dynamic imports
+
+Lazy-load charts that are not visible on initial page load:
+
+```tsx
+import { lazy, Suspense } from "react";
+
+const RevenueChart = lazy(() => import("./revenue-chart"));
+const AnalyticsChart = lazy(() => import("./analytics-chart"));
+
+function Dashboard() {
+  return (
+    <div>
+      <Suspense fallback={<ChartSkeleton />}>
+        <RevenueChart />
+      </Suspense>
+      <Suspense fallback={<ChartSkeleton />}>
+        <AnalyticsChart />
+      </Suspense>
+    </div>
+  );
+}
+```
+
+This splits chart code into separate chunks that load on demand. The initial page load is faster, but users see loading states when charts appear.
+
+### Fix: Use a lighter library
+
+The most effective fix for bundle size is to use a library that is simply smaller. Chart.ts ships the entire library, all 65+ chart types, in under 15kb gzipped. This is smaller than a single chart type in most other libraries.
+
+The size difference comes from architecture. Chart.ts does not bundle a layout engine, a color manipulation library, an animation framework, or a DOM abstraction layer. It outputs React elements directly. React handles the DOM. CSS handles the styling. The library only contains the math to convert data into coordinates.
+
+## Problem 3: Canvas rendering overhead
+
+Canvas-based chart libraries (Chart.js, ECharts, ApexCharts) redraw the entire chart on every update. A Canvas context does not have a DOM. There is no diffing. When any data point changes, the library clears the canvas and redraws every element from scratch.
+
+This becomes a problem when:
+
+1. **Frequent updates** - Real-time dashboards that update every second redraw the entire chart each time.
+2. **Multiple charts** - Six Canvas charts on one page means six full redraws per update cycle.
+3. **Large datasets** - A scatter plot with 10,000 points redraws all 10,000 on every interaction.
+4. **Tooltips and hover** - Moving the mouse across a chart triggers a redraw on every frame to update the tooltip position.
+
+### Diagnosis
+
+Open Chrome DevTools Performance tab. Record a trace while interacting with your chart (hovering, resizing, receiving data updates). Look for long frames (>16ms) in the flame chart. Canvas redraw operations appear as blocks in the rendering section.
+
+You can also monitor frame rate:
+
+```javascript
+let frameCount = 0;
+let lastTime = performance.now();
+
+function measureFPS() {
+  frameCount++;
+  const now = performance.now();
+  if (now - lastTime >= 1000) {
+    console.log(`FPS: ${frameCount}`);
+    frameCount = 0;
+    lastTime = now;
+  }
+  requestAnimationFrame(measureFPS);
+}
+measureFPS();
+```
+
+If your frame rate drops below 30fps during chart interactions, Canvas redraw is likely the bottleneck.
+
+### Fix: Use SVG for moderate datasets
+
+SVG elements are part of the DOM. React can diff them. When one data point changes, only the corresponding SVG element updates. The rest of the chart stays untouched.
+
+For datasets under 5,000 points, SVG consistently outperforms Canvas for interactive charts because partial updates are dramatically cheaper than full redraws.
+
+```tsx
+// SVG: React updates only the changed elements
+<BarChart
+  data={data}
+  x="month"
+  y="revenue"
+  className="h-80 w-full"
+/>
+
+// This bar chart produces ~200 SVG elements for 100 data points.
+// When one data point changes, React updates 2 elements (~0.1ms).
+// A Canvas library would redraw all 100 bars (~5-15ms).
+```
+
+### Fix: Use Canvas or WebGL for large datasets
+
+Above 5,000-10,000 data points, SVG hits its own limits. The DOM becomes too large. Layout calculations slow down. Scrolling causes jank because the browser has too many elements to composite.
+
+For large datasets, Canvas or WebGL is the right choice. The key is to minimize redraws:
+
+Chart.ts handles this automatically with its multi-renderer architecture. It uses SVG by default for accessibility and CSS styling. When data exceeds a configurable threshold, it switches to Canvas. For extremely large datasets (100k+), it uses WebGL:
+
+```tsx
+<ScatterChart
+  data={largeDataset} // 50,000 points
+  x="x"
+  y="y"
+  className="h-96 w-full"
+  renderer="auto" // Automatically selects Canvas for this dataset size
+/>
+```
+
+## Problem 4: D3 dependency chains
+
+Many React chart libraries (Recharts, Nivo, Victory, visx) are built on D3 modules. D3 is a powerful low-level visualization toolkit, but using it through a React wrapper creates performance overhead:
+
+1. **D3 calculates layout** - Scales, axes, paths, and positions are computed using D3 functions.
+2. **Results are converted to React elements** - The wrapper library translates D3's output into JSX.
+3. **React renders elements** - React creates or updates DOM elements.
+4. **D3 recalculates on updates** - When data changes, D3 recalculates everything, then the wrapper re-translates, then React re-renders.
+
+This three-layer pipeline means data flows through two separate systems (D3 and React) before reaching the DOM. Each layer adds computation and memory allocation.
+
+### Diagnosis
+
+Profile your chart rendering with React DevTools. If you see D3 scale and path calculations in the flame chart, you are paying the D3 overhead:
+
+```
+RevenueChart (12.4ms)
+  └── BarChart (11.8ms)
+       ├── computeScales (3.2ms)     ← D3 scale calculations
+       ├── computeAxes (2.1ms)       ← D3 axis generation
+       ├── computePaths (1.8ms)      ← D3 path generation
+       └── renderElements (4.7ms)    ← React element creation
+```
+
+### Fix: Libraries without D3
+
+Chart.ts does not use D3 internally. Scales, paths, and layouts are computed with minimal, purpose-built functions that output React elements directly. The computation pipeline is:
+
+```
+data → scale functions → coordinates → React elements → DOM
+```
+
+There is no intermediate representation. No conversion layer. The total computation for a 100-point bar chart is typically under 2ms.
+
+## Problem 5: Resize handling
+
+Responsive charts need to resize when their container changes dimensions. The naive approach is catastrophic for performance:
+
+```tsx
+// BAD: Resizes on every pixel of window resize
+function ResponsiveChart({ data }) {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const ref = useRef();
+
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      setSize({ width, height }); // Triggers re-render on every frame during resize
+    });
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref}>
+      <BarChart data={data} width={size.width} height={size.height} />
+    </div>
+  );
+}
+```
+
+During a window resize, `ResizeObserver` fires at 60fps. Each observation updates state. Each state update triggers a re-render. The chart recalculates and redraws 60 times per second during the resize. The result is visible jank and dropped frames.
+
+### Fix: Debounce resize
+
+```tsx
+function ResponsiveChart({ data }) {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const ref = useRef();
+  const timeoutRef = useRef();
+
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) => {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        const { width, height } = entries[0].contentRect;
+        setSize({ width, height });
+      }, 150);
+    });
+    observer.observe(ref.current);
+    return () => {
+      observer.disconnect();
+      clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  return (
+    <div ref={ref}>
+      <BarChart data={data} width={size.width} height={size.height} />
+    </div>
+  );
+}
+```
+
+### Fix: Use CSS-based sizing
+
+SVG charts can use `viewBox` and let CSS control the dimensions. No resize observer, no JavaScript-driven layout:
+
+```tsx
+// Chart.ts uses viewBox internally. Size it with CSS.
+<BarChart
+  data={data}
+  x="month"
+  y="revenue"
+  className="h-80 w-full" // CSS controls dimensions
+/>
+```
+
+The chart renders at a fixed internal resolution (e.g., 600x400) defined by the `viewBox`. CSS scales the SVG to fit its container. Resizing is handled by the browser's native SVG scaling, which is fast and does not trigger React re-renders.
+
+## Problem 6: Animations and transitions
+
+Animated charts look polished but can devastate performance if implemented poorly. The common mistake is animating with React state:
+
+```tsx
+// BAD: Animating by updating state 60 times per second
+function AnimatedChart({ data }) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    let frame;
+    const start = Date.now();
+    const animate = () => {
+      const elapsed = Date.now() - start;
+      setProgress(Math.min(elapsed / 1000, 1)); // 60 state updates per second
+      if (elapsed < 1000) frame = requestAnimationFrame(animate);
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [data]);
+
+  const animatedData = data.map((d) => ({
+    ...d,
+    value: d.value * progress,
+  }));
+
+  return <BarChart data={animatedData} x="label" y="value" />;
+}
+```
+
+This creates 60 React render cycles per second. Each render recreates the data array, recalculates the chart layout, and diffs the DOM. For complex charts, each frame takes 10-20ms, leaving no budget for anything else on the page.
+
+### Fix: CSS transitions
+
+SVG elements support CSS transitions natively:
+
+```css
+/* Animate bar heights with CSS */
+rect {
+  transition: height 0.3s ease-out, y 0.3s ease-out;
+}
+
+/* Animate line paths */
+path {
+  transition: d 0.3s ease-out;
+}
+```
+
+CSS transitions run on the compositor thread, separate from JavaScript. They do not trigger React re-renders. They do not block the main thread. And they are hardware-accelerated on most devices.
+
+Chart.ts uses CSS transitions by default for data updates. When you change the data prop, the bars grow or shrink smoothly without any JavaScript animation loop:
+
+```tsx
+<BarChart
+  data={currentData}
+  x="month"
+  y="revenue"
+  className="h-80 w-full"
+  transition={{ duration: 300, easing: "ease-out" }}
+/>
+```
+
+## Performance checklist
+
+Here is a checklist for diagnosing and fixing chart performance in React applications:
+
+**Re-renders**
+- Wrap chart components in `React.memo`
+- Ensure data props are referentially stable (use `useMemo`)
+- Isolate frequently-changing state from chart components
+- Profile with React DevTools Profiler
+
+**Bundle size**
+- Measure your chart library's contribution with bundle analysis
+- Tree-shake unused chart types if your library supports it
+- Lazy-load charts below the fold
+- Consider a lighter library if charts dominate your bundle
+
+**Rendering**
+- Use SVG for datasets under 5,000 points
+- Use Canvas for 5,000-100,000 points
+- Use WebGL above 100,000 points
+- Avoid full Canvas redraws on hover/tooltip interactions
+
+**Resize**
+- Debounce resize observers (150ms minimum)
+- Prefer CSS-based sizing with `viewBox` over JavaScript measurement
+- Avoid re-rendering charts during active resize
+
+**Animation**
+- Never animate by updating React state at 60fps
+- Use CSS transitions for SVG charts
+- Use `requestAnimationFrame` with direct DOM manipulation for Canvas
+- Limit animation to entry transitions; avoid continuous animation
+
+**Data processing**
+- Calculate derived values (scales, paths, positions) with `useMemo`
+- Avoid recalculating layouts when only styling changes
+- Downsample large datasets before charting (LTTB algorithm)
+- Pre-aggregate data on the server when possible
+
+## When to switch libraries
+
+Sometimes the right fix is not optimizing your current library. It is switching to one that does not have the problem in the first place.
+
+Consider switching if:
+
+- Your chart library adds more than 50kb to your bundle and you use fewer than 5 chart types
+- You need server-side rendering and your library requires `"use client"`
+- You are fighting the library's theming system to match your Tailwind design
+- You need accessible charts and your library uses Canvas exclusively
+- You have simple charting needs wrapped in a complex library
+
+Chart.ts was designed to avoid these problems from the start. It is under 15kb for all chart types. It renders on the server without configuration. It styles with Tailwind classes. It outputs accessible SVG. It does not use D3 internally.
+
+But no library is the right choice for every application. If you need highly customized, interactive visualizations with custom geometries, D3 or visx gives you lower-level control. If you need enterprise-grade charts with hundreds of configuration options, Highcharts or ECharts may be worth their bundle size. The right tool depends on what you are building.
+
+## Conclusion
+
+React chart performance problems are predictable because they have predictable causes. Unnecessary re-renders waste CPU cycles. Large bundles delay interactivity. Canvas full-redraws make interactions janky. D3 wrapper layers add overhead. Resize handling without debouncing creates frame drops. State-driven animation blocks the main thread.
+
+Each of these problems has a fix. Memoization prevents unnecessary re-renders. Tree-shaking and lazy loading reduce bundle impact. SVG with DOM diffing eliminates full-redraw overhead for moderate datasets. Purpose-built rendering pipelines remove D3 wrapper overhead. CSS-based sizing avoids resize observers. CSS transitions replace JavaScript animation loops.
+
+The most effective approach is to choose tools that avoid these problems architecturally rather than patching them after the fact. A library that is small, renders SVG, integrates with React's rendering model, and uses CSS for styling and animation simply does not have most of these performance failure modes.
+
+Whether you optimize your current setup or switch to a lighter tool, the performance gains are real and measurable. Your dashboards will load faster. Your charts will interact smoothly. Your users will stop noticing the charts and start reading the data, which is the whole point.

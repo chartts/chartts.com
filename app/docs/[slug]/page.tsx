@@ -136,29 +136,21 @@ const docs: Record<
       { label: "SVG Rendering", href: "/docs/svg" },
     ],
   },
+  // NOTE: The "themes" slug is now served by /docs/themes/page.tsx (static route)
+  // which renders an interactive showcase with 100+ live theme previews.
+  // This entry is kept as a fallback but will never be matched by Next.js routing.
   themes: {
     title: "Themes",
     description:
-      "Beautiful defaults with full customization. Every color, font, spacing value is overridable.",
+      "100+ theme presets with live chart previews. Browse the full showcase at /docs/themes.",
     content: [
       {
-        heading: "Beautiful defaults",
-        body: "Chart.ts looks stunning out of the box. Smooth gradients, clean typography, elegant animations, accessible color palettes. You don't need to configure anything to get a professional result.",
-      },
-      {
-        heading: "Global theme",
-        body: "Set a global theme object to control colors, fonts, spacing, border radius, and animation timing across all charts. Override per-chart or per-element with props and className.",
-      },
-      {
-        heading: "Color palettes",
-        body: "Ships with 8 curated color palettes designed for accessibility and aesthetics. Each palette includes 12 colors that work together and meet WCAG contrast requirements against both light and dark backgrounds.",
-      },
-      {
-        heading: "CSS custom properties",
-        body: "Every theme value maps to a CSS custom property. Override them in your stylesheet for complete control. Works with Tailwind's @theme directive in v4.",
+        heading: "Theme Showcase",
+        body: "Visit the dedicated theme showcase page for interactive previews of all 100+ themes, organized by category with live chart rendering and copy-paste code snippets.",
       },
     ],
     relatedLinks: [
+      { label: "Theme Showcase", href: "/docs/themes" },
       { label: "Tailwind CSS", href: "/docs/tailwind" },
       { label: "Accessibility", href: "/docs/accessibility" },
     ],
@@ -333,7 +325,7 @@ const docs: Record<
       },
       {
         heading: "Nuxt",
-        body: "Works with Nuxt 3 out of the box. Charts SSR as static SVG and hydrate on the client. No plugin or module needed.",
+        body: "Works with Nuxt 3 by default. Charts SSR as static SVG and hydrate on the client. No plugin or module needed.",
       },
     ],
     relatedLinks: [
@@ -455,6 +447,142 @@ const docs: Record<
     relatedLinks: [
       { label: "Getting Started", href: "/docs" },
       { label: "API Reference", href: "/docs/api" },
+    ],
+  },
+  remix: {
+    title: "Remix",
+    description:
+      "Use Chart.ts with Remix. Load data in loaders, render charts in routes. SVG output works with streaming and nested routes.",
+    badge: "@chartts/react",
+    content: [
+      {
+        heading: "Installation",
+        body: "npm install @chartts/react",
+      },
+      {
+        heading: "Basic usage with loaders",
+        body: "import { json } from '@remix-run/node'\nimport { useLoaderData } from '@remix-run/react'\nimport { BarChart } from '@chartts/react'\n\nexport async function loader() {\n  const metrics = await db.getMetrics()\n  return json({ metrics })\n}\n\nexport default function Dashboard() {\n  const { metrics } = useLoaderData<typeof loader>()\n  return <BarChart data={metrics} x=\"month\" y=\"sales\" className=\"h-64\" />\n}",
+      },
+      {
+        heading: "Streaming with defer",
+        body: "Use Remix's defer for slow data sources. Chart.ts components work with Suspense boundaries - render a skeleton while data loads, then swap in the chart.\n\nimport { defer } from '@remix-run/node'\nimport { Await, useLoaderData } from '@remix-run/react'\nimport { Suspense } from 'react'\nimport { LineChart } from '@chartts/react'\n\nexport async function loader() {\n  return defer({ metrics: db.getMetrics() })\n}\n\nexport default function Dashboard() {\n  const { metrics } = useLoaderData<typeof loader>()\n  return (\n    <Suspense fallback={<div className=\"h-64 animate-pulse card\" />}>\n      <Await resolve={metrics}>\n        {(data) => <LineChart data={data} x=\"month\" y=\"revenue\" />}\n      </Await>\n    </Suspense>\n  )\n}",
+      },
+      {
+        heading: "Nested routes",
+        body: "Chart.ts components work in any Remix route, including nested layouts. Share chart configuration through route context or layout components.",
+      },
+      {
+        heading: "Actions and mutations",
+        body: "Update chart data through Remix actions. The chart re-renders automatically when loader data changes after a form submission or action redirect.",
+      },
+    ],
+    relatedLinks: [
+      { label: "React", href: "/docs/react" },
+      { label: "Getting Started", href: "/docs" },
+    ],
+  },
+  astro: {
+    title: "Astro",
+    description:
+      "Use Chart.ts with Astro. Zero JS by default with SVG rendering. Use framework islands for interactivity.",
+    badge: "@chartts/core",
+    content: [
+      {
+        heading: "Installation",
+        body: "npm install @chartts/core",
+      },
+      {
+        heading: "Zero JS charts in .astro files",
+        body: "---\nimport { line } from '@chartts/core'\n\nconst data = await fetch('/api/metrics').then(r => r.json())\nconst svg = line({ data, x: 'month', y: 'revenue', width: 600, height: 300 })\n---\n\n<div class=\"chart\" set:html={svg} />\n\nCharts render at build time. Zero JavaScript shipped to the client. Perfect for content sites, blogs, and documentation.",
+      },
+      {
+        heading: "Interactive charts with islands",
+        body: "Need interactivity (tooltips, zoom, click events)? Use Chart.ts React/Vue/Svelte components as Astro islands:\n\n---\nimport { LineChart } from '@chartts/react'\n---\n\n<LineChart client:load data={data} x=\"month\" y=\"revenue\" />\n\nThe chart hydrates on page load. Use client:visible to hydrate when scrolled into view.",
+      },
+      {
+        heading: "Content Collections",
+        body: "Generate charts from Content Collections data. Fetch frontmatter values and render charts in .astro layouts. Great for data-driven blog posts and documentation.",
+      },
+      {
+        heading: "Static site generation",
+        body: "Chart.ts SVG output works perfectly with Astro's static site generation. Charts are embedded as HTML in the build output. No runtime rendering needed.",
+      },
+    ],
+    relatedLinks: [
+      { label: "Vanilla JS", href: "/docs/vanilla" },
+      { label: "SVG Rendering", href: "/docs/svg" },
+    ],
+  },
+  nuxt: {
+    title: "Nuxt",
+    description:
+      "Use Chart.ts with Nuxt 3. Vue 3 components with SSR, auto-imports, and Tailwind CSS integration.",
+    badge: "@chartts/vue",
+    content: [
+      {
+        heading: "Installation",
+        body: "npm install @chartts/vue",
+      },
+      {
+        heading: "Basic usage",
+        body: "<script setup lang=\"ts\">\nimport { LineChart } from '@chartts/vue'\n\nconst { data: metrics } = await useFetch('/api/metrics')\n</script>\n\n<template>\n  <LineChart :data=\"metrics\" x=\"month\" y=\"revenue\" class=\"h-64\" />\n</template>",
+      },
+      {
+        heading: "SSR support",
+        body: "Chart.ts Vue components render as SVG on the server and hydrate on the client. No special Nuxt configuration needed. Charts appear in the initial HTML response with zero layout shift.",
+      },
+      {
+        heading: "Auto-imports",
+        body: "You can register Chart.ts components globally with a Nuxt plugin for auto-imports. Create plugins/chartts.ts:\n\nimport { LineChart, BarChart, PieChart } from '@chartts/vue'\n\nexport default defineNuxtPlugin((nuxtApp) => {\n  nuxtApp.vueApp.component('LineChart', LineChart)\n  nuxtApp.vueApp.component('BarChart', BarChart)\n  nuxtApp.vueApp.component('PieChart', PieChart)\n})",
+      },
+      {
+        heading: "Tailwind CSS",
+        body: "If you're using @nuxtjs/tailwindcss, Chart.ts Tailwind classes work automatically. Dark mode with dark: variants, responsive breakpoints, and all Tailwind utilities.",
+      },
+      {
+        heading: "Composables",
+        body: "Use Nuxt composables like useFetch, useAsyncData, and useState to manage chart data. Reactive data flows through to charts automatically via Vue's reactivity system.",
+      },
+    ],
+    relatedLinks: [
+      { label: "Vue", href: "/docs/vue" },
+      { label: "Getting Started", href: "/docs" },
+    ],
+  },
+  sveltekit: {
+    title: "SvelteKit",
+    description:
+      "Use Chart.ts with SvelteKit. Load data in +page.server.ts, render charts with SSR, style with Tailwind.",
+    badge: "@chartts/svelte",
+    content: [
+      {
+        heading: "Installation",
+        body: "npm install @chartts/svelte",
+      },
+      {
+        heading: "Basic usage with load functions",
+        body: "<!-- src/routes/dashboard/+page.svelte -->\n<script lang=\"ts\">\n  import { BarChart } from '@chartts/svelte'\n  import type { PageData } from './$types'\n\n  export let data: PageData\n</script>\n\n<BarChart data={data.metrics} x=\"month\" y=\"sales\" class=\"h-64\" barClass=\"fill-cyan-500\" />",
+      },
+      {
+        heading: "Server-side data loading",
+        body: "Load chart data in +page.server.ts:\n\n// src/routes/dashboard/+page.server.ts\nimport type { PageServerLoad } from './$types'\n\nexport const load: PageServerLoad = async () => {\n  const metrics = await db.getMetrics()\n  return { metrics }\n}\n\nCharts receive server-loaded data and render as SSR SVG.",
+      },
+      {
+        heading: "Stores and reactivity",
+        body: "Use Svelte writable or derived stores for dynamic data. Charts re-render when store values change.\n\nimport { writable, derived } from 'svelte/store'\n\nconst data = writable(initialData)\nconst filtered = derived(data, $d => $d.filter(item => item.active))",
+      },
+      {
+        heading: "Form actions",
+        body: "Update chart data through SvelteKit form actions. After an action completes, load functions re-run and charts update with fresh data automatically.",
+      },
+      {
+        heading: "Static adapter",
+        body: "Chart.ts works with @sveltejs/adapter-static. Charts render at build time as SVG HTML. Perfect for static dashboards and documentation sites.",
+      },
+    ],
+    relatedLinks: [
+      { label: "Svelte", href: "/docs/svelte" },
+      { label: "Getting Started", href: "/docs" },
     ],
   },
   cdn: {

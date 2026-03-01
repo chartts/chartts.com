@@ -1,0 +1,354 @@
+---
+title: "The Chart.ts Plugin System: Building Custom Chart Types"
+description: "Create fully custom chart types with defineChartType(). Render context, hit testing, custom scales, and renderer-agnostic render nodes."
+date: "2026-02-28"
+readTime: "13 min read"
+tag: "Tutorial"
+---
+
+Chart.ts ships 65+ chart types. But sometimes your visualization does not fit any standard category. A radial gauge. A genome browser. A custom risk matrix. A chord diagram with domain-specific interaction rules.
+
+The plugin system lets you define entirely new chart types that work across all three renderers (SVG, Canvas, WebGL), integrate with the theme system, support Tailwind CSS classes, and behave like first-class Chart.ts citizens. This tutorial walks through building a custom gauge chart from scratch.
+
+## The defineChartType() API
+
+Every chart type in Chart.ts is defined with `defineChartType()`. This is the same API used internally for the built-in bar, line, scatter, and pie charts. There is no internal/external divide. Your custom chart has access to the same capabilities.
+
+```ts
+import { defineChartType } from "@chartts/core"
+
+const GaugeChart = defineChartType({
+  name: "gauge",
+  defaultOptions: {
+    min: 0,
+    max: 100,
+    value: 0,
+    startAngle: -135,
+    endAngle: 135,
+    thickness: 20,
+    colors: ["#22c55e", "#f59e0b", "#ef4444"],
+    thresholds: [33, 66, 100],
+  },
+  setup(ctx) {
+    // Called once when the chart mounts
+  },
+  render(ctx) {
+    // Called on every frame
+    return [] // Return render nodes
+  },
+  hitTest(ctx, point) {
+    // Called on mouse/touch interaction
+    return null
+  },
+})
+```
+
+The three lifecycle methods give you complete control. `setup()` runs once for initialization. `render()` produces the visual output on every frame. `hitTest()` determines what the user is interacting with.
+
+## The render context
+
+The `ctx` parameter in `render()` provides everything you need:
+
+```ts
+render(ctx) {
+  const {
+    width,        // Container width in pixels
+    height,       // Container height in pixels
+    chartArea,    // { top, right, bottom, left, width, height }
+    theme,        // Current theme colors and typography
+    options,      // Merged default + user options
+    data,         // The data array
+    scales,       // Computed scale functions
+    animate,      // Animation progress (0 to 1)
+  } = ctx
+
+  // ...
+}
+```
+
+The `chartArea` is the drawable region after margins and axes. The `theme` object contains all colors, font sizes, and spacing values from the active Chart.ts theme. The `animate` value transitions from 0 to 1 during mount and data change animations.
+
+## Building the gauge: render nodes
+
+Render nodes are the primitives you return from `render()`. They describe what to draw without specifying how. Chart.ts translates them to SVG elements, Canvas draw calls, or WebGL geometry depending on the active renderer.
+
+Available render nodes: `circle`, `arc`, `rect`, `line`, `path`, `text`, `group`, and `polygon`.
+
+Here is the gauge background arc:
+
+```ts
+import { defineChartType, arc, text, line, group } from "@chartts/core"
+
+const GaugeChart = defineChartType({
+  name: "gauge",
+  defaultOptions: {
+    min: 0,
+    max: 100,
+    value: 50,
+    startAngle: -135,
+    endAngle: 135,
+    thickness: 20,
+    colors: ["#22c55e", "#f59e0b", "#ef4444"],
+    thresholds: [33, 66, 100],
+    label: "",
+  },
+
+  render(ctx) {
+    const { width, height, options, theme, animate } = ctx
+    const cx = width / 2
+    const cy = height / 2
+    const radius = Math.min(cx, cy) - 20
+    const { min, max, startAngle, endAngle, thickness, colors, thresholds, value, label } = options
+
+    const nodes = []
+
+    // Background track
+    nodes.push(
+      arc({
+        cx,
+        cy,
+        innerRadius: radius - thickness,
+        outerRadius: radius,
+        startAngle,
+        endAngle,
+        fill: theme.colors.muted,
+      })
+    )
+
+    // Colored segments based on thresholds
+    let prevAngle = startAngle
+    const totalRange = endAngle - startAngle
+
+    for (let i = 0; i < thresholds.length; i++) {
+      const thresholdNorm = (thresholds[i] - min) / (max - min)
+      const segEnd = startAngle + totalRange * thresholdNorm
+
+      nodes.push(
+        arc({
+          cx,
+          cy,
+          innerRadius: radius - thickness,
+          outerRadius: radius,
+          startAngle: prevAngle,
+          endAngle: Math.min(segEnd, startAngle + totalRange * animate),
+          fill: colors[i],
+          opacity: 0.3,
+        })
+      )
+      prevAngle = segEnd
+    }
+
+    // Value arc (animated)
+    const valueNorm = ((value - min) / (max - min)) * animate
+    const valueAngle = startAngle + totalRange * valueNorm
+    const valueColorIndex = thresholds.findIndex((t) => value <= t)
+    const valueColor = colors[Math.max(0, valueColorIndex)]
+
+    nodes.push(
+      arc({
+        cx,
+        cy,
+        innerRadius: radius - thickness,
+        outerRadius: radius,
+        startAngle,
+        endAngle: valueAngle,
+        fill: valueColor,
+      })
+    )
+
+    // Needle
+    const needleAngleRad = ((valueAngle - 90) * Math.PI) / 180
+    const needleLength = radius - thickness - 10
+
+    nodes.push(
+      line({
+        x1: cx,
+        y1: cy,
+        x2: cx + Math.cos(needleAngleRad) * needleLength,
+        y2: cy + Math.sin(needleAngleRad) * needleLength,
+        stroke: theme.colors.foreground,
+        strokeWidth: 2,
+      })
+    )
+
+    // Center value text
+    nodes.push(
+      text({
+        x: cx,
+        y: cy + 10,
+        content: `${Math.round(value * animate)}`,
+        fontSize: 32,
+        fontWeight: "bold",
+        fill: theme.colors.foreground,
+        textAnchor: "middle",
+      })
+    )
+
+    // Label
+    if (label) {
+      nodes.push(
+        text({
+          x: cx,
+          y: cy + 36,
+          content: label,
+          fontSize: 14,
+          fill: theme.colors.mutedForeground,
+          textAnchor: "middle",
+        })
+      )
+    }
+
+    return nodes
+  },
+
+  hitTest(ctx, point) {
+    const { width, height, options } = ctx
+    const cx = width / 2
+    const cy = height / 2
+    const radius = Math.min(cx, cy) - 20
+    const dist = Math.sqrt((point.x - cx) ** 2 + (point.y - cy) ** 2)
+
+    if (dist <= radius && dist >= radius - options.thickness) {
+      return { type: "gauge-arc", value: options.value }
+    }
+    return null
+  },
+})
+```
+
+The `animate` value transitions from 0 to 1 when the chart first renders and whenever the data changes. This makes the gauge needle sweep from zero to its target value on mount.
+
+## Hit testing
+
+The `hitTest()` method receives a `{ x, y }` point in chart coordinates and returns either `null` (no hit) or an object describing what was hit. Chart.ts calls this on mousemove, click, and touch events.
+
+The return value is passed to event handlers and tooltip formatters:
+
+```ts
+import { createChart } from "@chartts/core"
+
+const chart = createChart("#container", {
+  type: "gauge",
+  value: 73,
+  min: 0,
+  max: 100,
+  label: "CPU Usage",
+  onHover(hit) {
+    if (hit) {
+      console.log(`Hovering gauge at value: ${hit.value}`)
+    }
+  },
+  onClick(hit) {
+    if (hit) {
+      console.log(`Clicked gauge at value: ${hit.value}`)
+    }
+  },
+})
+```
+
+For more complex chart types, your hit test can return different objects for different visual regions. A chord diagram might return `{ type: "chord", source, target }` or `{ type: "node", id }` depending on whether the user hovers a connection or a node.
+
+## Using your custom chart in React
+
+Custom chart types integrate directly with `@chartts/react`:
+
+```tsx
+import { Chart } from "@chartts/react"
+import { GaugeChart } from "./gauge-chart"
+
+export function CPUGauge({ usage }: { usage: number }) {
+  return (
+    <Chart
+      type={GaugeChart}
+      value={usage}
+      min={0}
+      max={100}
+      label="CPU %"
+      colors={["#22c55e", "#f59e0b", "#ef4444"]}
+      thresholds={[50, 80, 100]}
+      className="h-48 w-48"
+    />
+  )
+}
+```
+
+The `Chart` component accepts any chart type, whether built-in or custom. TypeScript infers the correct props from your `defaultOptions` definition, so you get full autocomplete and type checking.
+
+## Renderer-agnostic rendering
+
+The render nodes you return from `render()` work identically on SVG, Canvas, and WebGL. This is a core architectural decision in Chart.ts.
+
+When the renderer is SVG, an `arc()` node produces an `<path>` element with the correct `d` attribute. When the renderer is Canvas, it produces `ctx.arc()` and `ctx.fill()` calls. When the renderer is WebGL, it tessellates the arc into triangles and uploads them to a vertex buffer.
+
+You never write renderer-specific code. The same gauge chart works in an SVG email report, a Canvas dashboard, and a WebGL monitoring display.
+
+```ts
+// Same chart type, different renderers
+createChart("#svg-container", { type: GaugeChart, value: 75, renderer: "svg" })
+createChart("#canvas-container", { type: GaugeChart, value: 75, renderer: "canvas" })
+createChart("#webgl-container", { type: GaugeChart, value: 75, renderer: "webgl" })
+```
+
+## Registering plugins globally
+
+If you want your chart type available by string name (like `"gauge"` instead of passing the object), register it globally:
+
+```ts
+import { registerChartType } from "@chartts/core"
+import { GaugeChart } from "./gauge-chart"
+
+registerChartType(GaugeChart)
+
+// Now usable by name
+createChart("#container", { type: "gauge", value: 73 })
+```
+
+This is useful for configuration-driven dashboards where chart types come from a database or API response.
+
+## Adding custom scales
+
+Some chart types need non-standard scales. A polar chart needs angle and radius scales. A treemap needs a hierarchical layout scale. The `scales` option in `defineChartType()` lets you define these:
+
+```ts
+const RadarChart = defineChartType({
+  name: "radar",
+  scales: {
+    angle: { type: "band", domain: (data, options) => options.axes },
+    radius: { type: "linear", domain: (data) => [0, Math.max(...data.map((d) => d.value))] },
+  },
+  render(ctx) {
+    const { scales } = ctx
+    const angle = scales.angle // Band scale for axis labels
+    const radius = scales.radius // Linear scale for values
+    // ...
+  },
+})
+```
+
+Custom scales integrate with the Chart.ts scale system. They support zoom, pan, and animation out of the box.
+
+## Publishing your plugin
+
+Package your chart type as an npm package for others to use:
+
+```json
+{
+  "name": "@myorg/chartts-gauge",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "peerDependencies": {
+    "@chartts/core": "^1.0.0"
+  }
+}
+```
+
+The only peer dependency is `@chartts/core`. Your plugin works with any framework package (`@chartts/react`, `@chartts/vue`, `@chartts/svelte`, etc.) without additional adapters.
+
+## What the plugin system enables
+
+The `defineChartType()` API is the foundation for every chart type in Chart.ts, including the 65+ built-in types. The same system that powers the basic `BarChart` also powers the complex `Sankey`, `Treemap`, and `ChordDiagram` types.
+
+This means the ecosystem can grow without core library changes. A domain-specific chart type for genomics, network topology, or sports analytics can be published as a standalone package that integrates perfectly with themes, animation, interaction, and all three renderers.
+
+If the built-in 65 chart types do not cover your use case, you are not stuck. The plugin system gives you the same tools the library authors use.

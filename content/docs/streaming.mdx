@@ -1,0 +1,177 @@
+---
+title: "Real-time Streaming"
+description: "Push live data into any chart with createStreamingChart(). Circular buffer, rolling window, batch updates, and throttled rendering."
+badge: "Feature"
+---
+
+## Overview
+
+`createStreamingChart()` wraps any chart instance with a circular buffer and rolling window for live data feeds. Data arrives via `push()` or `pushBatch()`, old points are discarded when the buffer fills, and re-renders are throttled through `requestAnimationFrame` or a configurable interval.
+
+This works with every chart type and every renderer (SVG, Canvas, WebGL).
+
+```ts
+import { createChart } from "@chartts/core"
+import { createStreamingChart } from "@chartts/core/streaming"
+
+const chart = createChart(container, { type: "line", animate: false })
+
+const stream = createStreamingChart(chart, {
+  windowSize: 60,
+  seriesCount: 2,
+  seriesNames: ["CPU", "Memory"],
+})
+
+// Simulated live data
+setInterval(() => {
+  stream.push(
+    [Math.random() * 100, Math.random() * 80],
+    new Date().toLocaleTimeString()
+  )
+}, 1000)
+```
+
+---
+
+## React Example
+
+```tsx
+import { useEffect, useRef } from "react"
+import { LineChart, useChartRef } from "@chartts/react"
+import { createStreamingChart } from "@chartts/core/streaming"
+
+export function LiveMetrics() {
+  const chartRef = useChartRef()
+  const streamRef = useRef<ReturnType<typeof createStreamingChart> | null>(null)
+
+  useEffect(() => {
+    if (!chartRef.current) return
+
+    const stream = createStreamingChart(chartRef.current, {
+      windowSize: 100,
+      seriesCount: 3,
+      seriesNames: ["Requests/s", "Latency (ms)", "Errors"],
+      seriesColors: ["#3b82f6", "#f59e0b", "#ef4444"],
+      throttleMs: 200,
+    })
+
+    streamRef.current = stream
+
+    const ws = new WebSocket("wss://metrics.example.com/stream")
+    ws.onmessage = (event) => {
+      const { requests, latency, errors, timestamp } = JSON.parse(event.data)
+      stream.push([requests, latency, errors], timestamp)
+    }
+
+    return () => {
+      ws.close()
+      stream.destroy()
+    }
+  }, [])
+
+  return (
+    <div>
+      <LineChart ref={chartRef} data={[]} x="label" y={[]} className="h-64 w-full" />
+      <button onClick={() => streamRef.current?.pause()}>Pause</button>
+      <button onClick={() => streamRef.current?.resume()}>Resume</button>
+    </div>
+  )
+}
+```
+
+---
+
+## Configuration
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `windowSize` | `number` | `100` | Number of data points visible in the rolling window |
+| `seriesCount` | `number` | `1` | Number of data series |
+| `seriesNames` | `string[]` | `['Series 1', ...]` | Display names for each series |
+| `seriesColors` | `string[]` | chart palette | Colors for each series |
+| `maxBufferSize` | `number` | `windowSize * 10` | Maximum buffer capacity. Oldest points are discarded beyond this |
+| `throttleMs` | `number` | `0` | Throttle interval in milliseconds. 0 uses `requestAnimationFrame` |
+
+---
+
+## Instance API
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `push` | `(values: number[], label?: string \| number \| Date) => void` | Push one data point (one value per series) |
+| `pushBatch` | `(points: Array<{ values: number[]; label?: string \| number \| Date }>) => void` | Push multiple data points at once |
+| `pause` | `() => void` | Pause rendering. Data is still buffered |
+| `resume` | `() => void` | Resume rendering. Triggers immediate update if data arrived while paused |
+| `clear` | `() => void` | Clear all buffered data and reset counters |
+| `getBufferSize` | `() => number` | Returns current number of points in the buffer |
+| `destroy` | `() => void` | Cancel pending frames/timers and release memory |
+
+---
+
+## Batch Updates
+
+When you receive data in chunks (database polling, batch API responses), use `pushBatch()` to add many points in a single call. This avoids scheduling multiple renders.
+
+```ts
+const stream = createStreamingChart(chart, {
+  windowSize: 200,
+  seriesCount: 1,
+  seriesNames: ["Temperature"],
+})
+
+// Poll every 5 seconds, get last 5 readings
+setInterval(async () => {
+  const readings = await fetch("/api/temperature?last=5").then(r => r.json())
+  stream.pushBatch(
+    readings.map((r: { value: number; time: string }) => ({
+      values: [r.value],
+      label: r.time,
+    }))
+  )
+}, 5000)
+```
+
+---
+
+## Throttling
+
+By default, renders are batched via `requestAnimationFrame`, which caps updates at ~60fps. For high-frequency data sources where you want to reduce CPU usage, set `throttleMs`:
+
+```ts
+const stream = createStreamingChart(chart, {
+  windowSize: 50,
+  seriesCount: 1,
+  throttleMs: 500, // render at most every 500ms
+})
+
+// Data arrives much faster than render rate
+ws.onmessage = (event) => {
+  const { value, ts } = JSON.parse(event.data)
+  stream.push([value], ts)
+  // Buffer fills continuously, but chart only redraws every 500ms
+}
+```
+
+---
+
+## Buffer Management
+
+The circular buffer holds up to `maxBufferSize` points (default: 10x the window size). When the buffer exceeds this limit, the oldest points are removed. The visible window always shows the most recent `windowSize` points.
+
+```
+Buffer: [----older data----][---visible window---]
+                             <- windowSize ->
+<------------ maxBufferSize -------------->
+```
+
+Setting `maxBufferSize` equal to `windowSize` means no history is kept beyond the visible range. Setting it higher lets you retain history for export or analysis.
+
+---
+
+## Tips
+
+- Set `animate: false` on the chart to avoid animation overhead during live updates
+- For WebSocket feeds, `throttleMs: 0` (rAF) gives the smoothest visual updates
+- Call `destroy()` when unmounting to cancel any pending `requestAnimationFrame` or `setTimeout` handles
+- The `pause()` and `resume()` pattern is useful for "freeze frame" controls: data keeps buffering while the display is frozen, and `resume()` catches up immediately
+- If labels are omitted from `push()`, an auto-incrementing counter is used instead

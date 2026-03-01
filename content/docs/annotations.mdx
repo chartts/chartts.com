@@ -1,0 +1,305 @@
+---
+title: "Annotations & Graphics"
+description: "Add reference lines, shaded regions, text labels, threshold markers, and custom SVG shapes to any chart. Use the core graphic API for low-level control or @chartts/annotation for a declarative approach."
+badge: "Feature"
+---
+
+## Overview
+
+Chart.ts provides two levels of annotation support:
+
+1. **Core graphic API** (`@chartts/core`): low-level functions for creating SVG elements positioned on the chart canvas. You get `horizontalLine()`, `verticalLine()`, `annotation()`, and `createGraphicElements()`.
+2. **Annotation package** (`@chartts/annotation`): a higher-level, declarative API with scale-aware positioning. You describe annotations as data (reference lines, areas, thresholds, labels) and the package maps values through chart scales automatically.
+
+Use the core API when you need pixel-level control. Use `@chartts/annotation` when you want to annotate at data coordinates.
+
+---
+
+## Core Graphic API
+
+### Import
+
+```ts
+import {
+  horizontalLine,
+  verticalLine,
+  annotation,
+  createGraphicElements,
+} from "@chartts/core"
+```
+
+### horizontalLine(y, area, attrs?)
+
+Creates a dashed horizontal guideline across the full chart width at a given pixel y-coordinate.
+
+```ts
+import type { GraphicArea } from "@chartts/core"
+
+const area: GraphicArea = { x: 40, y: 20, width: 600, height: 300 }
+
+const line = horizontalLine(150, area, {
+  stroke: "#ef4444",
+  strokeDasharray: "6,3",
+})
+```
+
+**Default styling:** `stroke: #6b7280`, `strokeWidth: 1`, `strokeDasharray: 4,3`.
+
+### verticalLine(x, area, attrs?)
+
+Creates a dashed vertical guideline from top to bottom at a given pixel x-coordinate.
+
+```ts
+const line = verticalLine(200, area, {
+  stroke: "#3b82f6",
+  strokeWidth: 2,
+})
+```
+
+### annotation(x, y, content, attrs?)
+
+Places a text label at the given pixel coordinates. Centered horizontally by default.
+
+```ts
+const label = annotation(300, 100, "Peak: 4,200", {
+  fill: "#059669",
+  fontSize: 13,
+  fontWeight: 700,
+})
+```
+
+**Default styling:** `fill: #374151`, `fontSize: 11`, `textAnchor: middle`.
+
+### createGraphicElements(elements, area?)
+
+Converts an array of `GraphicElement` definitions into render nodes. Supports `rect`, `circle`, `path`, `text`, `line`, `group`, and `image` types. Positions can be absolute (pixels) or relative (0 to 1 proportion of chart area).
+
+```ts
+import type { GraphicElement } from "@chartts/core"
+
+const elements: GraphicElement[] = [
+  {
+    type: "rect",
+    x: 0.1,
+    y: 0.1,
+    width: 0.3,
+    height: 0.2,
+    position: "relative",
+    attrs: { fill: "rgba(59, 130, 246, 0.1)", stroke: "#3b82f6" },
+  },
+  {
+    type: "text",
+    x: 0.25,
+    y: 0.2,
+    position: "relative",
+    content: "Target Zone",
+    attrs: { fill: "#3b82f6", textAnchor: "middle", fontSize: 12 },
+  },
+  {
+    type: "circle",
+    x: 300,
+    y: 150,
+    r: 8,
+    attrs: { fill: "#ef4444", fillOpacity: 0.6 },
+  },
+]
+
+const nodes = createGraphicElements(elements, area)
+```
+
+### GraphicElement Reference
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | `'rect' \| 'circle' \| 'path' \| 'text' \| 'line' \| 'group' \| 'image'` | Shape type |
+| `x`, `y` | `number` | Position (px or 0..1 when relative) |
+| `width`, `height` | `number` | Size for rect and image |
+| `r` | `number` | Radius for circle (default 10) |
+| `d` | `string` | SVG path data for path type |
+| `content` | `string` | Text content for text type |
+| `x2`, `y2` | `number` | End coordinates for line type |
+| `src` | `string` | Image source URL for image type |
+| `children` | `GraphicElement[]` | Child elements for group type |
+| `position` | `'absolute' \| 'relative'` | Positioning mode |
+| `attrs` | `Record<string, unknown>` | Additional SVG attributes |
+
+---
+
+## @chartts/annotation Package
+
+For scale-aware annotations that work with data coordinates, use the `@chartts/annotation` package.
+
+### Install
+
+```bash
+npm install @chartts/annotation
+```
+
+### Import
+
+```ts
+import {
+  referenceLine,
+  referenceArea,
+  threshold,
+  dataLabel,
+  createAnnotations,
+} from "@chartts/annotation"
+```
+
+### referenceLine(axis, value, area, xScale, yScale, opts?)
+
+Draws a horizontal or vertical reference line at a data value. The value is mapped through the appropriate scale.
+
+```ts
+// Horizontal line at y=75 (mapped through yScale)
+const nodes = referenceLine("y", 75, area, xScale, yScale, {
+  label: "Target: 75%",
+  color: "#059669",
+  dash: true,
+  lineWidth: 1.5,
+})
+
+// Vertical line at x="Mar" (mapped through xScale)
+const nodes = referenceLine("x", "Mar", area, xScale, yScale, {
+  label: "Launch Date",
+  color: "#6366f1",
+})
+```
+
+### referenceArea(axis, from, to, area, xScale, yScale, opts?)
+
+Draws a shaded rectangular band between two data values.
+
+```ts
+// Shade the region between y=60 and y=80
+const nodes = referenceArea("y", 60, 80, area, xScale, yScale, {
+  color: "#22c55e",
+  opacity: 0.12,
+  label: "Normal Range",
+})
+
+// Shade a date range on the x-axis
+const nodes = referenceArea("x", "Feb", "Apr", area, xScale, yScale, {
+  color: "#f97316",
+  opacity: 0.1,
+  label: "Q1 Campaign",
+})
+```
+
+### threshold(value, area, yScale, opts?)
+
+Renders a horizontal threshold line with optional color zones above and below.
+
+```ts
+const nodes = threshold(90, area, yScale, {
+  label: "Critical",
+  color: "#ef4444",
+  aboveColor: "#ef4444",   // red tint above 90
+  belowColor: "#22c55e",   // green tint below 90
+  dash: true,
+  lineWidth: 2,
+})
+```
+
+### dataLabel(x, y, text, area, xScale, yScale, opts?)
+
+Places a text label at a data coordinate.
+
+```ts
+const label = dataLabel("Jun", 4200, "All-time high", area, xScale, yScale, {
+  color: "#7c3aed",
+  fontSize: 13,
+  anchor: "start",
+})
+```
+
+### createAnnotations(annotations, area, xScale, yScale)
+
+Batch API: pass an array of annotation config objects and get back render nodes for all of them at once.
+
+```ts
+import type { Annotation } from "@chartts/annotation"
+
+const annotations: Annotation[] = [
+  {
+    type: "line",
+    axis: "y",
+    value: 100,
+    label: "Budget",
+    color: "#ef4444",
+    dash: true,
+  },
+  {
+    type: "area",
+    axis: "x",
+    from: "Mar",
+    to: "May",
+    color: "#3b82f6",
+    opacity: 0.08,
+    label: "Sprint 3",
+  },
+  {
+    type: "threshold",
+    value: 80,
+    label: "SLA Target",
+    color: "#f59e0b",
+    aboveColor: "#22c55e",
+    belowColor: "#ef4444",
+  },
+  {
+    type: "label",
+    x: "Jun",
+    y: 120,
+    text: "Peak",
+    color: "#7c3aed",
+    fontSize: 14,
+    anchor: "middle",
+  },
+]
+
+const nodes = createAnnotations(annotations, area, xScale, yScale)
+```
+
+### Annotation Types
+
+| Type | Required Fields | Optional Fields |
+|------|----------------|-----------------|
+| `line` | `axis`, `value` | `label`, `color`, `dash`, `lineWidth` |
+| `area` | `axis`, `from`, `to` | `color`, `opacity`, `label` |
+| `threshold` | `value` | `label`, `color`, `aboveColor`, `belowColor` |
+| `label` | `x`, `y`, `text` | `color`, `fontSize`, `anchor` |
+
+---
+
+## Full Example: Sales Dashboard with Annotations
+
+```ts
+import { createChart } from "@chartts/core"
+import { createAnnotations } from "@chartts/annotation"
+
+const chart = createChart(document.getElementById("chart")!, {
+  yLabel: "Revenue ($k)",
+  xLabel: "Month",
+  theme: "corporate",
+})
+
+chart.setData({
+  labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"],
+  series: [
+    {
+      name: "Revenue",
+      values: [42, 48, 55, 51, 67, 73, 82, 91],
+    },
+  ],
+})
+```
+
+Then overlay annotations using the chart's scales and area to mark targets, campaigns, and milestones.
+
+## Tips
+
+- The core graphic functions (`horizontalLine`, `verticalLine`, `annotation`) work in pixel coordinates. Use them when you know the exact pixel position or want to position relative to the chart area.
+- The `@chartts/annotation` functions work in data coordinates. Use them when you want lines and labels anchored to actual data values that stay correct if the chart resizes or data changes.
+- All annotation render nodes use CSS class names like `chartts-graphic`, `chartts-graphic-guideline`, and `chartts-annotations`, so you can target them with custom CSS.
+- For relative positioning in `createGraphicElements()`, coordinates from 0 to 1 map proportionally to the chart area dimensions. Pass the `area` parameter for this to work.

@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Compare Chart.ts",
   description:
-    "See how Chart.ts compares to other charting libraries. Smaller bundle, better Tailwind integration, full accessibility, 40+ chart types.",
+    "See how Chart.ts compares to other charting libraries. Smaller bundle, better Tailwind integration, full accessibility, 65+ chart types.",
 };
 
 const libraries = [
@@ -56,12 +56,48 @@ const libraries = [
     tagline: "Commercial, $590/dev/yr, legacy API",
     color: "text-indigo-400",
   },
+  {
+    slug: "plotly",
+    name: "Plotly.js",
+    tagline: "Data science focused, ~1MB bundle",
+    color: "text-violet-400",
+  },
+  {
+    slug: "victory",
+    name: "Victory",
+    tagline: "React-only, D3 dependency, ~50kb",
+    color: "text-emerald-400",
+  },
+  {
+    slug: "tremor",
+    name: "Tremor",
+    tagline: "React dashboard wrapper, uses Recharts",
+    color: "text-teal-400",
+  },
+  {
+    slug: "tradingview",
+    name: "TradingView Lightweight Charts",
+    tagline: "Financial only, Canvas rendering",
+    color: "text-amber-400",
+  },
+  {
+    slug: "shadcn-charts",
+    name: "shadcn/ui Charts",
+    tagline: "React-only, wraps Recharts, 6 chart types",
+    color: "text-sky-400",
+  },
+  {
+    slug: "google-charts",
+    name: "Google Charts",
+    tagline: "CDN-dependent, data sent to Google",
+    color: "text-lime-400",
+  },
 ];
 
 export default function ComparePage() {
   return (
     <>
-<section className="pt-32 pb-16 px-6">
+<section className="pt-24 sm:pt-32 pb-16 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight heading">
             Compare Chart.ts

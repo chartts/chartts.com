@@ -1,0 +1,155 @@
+---
+title: "Data Decimation"
+description: "Reduce large datasets to a manageable number of points while preserving visual fidelity. Chart.ts includes LTTB and min-max algorithms that activate automatically or on demand."
+badge: "Performance"
+---
+
+## Overview
+
+When a dataset contains thousands or millions of points, rendering every one of them is wasteful. Most displays are only 1000 to 2000 pixels wide, so anything beyond that count produces sub-pixel overlap with no visual benefit.
+
+Chart.ts ships two decimation algorithms that reduce point counts while keeping the shape of the data intact:
+
+- **LTTB** (Largest Triangle Three Buckets): preserves the overall visual shape by selecting points that maximize triangle area between buckets. Best general-purpose choice.
+- **Min-Max**: keeps the minimum and maximum value in each bucket, guaranteeing that peaks and valleys are always visible. Better for data where extremes matter (e.g. latency spikes, error rates).
+
+## Import
+
+```ts
+import { createChart } from "@chartts/core"
+```
+
+Decimation is configured through the `decimate` option on any chart. No separate import is needed.
+
+## When Decimation Activates
+
+Decimation runs when **any series** in the dataset has more values than the configured threshold. If all series are already below the threshold, the original data passes through untouched.
+
+By default, the threshold is **1000 points**. You can override it.
+
+## Configuration
+
+### Enable with defaults (LTTB, 1000 point threshold)
+
+```ts
+const chart = createChart(container, {
+  decimate: true,
+})
+
+chart.setData({
+  labels: timestamps,    // 50,000 labels
+  series: [
+    { name: "CPU", values: cpuValues },   // 50,000 points
+    { name: "Memory", values: memValues }, // 50,000 points
+  ],
+})
+```
+
+With `decimate: true`, Chart.ts applies LTTB and reduces each series to 1000 points before rendering.
+
+### Specify algorithm and threshold
+
+```ts
+const chart = createChart(container, {
+  decimate: {
+    algorithm: "min-max",
+    threshold: 2000,
+  },
+})
+```
+
+### Disable decimation
+
+```ts
+const chart = createChart(container, {
+  decimate: false,
+})
+```
+
+## Options Reference
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `decimate` | `boolean \| object` | `false` | Enable decimation. `true` uses defaults. |
+| `decimate.algorithm` | `'lttb' \| 'min-max'` | `'lttb'` | Which algorithm to use. |
+| `decimate.threshold` | `number` | `1000` | Target number of output points per series. |
+
+## Algorithm Details
+
+### LTTB (Largest Triangle Three Buckets)
+
+LTTB divides the data into equal-sized buckets. For each bucket, it selects the point that forms the largest triangle with the selected point from the previous bucket and the average of the next bucket. This preserves the visual shape of the data better than simple sampling.
+
+Reference: Sveinn Steinarsson, "Downsampling Time Series for Visual Representation" (2013).
+
+**Behavior:**
+- Always keeps the first and last points
+- Produces exactly `threshold` output points
+- Labels are re-indexed to match the selected points
+
+```ts
+const chart = createChart(container, {
+  decimate: { algorithm: "lttb", threshold: 500 },
+})
+```
+
+### Min-Max
+
+Min-Max splits the data into `threshold / 2` buckets. Each bucket contributes both its minimum and maximum value, maintaining them in index order so the rendered line does not cross itself.
+
+**Behavior:**
+- Always keeps the first and last points
+- Produces up to `threshold` output points (2 per bucket plus endpoints)
+- Peaks and valleys are guaranteed to appear in the output
+
+```ts
+const chart = createChart(container, {
+  decimate: { algorithm: "min-max", threshold: 800 },
+})
+```
+
+## Choosing an Algorithm
+
+| Scenario | Recommended | Reason |
+|----------|-------------|--------|
+| General time-series visualization | LTTB | Best shape preservation for smooth data |
+| Monitoring dashboards with spike detection | Min-Max | Guarantees peaks and valleys are visible |
+| Financial price data | Min-Max | High/low values must not be dropped |
+| Smooth sensor readings | LTTB | Visual fidelity matters more than exact extremes |
+
+## Full Example: High-Frequency Sensor Data
+
+```ts
+import { createChart } from "@chartts/core"
+
+// Simulate 100,000 temperature readings
+const labels = Array.from({ length: 100_000 }, (_, i) =>
+  new Date(Date.now() - (100_000 - i) * 1000).toISOString()
+)
+const values = Array.from({ length: 100_000 }, (_, i) =>
+  20 + Math.sin(i / 500) * 5 + (Math.random() - 0.5) * 2
+)
+
+const chart = createChart(document.getElementById("chart")!, {
+  decimate: { algorithm: "lttb", threshold: 1500 },
+  renderer: "canvas",
+  xLabel: "Time",
+  yLabel: "Temperature (C)",
+  curve: "monotone",
+})
+
+chart.setData({
+  labels,
+  series: [{ name: "Sensor A", values }],
+})
+```
+
+This renders 1500 points from 100,000 with no visible loss of shape.
+
+## Tips
+
+- Set `threshold` to roughly 2x your chart's pixel width for the best balance of performance and fidelity.
+- Combine decimation with `renderer: "canvas"` for datasets in the 10k to 100k range, or `renderer: "webgl"` for 100k+.
+- Decimation applies per-series. If one series has 50,000 points and another has 500, only the larger one is reduced.
+- Labels are automatically re-indexed to match the decimated data, so axis labels stay correct.
+- If you are streaming data and calling `setData()` frequently, decimation runs on each update. Keep this in mind for very high update rates.

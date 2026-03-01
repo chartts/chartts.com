@@ -1,0 +1,330 @@
+---
+title: "Enterprise Data Visualization with Chart.ts"
+description: "Why Chart.ts is enterprise-ready. WCAG AA accessibility, TypeScript strict mode, SSR, plugin system, 25 packages, testing utilities, and CLI."
+date: "2026-02-28"
+readTime: "11 min read"
+tag: "Guide"
+---
+
+Enterprise applications have requirements that demo projects do not. Accessibility compliance for government contracts. Type safety that prevents production bugs across a 50-person engineering team. Server-side rendering for SEO and performance. Consistent branding across 12 internal dashboards. Testing utilities that work in CI. A plugin system for domain-specific chart types that no vendor anticipated.
+
+Chart.ts was built to meet these requirements. This post covers the specific enterprise capabilities, with code examples and concrete details.
+
+## 65+ chart types across every domain
+
+Chart.ts ships chart types for every common visualization category:
+
+- **Standard**: Bar, Line, Area, Scatter, Pie, Donut, Bubble
+- **Statistical**: Box plot, Violin, Histogram, Density, Error bars
+- **Financial**: Candlestick, OHLC, Kagi, Renko, Point & Figure
+- **Hierarchical**: Treemap, Sunburst, Icicle, Circle pack
+- **Network**: Sankey, Chord, Force-directed graph, Arc diagram
+- **Geographic**: Choropleth, Bubble map, Globe3D, Map3D
+- **Flow**: Gantt, Timeline, Waterfall
+- **Part-to-whole**: Funnel, Waffle, Marimekko, Stacked bar
+- **Distribution**: Heatmap, Contour, Ridgeline, Strip plot
+- **Specialized**: Gauge, Radar, Parallel coordinates, Slope chart
+
+For enterprise teams, breadth matters. When a product manager asks for a Sankey diagram next quarter, you should not need to evaluate and integrate a second charting library. Chart.ts covers the need from a single dependency.
+
+## WCAG AA accessibility
+
+Chart.ts meets WCAG 2.1 AA compliance requirements out of the box. This is not a checkbox claim. Here is what it includes:
+
+**Keyboard navigation.** Every interactive element (data points, legend items, axis labels) is focusable with Tab and navigable with arrow keys. Focus indicators are visible and high-contrast.
+
+```tsx
+// Keyboard navigation is automatic. No extra props needed.
+<BarChart
+  data={data}
+  x="category"
+  y="value"
+  tooltip
+  className="h-64"
+/>
+// Tab to the chart → arrow keys to navigate bars → Enter to select
+```
+
+**ARIA attributes.** Charts render with `role="img"` and auto-generated `aria-label` descriptions. Data points include `aria-roledescription` for screen readers. Grouped data uses `aria-labelledby` to associate labels with values.
+
+**Screen reader announcements.** When the user navigates data points with keyboard, Chart.ts announces the value, category, and series name via an ARIA live region. A screen reader user can navigate a bar chart and hear "Revenue, January, $42,000. Revenue, February, $58,000."
+
+**Pattern fills for color blindness.** Enable `patternFills` to add distinct patterns (hatching, dots, crosshatch) to data series. This makes charts readable for users with color vision deficiency, even when printed in grayscale.
+
+```tsx
+<BarChart
+  data={data}
+  x="month"
+  y="value"
+  color="category"
+  patternFills
+  className="h-64"
+/>
+```
+
+**High contrast mode.** Chart.ts detects the `prefers-contrast: more` media query and automatically increases border widths, label font sizes, and color contrast ratios.
+
+## TypeScript strict mode
+
+Chart.ts is written in TypeScript with `strict: true`. The entire API surface is fully typed with generic inference.
+
+What this means in practice:
+
+```tsx
+type SalesRecord = {
+  month: string
+  revenue: number
+  region: string
+}
+
+// TypeScript infers valid prop values from your data type
+<BarChart<SalesRecord>
+  data={salesData}
+  x="month"      // ← autocomplete shows: "month" | "revenue" | "region"
+  y="revenue"    // ← must be a numeric key
+  color="region"  // ← must be a categorical key
+/>
+
+// Type errors catch bugs at compile time
+<BarChart<SalesRecord>
+  data={salesData}
+  x="quarter"    // ← Type error: "quarter" not in SalesRecord
+  y="region"     // ← Type error: "region" is string, not number
+/>
+```
+
+On a large team, this prevents an entire class of bugs. The data contract between your API response and your chart is enforced by the compiler, not by manual testing.
+
+## Server-side rendering
+
+Chart.ts charts are SVG by default. SVG is HTML. This means charts render on the server in any SSR framework.
+
+**Next.js App Router (React Server Components):**
+
+```tsx
+// app/reports/page.tsx - Server Component, no "use client"
+import { BarChart } from "@chartts/react"
+import { getQuarterlyRevenue } from "@/lib/data"
+
+export default async function ReportsPage() {
+  const revenue = await getQuarterlyRevenue()
+  return <BarChart data={revenue} x="quarter" y="amount" className="h-64" />
+}
+```
+
+The chart renders as static SVG on the server. Zero JavaScript is shipped to the client for the chart. The page loads instantly, the chart is visible on first paint, and search engines index the chart content.
+
+**Nuxt 3:**
+
+```vue
+<script setup lang="ts">
+import { BarChart } from "@chartts/vue"
+const { data: revenue } = await useFetch("/api/revenue")
+</script>
+
+<template>
+  <BarChart :data="revenue" x="quarter" y="amount" class="h-64" />
+</template>
+```
+
+**SvelteKit:**
+
+```svelte
+<script lang="ts">
+  import { BarChart } from "@chartts/svelte"
+  export let data // From load function
+</script>
+
+<BarChart data={data.revenue} x="quarter" y="amount" class="h-64" />
+```
+
+For interactive features (tooltips, zoom, click handlers), the chart hydrates on the client. The static SVG is visible immediately, and interactivity activates when JavaScript loads.
+
+## Plugin system for custom chart types
+
+Enterprise teams inevitably need chart types that no vendor provides. A custom risk matrix. A regulatory compliance visualization. A domain-specific flow diagram.
+
+The `defineChartType()` API lets you build custom chart types that integrate fully with the Chart.ts ecosystem:
+
+```ts
+import { defineChartType, rect, text, circle } from "@chartts/core"
+
+const RiskMatrix = defineChartType({
+  name: "risk-matrix",
+  defaultOptions: {
+    xAxis: "likelihood",
+    yAxis: "impact",
+    gridSize: 5,
+  },
+  render(ctx) {
+    const { width, height, data, theme, options } = ctx
+    const cellW = width / options.gridSize
+    const cellH = height / options.gridSize
+    const nodes = []
+
+    // Render grid cells with risk coloring
+    for (let x = 0; x < options.gridSize; x++) {
+      for (let y = 0; y < options.gridSize; y++) {
+        const risk = (x + 1) * (y + 1)
+        const color = risk <= 6 ? "#22c55e" : risk <= 12 ? "#f59e0b" : "#ef4444"
+        nodes.push(rect({ x: x * cellW, y: (options.gridSize - 1 - y) * cellH, width: cellW - 2, height: cellH - 2, fill: color, opacity: 0.3 }))
+      }
+    }
+
+    // Plot risk items
+    for (const item of data) {
+      const cx = (item[options.xAxis] - 0.5) * cellW
+      const cy = (options.gridSize - item[options.yAxis] + 0.5) * cellH
+      nodes.push(circle({ cx, cy, r: 8, fill: theme.colors.foreground }))
+      nodes.push(text({ x: cx, y: cy - 14, content: item.label, fontSize: 11, fill: theme.colors.foreground, textAnchor: "middle" }))
+    }
+
+    return nodes
+  },
+})
+```
+
+Custom chart types inherit theming, animation, accessibility, and renderer switching. They work with `@chartts/react`, `@chartts/vue`, and every other framework package.
+
+## Testing utilities
+
+`@chartts/test-utils` provides testing primitives for CI environments:
+
+```ts
+import { renderChart, getChartData, simulateHover } from "@chartts/test-utils"
+import { BarChart } from "@chartts/core"
+
+// Render a chart in a test environment (jsdom or happy-dom)
+const chart = renderChart(BarChart, {
+  data: [{ category: "A", value: 100 }, { category: "B", value: 200 }],
+  x: "category",
+  y: "value",
+})
+
+// Assert on rendered output
+expect(chart.getBars()).toHaveLength(2)
+expect(chart.getBar(0).height).toBeGreaterThan(0)
+expect(chart.getBar(1).height).toBeGreaterThan(chart.getBar(0).height)
+
+// Simulate interaction
+simulateHover(chart, chart.getBar(0))
+expect(chart.getTooltip()).toContainText("A: 100")
+```
+
+Testing charts in CI is typically painful. Most libraries render to Canvas, which is not available in Node.js without binary dependencies. Chart.ts renders to SVG by default, so standard DOM testing tools work without a headless browser.
+
+## CLI for CI/CD chart generation
+
+`@chartts/cli` generates chart images from the command line. This is useful for automated reports, Slack notifications, PDF generation, and CI dashboards.
+
+```bash
+npx @chartts/cli render \
+  --type bar \
+  --data '[ {"month":"Jan","sales":42}, {"month":"Feb","sales":58} ]' \
+  --x month \
+  --y sales \
+  --output chart.png \
+  --width 800 \
+  --height 400
+```
+
+The CLI renders charts as PNG or SVG without a browser. It uses the same rendering engine as the library, so charts look identical to their browser counterparts.
+
+For repeated use in CI pipelines, install globally and use configuration files:
+
+```bash
+npm install -g @chartts/cli
+chartts render --config chart-config.json --output weekly-report.png
+```
+
+## 100+ theme presets
+
+Brand consistency across multiple dashboards is a common enterprise requirement. Chart.ts ships 100+ built-in themes that cover light, dark, high-contrast, editor, brand, seasonal, and accessibility variants:
+
+```tsx
+import { ThemeProvider } from "@chartts/react"
+
+// Apply a theme to all charts in the tree
+<ThemeProvider theme="corporate-blue">
+  <Dashboard />
+</ThemeProvider>
+```
+
+Built-in themes include: `default`, `dark`, `corporate-blue`, `corporate-green`, `monochrome`, `high-contrast`, `pastel`, `earth`, `ocean`, `sunset`, and 24 more.
+
+Custom themes extend any base theme:
+
+```ts
+import { defineTheme } from "@chartts/core"
+
+const brandTheme = defineTheme({
+  extends: "dark",
+  colors: {
+    primary: "#0052cc",
+    secondary: "#00b8d9",
+    success: "#36b37e",
+    warning: "#ffab00",
+    danger: "#ff5630",
+    background: "#1a1a2e",
+    foreground: "#e0e0e0",
+  },
+  fonts: {
+    family: "Inter, system-ui, sans-serif",
+  },
+})
+```
+
+Themes cascade through nested `ThemeProvider` components. An outer provider sets the global brand theme. An inner provider can override colors for a specific section.
+
+## Modular package architecture
+
+Chart.ts is distributed as 25 npm packages:
+
+| Package | Purpose | Size (gzip) |
+|---------|---------|-------------|
+| `@chartts/core` | Core library, vanilla JS | 15kb |
+| `@chartts/react` | React components + hooks | 3kb |
+| `@chartts/vue` | Vue 3 components | 3kb |
+| `@chartts/svelte` | Svelte components | 2kb |
+| `@chartts/angular` | Angular components | 4kb |
+| `@chartts/solid` | Solid.js components | 2kb |
+| `@chartts/gl` | 3D WebGL chart types | 12kb |
+| `@chartts/finance` | Financial charts + indicators | 8kb |
+| `@chartts/websocket` | Real-time data adapters | 3kb |
+| `@chartts/test-utils` | Testing utilities | 2kb |
+| `@chartts/cli` | CLI chart generation | N/A |
+| `@chartts/themes` | Additional themes | 4kb |
+
+Every package is tree-shakeable. Install only what you need. A React dashboard using 3 chart types pulls in roughly 18kb total. A full trading platform with financial charts, WebSocket streaming, and 3D adds up to roughly 40kb.
+
+Compare this to a single Highcharts install at 300kb+ or ECharts at 308kb.
+
+## MIT licensed, no vendor lock-in
+
+Chart.ts is MIT licensed. There are no commercial tiers, no per-developer fees, no "contact sales" for enterprise features. Every feature described in this post is available in the open source package.
+
+The MIT license means:
+
+- Use in proprietary applications without disclosure
+- Modify the source code for internal needs
+- No per-seat or per-deployment costs
+- No audit concerns for open source compliance teams
+
+For comparison, Highcharts costs $590 per developer per year. amCharts starts at $180 per year. FusionCharts starts at $497 per year. Anychart starts at $49 per month.
+
+## Summary
+
+Enterprise readiness is not one feature. It is the accumulation of many: accessibility compliance, type safety, server rendering, testing, theming, extensibility, modular packaging, and licensing. Chart.ts addresses all of these at the library level, not as afterthoughts or paid add-ons.
+
+If you are evaluating charting libraries for an enterprise application, here is the checklist:
+
+- 65+ chart types: no gaps when requirements expand
+- WCAG AA: keyboard, ARIA, screen readers, pattern fills
+- TypeScript strict: compile-time data validation
+- SSR: works in Next.js, Nuxt, SvelteKit server components
+- Plugin system: build custom chart types when needed
+- Testing: CI-friendly utilities without headless browsers
+- CLI: automated chart generation in pipelines
+- 100+ themes: brand consistency out of the box
+- 25 packages: install only what you use
+- MIT licensed: no vendor lock-in, no per-seat costs

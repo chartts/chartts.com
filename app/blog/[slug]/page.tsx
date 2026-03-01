@@ -107,7 +107,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
-      <div className="pt-32 pb-24 px-6">
+      <div className="pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6">
         <article className="max-w-3xl mx-auto">
           {/* Header */}
           <div className="mb-12">

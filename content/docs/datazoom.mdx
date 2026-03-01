@@ -1,0 +1,208 @@
+---
+title: "Data Zoom Widget"
+description: "Add an interactive slider below any chart for data windowing and range selection. Users can drag handles, pan, and zoom to focus on a subset of the data."
+badge: "Feature"
+---
+
+## Overview
+
+The Data Zoom widget provides interactive range selection for charts with many data points. It renders a slider below the chart with draggable handles, a minimap sparkline, and range labels. Users can select a window of data to view, pan left and right, and zoom in or out programmatically.
+
+Data zoom consists of three pieces:
+
+1. **State management** (`createDataZoomState`): tracks the current range and provides methods for zooming and panning.
+2. **Data filtering** (`applyDataZoom`): slices chart data to the visible window.
+3. **Slider rendering** (`renderDataZoomSlider`): draws the interactive slider UI.
+
+## Import
+
+```ts
+import {
+  createDataZoomState,
+  applyDataZoom,
+  renderDataZoomSlider,
+} from "@chartts/core"
+```
+
+## DataZoomRange
+
+The zoom range is expressed as two numbers between 0 and 1, representing the start and end of the visible window as a proportion of the total dataset.
+
+```ts
+interface DataZoomRange {
+  start: number  // 0..1
+  end: number    // 0..1
+}
+```
+
+- `{ start: 0, end: 1 }` shows all data (default).
+- `{ start: 0.5, end: 0.75 }` shows the third quarter of the dataset.
+
+---
+
+## createDataZoomState(initial?, onChange?)
+
+Creates a state manager for the zoom range. Returns an object with the current range and methods to modify it.
+
+```ts
+const zoom = createDataZoomState(
+  { start: 0.2, end: 0.8 },  // initial range
+  (range) => {
+    // Called whenever range changes
+    console.log("Zoom:", range.start, "to", range.end)
+    updateChart(range)
+  },
+)
+```
+
+### DataZoomState API
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `range` | `DataZoomRange` | Current range (mutable, read directly) |
+| `setRange` | `(start: number, end: number) => void` | Set an exact range |
+| `reset` | `() => void` | Reset to full range (0 to 1) |
+| `zoomIn` | `(factor?: number) => void` | Narrow the range by `factor` (default 0.1) |
+| `zoomOut` | `(factor?: number) => void` | Widen the range by `factor` (default 0.1) |
+| `panLeft` | `(amount?: number) => void` | Shift range left by `amount` (default 0.05) |
+| `panRight` | `(amount?: number) => void` | Shift range right by `amount` (default 0.05) |
+
+All methods clamp values to the 0..1 range and enforce a minimum span of 0.01 (1%).
+
+### Example: programmatic zoom controls
+
+```ts
+const zoom = createDataZoomState({ start: 0, end: 1 }, (range) => {
+  const filtered = applyDataZoom(fullData, range)
+  chart.setData(filtered)
+})
+
+// Wire up buttons
+document.getElementById("zoom-in")!.onclick = () => zoom.zoomIn(0.15)
+document.getElementById("zoom-out")!.onclick = () => zoom.zoomOut(0.15)
+document.getElementById("pan-left")!.onclick = () => zoom.panLeft(0.1)
+document.getElementById("pan-right")!.onclick = () => zoom.panRight(0.1)
+document.getElementById("reset")!.onclick = () => zoom.reset()
+```
+
+---
+
+## applyDataZoom(data, range)
+
+Filters a `ChartData` object to the visible window. Slices both labels and series values based on the range.
+
+```ts
+import type { ChartData } from "@chartts/core"
+
+const fullData: ChartData = {
+  labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+  series: [
+    { name: "Sales", values: [12, 19, 15, 25, 22, 30, 28, 35, 40, 38, 45, 50] },
+  ],
+}
+
+// Show only Mar through Aug
+const filtered = applyDataZoom(fullData, { start: 0.167, end: 0.667 })
+// filtered.labels = ["Mar", "Apr", "May", "Jun", "Jul", "Aug"]
+// filtered.series[0].values = [15, 25, 22, 30, 28, 35]
+```
+
+The function calculates start and end indices from the range proportions:
+- `startIdx = Math.floor(range.start * totalLabels)`
+- `endIdx = Math.ceil(range.end * totalLabels)`
+
+---
+
+## renderDataZoomSlider(data, range, opts)
+
+Renders the slider widget as an array of `RenderNode[]` elements. This includes the track, minimap sparkline, selected region highlight, drag handles, and range labels.
+
+```ts
+const sliderNodes = renderDataZoomSlider(fullData, zoom.range, {
+  x: 40,
+  y: 320,
+  width: 600,
+  height: 30,
+  trackColor: "#e5e7eb",
+  handleColor: "#6b7280",
+  selectedColor: "rgba(59, 130, 246, 0.2)",
+  showMinimap: true,
+})
+```
+
+### DataZoomSliderOptions
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `x` | `number` | required | X position of the slider |
+| `y` | `number` | required | Y position of the slider |
+| `width` | `number` | required | Width of the slider track |
+| `height` | `number` | `30` | Height of the slider track |
+| `trackColor` | `string` | `#e5e7eb` | Background color of the track |
+| `handleColor` | `string` | `#6b7280` | Color of the drag handles and minimap |
+| `selectedColor` | `string` | `rgba(59,130,246,0.2)` | Highlight color for the selected region |
+| `showMinimap` | `boolean` | `true` | Draw a sparkline of the first series in the track |
+
+### Slider components
+
+The slider renders these visual elements:
+
+1. **Track**: a rounded rectangle background.
+2. **Minimap**: a small sparkline of the first series, drawn inside the track.
+3. **Selected region**: a highlighted rectangle between the two handles.
+4. **Left handle**: a draggable rounded rectangle at the start of the selection.
+5. **Right handle**: a draggable rounded rectangle at the end of the selection.
+6. **Range labels**: small text labels below the slider showing the start and end data labels.
+
+---
+
+## Full Example: Time Series with Zoom
+
+```ts
+import { createChart, createDataZoomState, applyDataZoom } from "@chartts/core"
+
+// Generate 365 days of data
+const labels = Array.from({ length: 365 }, (_, i) => {
+  const date = new Date(2025, 0, 1 + i)
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+})
+
+const values = Array.from({ length: 365 }, (_, i) =>
+  100 + Math.sin(i / 30) * 40 + Math.random() * 20
+)
+
+const fullData = {
+  labels,
+  series: [{ name: "Daily Active Users", values }],
+}
+
+const chart = createChart(document.getElementById("chart")!, {
+  xLabel: "Date",
+  yLabel: "Users",
+  theme: "saas",
+  curve: "monotone",
+})
+
+// Initialize zoom to show the last 90 days
+const zoom = createDataZoomState(
+  { start: 0.75, end: 1.0 },
+  (range) => {
+    const filtered = applyDataZoom(fullData, range)
+    chart.setData(filtered)
+  },
+)
+
+// Initial render with zoomed data
+const initialData = applyDataZoom(fullData, zoom.range)
+chart.setData(initialData)
+```
+
+## Tips
+
+- Place the slider below the chart by setting `y` to the chart's total height (including padding). A gap of 10 to 20 pixels between the chart bottom and the slider top looks clean.
+- The minimap sparkline uses the first series in the dataset. For multi-series charts, this gives users a reference of the overall data shape while zooming.
+- Combine data zoom with decimation for very large datasets. Apply zoom first to narrow the window, then let decimation handle any remaining excess points.
+- The minimum zoom span is 1% of the dataset. This prevents the user from zooming so far in that the chart becomes empty.
+- For keyboard accessibility, wire `panLeft`, `panRight`, `zoomIn`, and `zoomOut` to arrow keys and +/- keys.
+- The `onChange` callback fires on every range modification, including `reset()`. Use it to re-render the chart with filtered data.
