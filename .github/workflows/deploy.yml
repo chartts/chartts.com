@@ -26,18 +26,16 @@ jobs:
         with:
           node-version: 20
 
-      - name: Build core library
-        working-directory: lib/packages/core
-        run: |
-          npm install
-          npx tsup
+      - name: Install pnpm
+        run: npm install -g pnpm@9
 
-      - name: Build GL library
-        working-directory: lib/packages/gl
-        run: |
-          sed -i 's|"workspace:\*"|"file:../../core"|' package.json
-          npm install
-          npx tsup
+      - name: Install lib dependencies
+        working-directory: lib
+        run: pnpm install
+
+      - name: Build lib packages
+        working-directory: lib
+        run: pnpm -r build
 
       - name: Install web dependencies
         working-directory: web
