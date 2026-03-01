@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { renderToString, barChartType } from "@chartts/core";
+import { renderToString, barChartType } from "@chartts/core/all";
 import { sampleData, chartDisplayNames, chartTypes } from "@/lib/charts";
 
 const CHART_TYPES = Object.keys(sampleData);

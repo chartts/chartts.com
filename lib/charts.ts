@@ -53,7 +53,7 @@ import {
   orgChartType,
   flowChartType,
   paretoChartType,
-} from "@chartts/core";
+} from "@chartts/core/all";
 import type { ChartTypePlugin, ChartData } from "@chartts/core";
 
 export const chartTypes: Record<string, ChartTypePlugin> = {

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { renderChart } from "@/lib/charts";
 import { CodeBlock } from "@/lib/highlight";
-import type { ChartData } from "@chartts/core";
+import type { ChartData } from "@chartts/core/all";
 
 /* ── Chart panel inside a dashboard ── */
 interface DashChart {
@@ -39,107 +39,6 @@ interface Example {
    ═══════════════════════════════════════════════════════════════════ */
 
 const examples: Record<string, Example> = {
-
-  /* ──────────────────────────────────────────────────────────────
-     STOCK TRADING DASHBOARD
-     ────────────────────────────────────────────────────────────── */
-  "stock-tracker": {
-    title: "Stock Trading Dashboard",
-    badge: "Finance",
-    description: "Full trading view with candlestick price chart, volume bars, OHLC comparison, sparkline KPIs, and Kagi reversal chart. Multi-panel layout with synced data.",
-    kpis: [
-      { label: "AAPL", value: "$194.20", change: "+2.4%", up: true, sparkData: [185,188,186,190,189,194] },
-      { label: "Day Range", value: "$187 - $196", change: "High vol", up: true },
-      { label: "Volume", value: "52.1M", change: "+18%", up: true, sparkData: [32,41,38,52,48,52] },
-      { label: "Market Cap", value: "$3.01T", change: "+1.2%", up: true },
-    ],
-    charts: [
-      {
-        type: "candlestick", title: "AAPL - Daily Candlestick", span: "full",
-        data: {
-          labels: ["Jan 2","Jan 3","Jan 4","Jan 5","Jan 8","Jan 9","Jan 10","Jan 11","Jan 12","Jan 15","Jan 16","Jan 17","Jan 18","Jan 19","Jan 22","Jan 23","Jan 24","Jan 25","Jan 26","Jan 29"],
-          series: [
-            { name: "Open", values: [185.2,188.1,186.4,190.2,189.0,194.2,192.8,193.5,191.0,195.2,193.8,196.0,194.5,197.2,195.8,198.5,196.2,199.8,201.0,198.5] },
-            { name: "High", values: [190.5,192.0,191.8,195.0,196.2,197.5,195.8,196.2,195.5,198.0,197.5,199.0,198.8,200.5,199.2,201.8,200.5,203.0,204.2,202.5] },
-            { name: "Low", values: [183.5,185.2,184.8,188.5,187.2,192.0,190.5,191.8,189.2,193.5,191.8,194.2,192.5,195.5,194.0,196.8,194.5,198.2,199.5,196.0] },
-            { name: "Close", values: [188.1,186.4,190.2,189.0,194.2,192.8,193.5,191.0,195.2,193.8,196.0,194.5,197.2,195.8,198.5,196.2,199.8,201.0,198.5,201.2] },
-          ],
-        },
-        width: 800, height: 350,
-      },
-      {
-        type: "volume", title: "Trading Volume", span: "full",
-        data: {
-          labels: ["Jan 2","Jan 3","Jan 4","Jan 5","Jan 8","Jan 9","Jan 10","Jan 11","Jan 12","Jan 15","Jan 16","Jan 17","Jan 18","Jan 19","Jan 22","Jan 23","Jan 24","Jan 25","Jan 26","Jan 29"],
-          series: [
-            { name: "Volume", values: [48.2,52.1,39.8,55.1,42.6,61.2,38.9,45.2,58.4,41.5,53.2,47.8,62.1,44.5,51.8,39.2,56.4,48.9,67.2,52.1] },
-          ],
-        },
-        width: 800, height: 150,
-      },
-      {
-        type: "kagi", title: "Kagi Reversal", span: "1/2",
-        data: {
-          labels: ["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20"],
-          series: [{ name: "Price", values: [185,188,186,190,189,194,192,193,191,195,193,196,194,197,195,198,196,199,201,198] }],
-        },
-        width: 400, height: 250,
-      },
-      {
-        type: "line", title: "20-Day Moving Average", span: "1/2",
-        data: {
-          labels: ["Jan 2","Jan 5","Jan 8","Jan 11","Jan 15","Jan 18","Jan 22","Jan 25","Jan 29"],
-          series: [
-            { name: "Price", values: [188,189,194,191,193,197,198,201,201] },
-            { name: "SMA 20", values: [186,187,189,190,192,194,196,197,199] },
-          ],
-        },
-        width: 400, height: 250,
-      },
-    ],
-    code: `import { CandlestickChart, VolumeChart, LineChart, KagiChart, Sparkline } from "@chartts/react"
-
-// Full trading dashboard with synced panels
-export function TradingDashboard({ ticker }: { ticker: string }) {
-  const { candles, volume, kagi } = useMarketData(ticker)
-
-  return (
-    <div className="space-y-1">
-      {/* KPI bar */}
-      <div className="flex gap-6 p-4 rounded-xl bg-zinc-900 border border-zinc-800">
-        <KPI label="AAPL" value="$194.20" change="+2.4%" up />
-        <KPI label="Volume" value="52.1M" sparkline={volumeTrend} />
-        <KPI label="Market Cap" value="$3.01T" />
-      </div>
-
-      {/* Price chart */}
-      <CandlestickChart
-        data={candles}
-        x="date" open="open" high="high" low="low" close="close"
-        crosshair zoom pan
-        className="h-96 rounded-xl bg-zinc-950 p-4"
-      />
-
-      {/* Volume bars */}
-      <VolumeChart
-        data={volume}
-        x="date" y="volume"
-        className="h-32 rounded-xl bg-zinc-950 p-4"
-      />
-
-      {/* Bottom row */}
-      <div className="grid grid-cols-2 gap-4">
-        <KagiChart data={kagi} x="date" y="price" className="h-64 rounded-xl bg-zinc-950 p-4" />
-        <LineChart
-          data={candles}
-          x="date" y={["close", "sma20"]}
-          className="h-64 rounded-xl bg-zinc-950 p-4"
-        />
-      </div>
-    </div>
-  )
-}`,
-  },
 
   /* ──────────────────────────────────────────────────────────────
      ANALYTICS PLATFORM

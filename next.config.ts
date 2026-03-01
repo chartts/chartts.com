@@ -7,10 +7,10 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   webpack: (config) => {
-    config.resolve.alias["@chartts/core"] = path.resolve(
-      __dirname,
-      "../lib/packages/core/dist/index.js"
-    );
+    const coreDistDir = path.resolve(__dirname, "../lib/packages/core/dist");
+    // Exact match for @chartts/core (must come after subpath aliases)
+    config.resolve.alias["@chartts/core/all"] = path.resolve(coreDistDir, "all.js");
+    config.resolve.alias["@chartts/core"] = path.resolve(coreDistDir, "index.js");
     config.resolve.alias["@chartts/themes"] = path.resolve(
       __dirname,
       "../lib/packages/themes/dist/index.js"

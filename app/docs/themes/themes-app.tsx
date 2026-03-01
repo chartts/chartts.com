@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { renderToString, lineChartType, resolveTheme } from "@chartts/core";
+import { renderToString, lineChartType, resolveTheme } from "@chartts/core/all";
 import type { ThemeConfig } from "@chartts/core";
 import { EXTRA_THEMES } from "@chartts/themes";
 
